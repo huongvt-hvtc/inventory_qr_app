@@ -267,9 +267,9 @@ export function Navigation() {
 
         {/* Mobile bottom navigation - Pro Grab-style Design */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 md:hidden shadow-2xl">
-          {/* Safe area padding for devices with home indicator */}
-          <div className="pb-safe">
-            <nav className="flex px-4 pt-3 pb-6">
+          {/* Minimal padding - just enough to avoid home indicator */}
+          <div className="pb-1">
+            <nav className="flex px-4 pt-2 pb-2">
               {navigation.map((item, index) => {
                 const isActive = pathname === item.href;
                 // Define unique colors for each tab
@@ -336,11 +336,6 @@ export function Navigation() {
                       }`}>
                         {item.name}
                       </span>
-
-                      {/* Active Indicator Dot */}
-                      {isActive && (
-                        <div className={`w-1 h-1 rounded-full bg-gradient-to-r ${color.primary} mt-1`}></div>
-                      )}
                     </div>
 
                     {/* Touch Ripple Effect */}
