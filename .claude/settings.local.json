@@ -31,7 +31,12 @@
       "Bash(open /Users/ngoctmn/Documents/development/inventory-qr-app/create-app-icons.html)",
       "Bash(open /Users/ngoctmn/Documents/development/inventory-qr-app/create-login-style-icons.html)",
       "Bash(pnpm remove:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

@@ -32,6 +32,11 @@ class OfflineStorage {
   }
 
   private generateDeviceId(): string {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return 'device_' + Math.random().toString(36).substring(2, 15);
+    }
+
     let deviceId = localStorage.getItem('device_id');
     if (!deviceId) {
       deviceId = 'device_' + Math.random().toString(36).substring(2, 15);
@@ -361,7 +366,9 @@ class OfflineStorage {
   async getOfflineDataSummary(): Promise<{ pendingOperations: number; conflicts: number; lastSync: number }> {
     const pendingOps = await this.getPendingOperations();
     const conflicts = await this.getConflicts();
-    const lastSync = parseInt(localStorage.getItem('last_sync_timestamp') || '0');
+    const lastSync = typeof window !== 'undefined' && typeof localStorage !== 'undefined'
+      ? parseInt(localStorage.getItem('last_sync_timestamp') || '0')
+      : 0;
 
     return {
       pendingOperations: pendingOps.length,

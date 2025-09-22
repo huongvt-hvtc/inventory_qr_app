@@ -108,7 +108,9 @@ export function useOfflineSync() {
       await offlineStorage.clearSyncedOperations();
 
       // Update last sync timestamp
-      localStorage.setItem('last_sync_timestamp', Date.now().toString());
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.setItem('last_sync_timestamp', Date.now().toString());
+      }
 
       // Dismiss progress toast
       if (toastId) {

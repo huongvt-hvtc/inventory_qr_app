@@ -37,7 +37,7 @@ export default function PWAInstallPrompt() {
       setDeferredPrompt(e as BeforeInstallPromptEvent);
 
       // Show prompt after a delay if not already dismissed
-      const dismissed = localStorage.getItem('pwa-install-dismissed');
+      const dismissed = typeof window !== 'undefined' ? localStorage.getItem('pwa-install-dismissed') : null;
       if (!dismissed) {
         setTimeout(() => setShowPrompt(true), 3000);
       }
@@ -47,14 +47,14 @@ export default function PWAInstallPrompt() {
       setIsInstalled(true);
       setShowPrompt(false);
       setDeferredPrompt(null);
-      localStorage.setItem('pwa-installed', 'true');
+      typeof window !== 'undefined' && localStorage.setItem('pwa-installed', 'true');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     // Check if already installed
-    if (localStorage.getItem('pwa-installed')) {
+    if (typeof window !== 'undefined' && localStorage.getItem('pwa-installed')) {
       setIsInstalled(true);
     }
 
@@ -72,7 +72,7 @@ export default function PWAInstallPrompt() {
 
     if (outcome === 'accepted') {
       setIsInstalled(true);
-      localStorage.setItem('pwa-installed', 'true');
+      typeof window !== 'undefined' && localStorage.setItem('pwa-installed', 'true');
     }
 
     setShowPrompt(false);
@@ -81,7 +81,7 @@ export default function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+    typeof window !== 'undefined' && localStorage.setItem('pwa-install-dismissed', Date.now().toString());
   };
 
   // Don't show if already installed or in standalone mode
