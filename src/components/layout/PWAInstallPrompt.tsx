@@ -47,7 +47,9 @@ export default function PWAInstallPrompt() {
       setIsInstalled(true);
       setShowPrompt(false);
       setDeferredPrompt(null);
-      typeof window !== 'undefined' && localStorage.setItem('pwa-installed', 'true');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('pwa-installed', 'true');
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -72,7 +74,9 @@ export default function PWAInstallPrompt() {
 
     if (outcome === 'accepted') {
       setIsInstalled(true);
-      typeof window !== 'undefined' && localStorage.setItem('pwa-installed', 'true');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('pwa-installed', 'true');
+      }
     }
 
     setShowPrompt(false);
@@ -81,7 +85,9 @@ export default function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    typeof window !== 'undefined' && localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+    }
   };
 
   // Don't show if already installed or in standalone mode
