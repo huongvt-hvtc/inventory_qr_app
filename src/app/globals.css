@@ -2,26 +2,112 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* QR Scanner Animations */
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+  }
+  50% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
+
+.animate-scan {
+  animation: scan-line 2s ease-in-out infinite;
+}
+
+/* QR Scanner Video Styling */
+#qr-reader-viewport video {
+  object-fit: cover !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#qr-reader-viewport {
+  position: relative !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* Hide default QR scanner UI elements */
+#qr-reader-viewport__scan_region {
+  display: none !important;
+}
+
+#qr-reader-viewport__dashboard {
+  display: none !important;
+}
+
+#qr-reader-viewport__dashboard_section_swaplink {
+  display: none !important;
+}
+
+/* Fix QR box to be square */
+#qr-reader-viewport__scan_region video {
+  border-radius: 0 !important;
+}
+
+/* Ensure square scanning region */
+#qr-shaded-region {
+  border-color: transparent !important;
+}
+
+/* Make the video fill container properly */
+#qr-reader-viewport > div:first-child {
+  padding: 0 !important;
+  height: 100% !important;
+}
+
+#qr-reader-viewport video {
+  border-radius: 0 !important;
 }

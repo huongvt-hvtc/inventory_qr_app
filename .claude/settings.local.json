@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm add:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(pkill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(next dev:*)",
+      "Bash(lsof:*)",
+      "Bash(route:*)",
+      "Bash(killall:*)",
+      "Bash(echo $LANG)",
+      "Bash(echo $SHELL)",
+      "Read(//Users/ngoctmn/**)",
+      "Bash(git config:*)",
+      "Bash(source:*)",
+      "Bash(cat:*)",
+      "Bash(system_profiler:*)",
+      "Bash(brew install:*)",
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(sudo cp:*)",
+      "Bash(ngrok:*)",
+      "Bash(python3:*)",
+      "Bash(brew uninstall:*)",
+      "Read(//private/etc/**)",
+      "Bash(sudo sed:*)",
+      "Bash(open /Users/ngoctmn/Documents/development/inventory-qr-app/create-app-icons.html)",
+      "Bash(open /Users/ngoctmn/Documents/development/inventory-qr-app/create-login-style-icons.html)",
+      "Bash(pnpm remove:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
