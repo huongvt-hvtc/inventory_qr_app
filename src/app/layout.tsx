@@ -56,8 +56,8 @@ export default function RootLayout({
               <Navigation />
 
               {/* Main Content Area */}
-              <main className="md:ml-64 pb-16 md:pb-0">
-                <div className="max-w-full px-4 sm:px-6 lg:px-8 py-6">
+              <main className="md:ml-64 pb-16 md:pb-0 pt-16 md:pt-0">
+                <div className="max-w-full px-4 sm:px-6 lg:px-8 pb-6">
                   {children}
                 </div>
               </main>

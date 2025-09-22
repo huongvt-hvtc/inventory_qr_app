@@ -18,10 +18,6 @@ import {
   Loader2,
   Filter,
   FilterX,
-  TrendingUp,
-  CheckCircle,
-  Clock,
-  BarChart3,
   FolderOpen
 } from 'lucide-react';
 import { useAssets } from '@/hooks/useAssets';
@@ -57,6 +53,27 @@ export default function AssetsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [inventoryFilter, setInventoryFilter] = useState<'all' | 'checked' | 'unchecked'>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Sync with navigation scroll behavior
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Same logic as Navigation component
+      if (currentScrollY < lastScrollY || currentScrollY < 10) {
+        setIsHeaderVisible(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsHeaderVisible(false);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   // Modal states
   const [assetDetailModal, setAssetDetailModal] = useState<{ isOpen: boolean; asset: AssetWithInventoryStatus | null; mode: 'view' | 'edit' | 'create' }>({
@@ -317,12 +334,16 @@ export default function AssetsPage() {
   const statuses = Array.from(new Set(assets.map(a => a.status)));
 
   return (
-    <div className="space-y-3">
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
+    <div>
+      {/* Assets Header - Always sticky, but adjusts position based on navigation visibility */}
+      <div className={`sticky bg-white border-b border-gray-200 shadow-sm transition-all duration-300 z-20 ${
+        isHeaderVisible
+          ? 'top-16 md:top-0' // When navigation is visible: directly below nav on mobile, top on desktop
+          : 'top-0' // When navigation is hidden: always at top
+      }`}>
         {/* Title and Actions */}
-        <div className="px-6 py-2">
-          <div className="flex flex-col gap-3">
+        <div className="px-6 py-3">
+          <div className="flex flex-col gap-2">
             {/* Title */}
             <div>
               <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -332,11 +353,10 @@ export default function AssetsPage() {
             </div>
 
             {/* Dashboard Stats - Single Row */}
-            <div className="flex items-center justify-between text-sm md:text-base border-b border-gray-100 pb-2">
+            <div className="flex items-center gap-6 text-sm md:text-base border-b border-gray-100 pb-2">
               {/* Total Assets */}
               <div className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-blue-600" />
-                <span className="text-gray-700 font-medium">Tổng:</span>
+                <span className="text-gray-700 font-bold">Tổng:</span>
                 <span className="font-bold text-blue-600 text-base md:text-lg">{loading ? '...' : assets.length}</span>
               </div>
 
@@ -345,8 +365,7 @@ export default function AssetsPage() {
 
               {/* Checked Assets */}
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <span className="text-gray-700 font-medium">Đã kiểm:</span>
+                <span className="text-gray-700 font-bold">Đã kiểm:</span>
                 <span className="font-bold text-green-600 text-base md:text-lg">{loading ? '...' : assets.filter(a => a.is_checked).length}</span>
               </div>
 
@@ -355,101 +374,99 @@ export default function AssetsPage() {
 
               {/* Unchecked Assets */}
               <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-orange-600" />
-                <span className="text-gray-700 font-medium">Chưa kiểm:</span>
+                <span className="text-gray-700 font-bold">Chưa kiểm:</span>
                 <span className="font-bold text-orange-600 text-base md:text-lg">{loading ? '...' : assets.filter(a => !a.is_checked).length}</span>
               </div>
             </div>
 
             {/* Action Buttons - Professional Design */}
-            <div className="space-y-2">
+            <div className="space-y-1">
               {/* Desktop Layout */}
-              <div className="hidden md:flex items-center justify-between gap-2">
-                {/* Left Side - Selection Actions (only when items selected) + Primary Actions */}
-                <div className="flex items-center gap-2">
-                  {/* Selection Actions - Show to left of Add button on desktop */}
-                  {selectedAssets.size > 0 && (
-                    <>
-                      <button
-                        title="Đánh dấu đã kiểm kê"
-                        disabled={loading}
-                        onClick={handleCheckAssets}
-                        className="h-9 px-3 bg-white border border-green-600 hover:bg-green-600 hover:text-white text-green-600 text-sm font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                        <span>Check</span>
-                      </button>
+              <div className="hidden md:flex items-center gap-2">
+                {/* Primary Actions */}
+                <button
+                  title="Thêm tài sản mới"
+                  disabled={loading}
+                  onClick={handleCreateAsset}
+                  className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Thêm mới</span>
+                </button>
 
-                      <button
-                        title="Bỏ đánh dấu kiểm kê"
-                        disabled={loading}
-                        onClick={handleUncheckAssets}
-                        className="h-9 px-3 bg-white border border-orange-600 hover:bg-orange-600 hover:text-white text-orange-600 text-sm font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <X className="h-4 w-4" />
-                        <span>Uncheck</span>
-                      </button>
+                <button
+                  title="Nhập dữ liệu từ file Excel"
+                  disabled={loading}
+                  onClick={() => setImportModal(true)}
+                  className="h-9 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-md transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span>Nhập</span>
+                </button>
 
-                      <button
-                        title="In mã QR cho tài sản đã chọn"
-                        disabled={loading}
-                        onClick={handlePrintQR}
-                        className="h-9 px-3 bg-white border border-purple-600 hover:bg-purple-600 hover:text-white text-purple-600 text-sm font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <QrCode className="h-4 w-4" />
-                        <span>In QR</span>
-                      </button>
+                <button
+                  title="Xuất dữ liệu ra file Excel"
+                  disabled={loading}
+                  onClick={handleExport}
+                  className="h-9 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-md transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Xuất</span>
+                </button>
 
-                      <button
-                        title="Xóa tài sản đã chọn"
-                        disabled={loading}
-                        onClick={handleDeleteAssets}
-                        className="h-9 px-3 bg-white border border-red-600 hover:bg-red-600 hover:text-white text-red-600 text-sm font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span>Xóa</span>
-                      </button>
+                {/* Vertical Separator - Only when items selected */}
+                {selectedAssets.size > 0 && (
+                  <div className="w-px h-6 bg-gray-300 mx-2"></div>
+                )}
 
-                      <div className="w-px h-6 bg-gray-300 mx-2"></div>
-                    </>
-                  )}
+                {/* Selection Actions (only when items selected) */}
+                {selectedAssets.size > 0 && (
+                  <>
+                    <button
+                      title="Đánh dấu đã kiểm kê"
+                      disabled={loading}
+                      onClick={handleCheckAssets}
+                      className="h-9 px-3 bg-white border border-green-600 hover:bg-green-600 hover:text-white text-green-600 text-sm font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                      <span>Check</span>
+                    </button>
 
-                  {/* Primary Actions */}
-                  <button
-                    title="Thêm tài sản mới"
-                    disabled={loading}
-                    onClick={handleCreateAsset}
-                    className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Thêm mới</span>
-                  </button>
+                    <button
+                      title="Bỏ đánh dấu kiểm kê"
+                      disabled={loading}
+                      onClick={handleUncheckAssets}
+                      className="h-9 px-3 bg-white border border-orange-600 hover:bg-orange-600 hover:text-white text-orange-600 text-sm font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <X className="h-4 w-4" />
+                      <span>Uncheck</span>
+                    </button>
 
-                  <button
-                    title="Nhập dữ liệu từ file Excel"
-                    disabled={loading}
-                    onClick={() => setImportModal(true)}
-                    className="h-9 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-md transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Upload className="h-4 w-4" />
-                    <span>Nhập</span>
-                  </button>
+                    <button
+                      title="In mã QR cho tài sản đã chọn"
+                      disabled={loading}
+                      onClick={handlePrintQR}
+                      className="h-9 px-3 bg-white border border-purple-600 hover:bg-purple-600 hover:text-white text-purple-600 text-sm font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <QrCode className="h-4 w-4" />
+                      <span>In QR</span>
+                    </button>
 
-                  <button
-                    title="Xuất dữ liệu ra file Excel"
-                    disabled={loading}
-                    onClick={handleExport}
-                    className="h-9 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-md transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span>Xuất</span>
-                  </button>
-
-                </div>
+                    <button
+                      title="Xóa tài sản đã chọn"
+                      disabled={loading}
+                      onClick={handleDeleteAssets}
+                      className="h-9 px-3 bg-white border border-red-600 hover:bg-red-600 hover:text-white text-red-600 text-sm font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Xóa</span>
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Mobile Layout */}
-              <div className="md:hidden space-y-3">
+              <div className="md:hidden space-y-2">
                 {/* Primary Actions */}
                 <div className="flex items-center gap-2">
                   <button
@@ -529,7 +546,7 @@ export default function AssetsPage() {
         </div>
 
         {/* Search and Filter Toggle */}
-        <div className="px-6 py-2 bg-gray-50 border-t">
+        <div className="px-6 py-3 bg-gray-50 border-t">
           <div className="flex items-center gap-3">
             {/* Search Box */}
             <div className="flex-1 relative">
@@ -623,7 +640,8 @@ export default function AssetsPage() {
       </div>
 
       {/* Assets Table */}
-      <Card>
+      <div className="pt-4">
+        <Card>
         <CardContent className="p-0">
           {loading && assets.length === 0 && (
             <div className="flex items-center justify-center py-12">
@@ -765,6 +783,7 @@ export default function AssetsPage() {
         onImport={handleImportAssets}
         existingAssets={assets}
       />
+      </div>
     </div>
   );
 }

@@ -9,9 +9,6 @@ import {
   Camera,
   CameraOff,
   Keyboard,
-  TrendingUp,
-  Package,
-  CheckCircle,
   XCircle,
   Search,
   Loader2
@@ -40,6 +37,27 @@ export default function ScannerPage() {
     mode: 'view'
   });
   const [recentScans, setRecentScans] = useState<AssetWithInventoryStatus[]>([]);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Sync with navigation scroll behavior
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Same logic as Navigation component
+      if (currentScrollY < lastScrollY || currentScrollY < 10) {
+        setIsHeaderVisible(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsHeaderVisible(false);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   // Calculate stats from real data
   const stats = {
@@ -183,73 +201,54 @@ export default function ScannerPage() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="px-6 py-3 bg-white border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-          <QrCode className="h-6 w-6 text-blue-600" />
-          QR Scanner
-        </h1>
-        <p className="text-xs text-gray-600 mt-0.5">
-          Quét mã QR hoặc nhập mã tài sản để kiểm kê
-        </p>
+    <div>
+      {/* QR Scanner Header - Always sticky, but adjusts position based on navigation visibility */}
+      <div className={`sticky bg-white border-b border-gray-200 shadow-sm transition-all duration-300 z-20 ${
+        isHeaderVisible
+          ? 'top-16 md:top-0' // When navigation is visible: directly below nav on mobile, top on desktop
+          : 'top-0' // When navigation is hidden: always at top
+      }`}>
+        <div className="px-6 py-3">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <QrCode className="h-6 w-6 text-blue-600" />
+              QR Scanner
+            </h1>
+
+            {/* Dashboard Stats - Same as Assets Page */}
+            <div className="flex items-center gap-6 text-sm md:text-base border-b border-gray-100 pb-2">
+              {/* Total Assets */}
+              <div className="flex items-center gap-2">
+                <span className="text-gray-700 font-bold">Tổng:</span>
+                <span className="font-bold text-blue-600 text-base md:text-lg">{loading ? '...' : stats.total_assets}</span>
+              </div>
+
+              {/* Separator */}
+              <div className="w-px h-5 bg-gray-300"></div>
+
+              {/* Checked Assets */}
+              <div className="flex items-center gap-2">
+                <span className="text-gray-700 font-bold">Đã kiểm:</span>
+                <span className="font-bold text-green-600 text-base md:text-lg">{loading ? '...' : stats.checked_assets}</span>
+              </div>
+
+              {/* Separator */}
+              <div className="w-px h-5 bg-gray-300"></div>
+
+              {/* Unchecked Assets */}
+              <div className="flex items-center gap-2">
+                <span className="text-gray-700 font-bold">Chưa kiểm:</span>
+                <span className="font-bold text-orange-600 text-base md:text-lg">{loading ? '...' : (stats.total_assets - stats.checked_assets)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Dashboard Stats - Compact for Mobile */}
-      <div className="px-6 grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-6">
-        <Card className="border-blue-100">
-          <CardContent className="p-3 md:p-6">
-            <div className="flex flex-col md:flex-row md:items-center text-center md:text-left">
-              <Package className="h-6 w-6 md:h-8 md:w-8 text-blue-600 mx-auto md:mx-0" />
-              <div className="md:ml-4 mt-1 md:mt-0">
-                <p className="text-lg md:text-2xl font-bold text-gray-900">
-                  {loading ? <Loader2 className="h-4 w-4 md:h-6 md:w-6 animate-spin mx-auto" /> : stats.total_assets}
-                </p>
-                <p className="text-xs md:text-sm text-gray-600">Tổng TS</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-green-100">
-          <CardContent className="p-3 md:p-6">
-            <div className="flex flex-col md:flex-row md:items-center text-center md:text-left">
-              <CheckCircle className="h-6 w-6 md:h-8 md:w-8 text-green-600 mx-auto md:mx-0" />
-              <div className="md:ml-4 mt-1 md:mt-0">
-                <p className="text-lg md:text-2xl font-bold text-gray-900">
-                  {loading ? <Loader2 className="h-4 w-4 md:h-6 md:w-6 animate-spin mx-auto" /> : stats.checked_assets}
-                </p>
-                <p className="text-xs md:text-sm text-gray-600">Đã kiểm</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-purple-100">
-          <CardContent className="p-3 md:p-6">
-            <div className="flex flex-col md:flex-row md:items-center text-center md:text-left">
-              <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-purple-600 mx-auto md:mx-0" />
-              <div className="md:ml-4 mt-1 md:mt-0">
-                <p className="text-lg md:text-2xl font-bold text-gray-900">
-                  {loading ? <Loader2 className="h-4 w-4 md:h-6 md:w-6 animate-spin mx-auto" /> : `${stats.completion_rate}%`}
-                </p>
-                <p className="text-xs md:text-sm text-gray-600">Tiến độ</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="px-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="px-6 pt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* QR Scanner */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <QrCode className="h-5 w-5" />
-              QR Scanner
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-4 space-y-4">
             <SimpleQRScanner
               onScanSuccess={handleQRScanSuccess}
               onScanError={handleQRScanError}
@@ -258,14 +257,14 @@ export default function ScannerPage() {
             />
 
             {/* Manual Input */}
-            <div className="space-y-3">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
+            <div className="space-y-2">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
                   <Keyboard className="h-5 w-5 text-blue-600" />
                   <span className="font-medium text-blue-900">Nhập mã thủ công</span>
                 </div>
 
-                <form onSubmit={handleManualSubmit} className="space-y-3">
+                <form onSubmit={handleManualSubmit} className="space-y-2">
                   <div className="flex gap-2">
                     <Input
                       type="text"
@@ -294,14 +293,13 @@ export default function ScannerPage() {
 
         {/* Recent Scans */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5" />
+          <CardHeader className="pb-3">
+            <CardTitle>
               Kiểm kê gần đây
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="pt-0">
+            <div className="space-y-2">
               {recentScans.map((scan) => (
                 <div
                   key={scan.id}

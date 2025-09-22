@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -28,7 +28,28 @@ export function Navigation() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const { user, signOut } = useAuth();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Show header when scrolling up, hide when scrolling down
+      if (currentScrollY < lastScrollY || currentScrollY < 10) {
+        setIsHeaderVisible(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsHeaderVisible(false);
+        setIsMobileMenuOpen(false); // Close mobile menu when hiding header
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   return (
     <>
@@ -117,7 +138,9 @@ export function Navigation() {
       {/* Mobile Navigation */}
       <div className="md:hidden">
         {/* Mobile header */}
-        <div className="flex h-16 items-center justify-between bg-white border-b border-gray-200 px-4">
+        <div className={`fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between bg-white border-b border-gray-200 px-4 transition-transform duration-300 ${
+          isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}>
           <div className="flex items-center">
             <Package className="h-8 w-8 text-blue-600" />
             <span className="ml-2 text-xl font-semibold text-gray-900">
@@ -148,7 +171,7 @@ export function Navigation() {
 
         {/* Mobile menu - Enhanced professional dropdown */}
         {isMobileMenuOpen && (
-          <div className="absolute top-16 left-0 right-0 z-50 bg-white shadow-xl border-b border-gray-200 backdrop-blur-md">
+          <div className="fixed top-16 left-0 right-0 z-50 bg-white shadow-xl border-b border-gray-200 backdrop-blur-md">
             {/* Subtle overlay background */}
             <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50"></div>
 
@@ -242,27 +265,93 @@ export function Navigation() {
           </div>
         )}
 
-        {/* Mobile bottom navigation */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 md:hidden">
-          <nav className="flex">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex-1 flex flex-col items-center py-2 px-1 transition-colors ${
-                    isActive
-                      ? 'text-blue-600'
-                      : 'text-gray-500 hover:text-blue-600'
-                  }`}
-                >
-                  <item.icon className="h-6 w-6" />
-                  <span className="text-xs mt-1">{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
+        {/* Mobile bottom navigation - Pro Grab-style Design */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 md:hidden shadow-2xl">
+          {/* Safe area padding for devices with home indicator */}
+          <div className="pb-safe">
+            <nav className="flex px-4 pt-3 pb-6">
+              {navigation.map((item, index) => {
+                const isActive = pathname === item.href;
+                // Define unique colors for each tab
+                const colors = [
+                  {
+                    primary: 'from-blue-500 to-indigo-600',
+                    primarySolid: 'bg-blue-500',
+                    bg: 'bg-gradient-to-br from-blue-50 to-indigo-50',
+                    text: 'text-blue-600',
+                    shadow: 'shadow-blue-200',
+                    glow: 'shadow-blue-500/20'
+                  },
+                  {
+                    primary: 'from-purple-500 to-pink-600',
+                    primarySolid: 'bg-purple-500',
+                    bg: 'bg-gradient-to-br from-purple-50 to-pink-50',
+                    text: 'text-purple-600',
+                    shadow: 'shadow-purple-200',
+                    glow: 'shadow-purple-500/20'
+                  }
+                ];
+                const color = colors[index] || colors[0];
+
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="flex-1 flex flex-col items-center group relative px-2"
+                  >
+                    {/* Main Container with proper spacing */}
+                    <div className="flex flex-col items-center space-y-2 py-2 px-3 rounded-2xl transition-all duration-300 w-full">
+
+                      {/* Icon Container - Grab style */}
+                      <div className={`relative transition-all duration-300 ease-out ${
+                        isActive ? 'transform scale-110' : 'group-hover:scale-105'
+                      }`}>
+
+                        {/* Background Circle */}
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                          isActive
+                            ? `bg-gradient-to-br ${color.primary} shadow-lg ${color.glow}`
+                            : 'bg-gray-100 group-hover:bg-gray-200'
+                        }`}>
+
+                          {/* Icon */}
+                          <item.icon className={`h-6 w-6 transition-all duration-300 ${
+                            isActive
+                              ? 'text-white drop-shadow-sm'
+                              : 'text-gray-600 group-hover:text-gray-700'
+                          }`} />
+                        </div>
+
+                        {/* Active Glow Effect */}
+                        {isActive && (
+                          <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${color.primary} opacity-20 blur-md -z-10`}></div>
+                        )}
+                      </div>
+
+                      {/* Label - Always visible like Grab */}
+                      <span className={`text-xs font-medium transition-all duration-300 text-center leading-tight ${
+                        isActive
+                          ? `${color.text} font-semibold`
+                          : 'text-gray-600 group-hover:text-gray-700'
+                      }`}>
+                        {item.name}
+                      </span>
+
+                      {/* Active Indicator Dot */}
+                      {isActive && (
+                        <div className={`w-1 h-1 rounded-full bg-gradient-to-r ${color.primary} mt-1`}></div>
+                      )}
+                    </div>
+
+                    {/* Touch Ripple Effect */}
+                    <div className="absolute inset-0 rounded-2xl overflow-hidden">
+                      <div className={`absolute inset-0 bg-gradient-to-br ${color.primary} opacity-0 group-active:opacity-10 transition-opacity duration-150 rounded-2xl`}></div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
         </div>
       </div>
 
