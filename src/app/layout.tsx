@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/layout/Navigation";
 import PWAInstallPrompt from "@/components/layout/PWAInstallPrompt";
@@ -7,8 +7,14 @@ import { OfflineStatusIndicator } from "@/components/offline/OfflineStatusIndica
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AuthGuard from "@/components/auth/AuthGuard";
+import VisibilityHandler from "@/components/layout/VisibilityHandler";
+import MobilePWAFix from "@/components/layout/MobilePWAFix";
 
-const inter = Inter({ subsets: ["latin", "vietnamese"] });
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-be-vietnam-pro"
+});
 
 export const metadata: Metadata = {
   title: "Asset Inventory QR Management",
@@ -49,17 +55,21 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#2563eb" />
       </head>
-      <body className={`${inter.className} h-full bg-gray-50`}>
+      <body className={`${beVietnamPro.variable} font-sans h-full bg-gray-50`}>
         <AuthProvider>
           <AuthGuard>
+            {/* Prevent tab switch reloads */}
+            <VisibilityHandler />
+
+            {/* Mobile PWA fixes */}
+            <MobilePWAFix />
+
             <div className="min-h-screen">
               <Navigation />
 
               {/* Main Content Area */}
-              <main className="md:ml-64 pb-16 md:pb-0 pt-16 md:pt-0">
-                <div className="max-w-full px-4 sm:px-6 lg:px-8 pb-6">
-                  {children}
-                </div>
+              <main className="md:ml-64 pb-16 md:pb-0 pt-4 md:pt-6">
+                {children}
               </main>
 
               {/* Offline Status Indicator */}
