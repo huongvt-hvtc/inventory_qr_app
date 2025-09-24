@@ -95,37 +95,40 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
       scannerRef.current = new Html5Qrcode('qr-reader-viewport');
 
       const config = {
-        fps: 30, // Optimized for best performance across all devices
+        fps: 10, // Lower FPS but more processing time per frame like banking apps
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          // Larger scan area for better detection
+          // Full area scanning like native camera
           const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-          const qrboxSize = Math.floor(minEdgeSize * 0.8); // 80% of viewport for wider detection
+          const qrboxSize = Math.floor(minEdgeSize * 0.9); // 90% coverage like native apps
           return {
             width: qrboxSize,
             height: qrboxSize
           };
         },
-        aspectRatio: 16/9,
+        aspectRatio: 1.0, // Square ratio for better QR detection
         disableFlip: false,
         videoConstraints: {
           facingMode: cameras[currentCameraIndex]?.label?.toLowerCase().includes('front')
             ? "user"
             : "environment",
-          // Balanced quality for fast detection
-          width: { ideal: 1280, max: 1920, min: 640 },
-          height: { ideal: 720, max: 1080, min: 480 },
-          frameRate: { ideal: 30, min: 15 }
+          // High resolution for better detection like banking apps
+          width: { ideal: 1920, min: 800 },
+          height: { ideal: 1080, min: 600 },
+          frameRate: { ideal: 30, min: 10 },
+          // Auto-focus for better QR detection
+          focusMode: "continuous",
+          // Enhanced constraints for better detection
+          advanced: [{
+            focusMode: "continuous"
+          }]
         },
         rememberLastUsedCamera: true,
-        supportedScanTypes: [0], // Only QR codes for faster processing
-        // Enhanced detection settings
+        // Support all formats like native camera
+        supportedScanTypes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true
         },
-        formatsToSupport: [0], // QR_CODE format only
-        // Additional optimizations
-        willReadFrequently: true, // Browser optimization
-        verbose: false // Reduce console noise
+        verbose: false
       };
 
       await scannerRef.current.start(
@@ -138,29 +141,21 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
           setDetectedQR(decodedText);
           setShowDetection(true);
 
-          // Auto-hide detection after 2 seconds (shorter for better UX)
+          // Auto-hide detection after 3 seconds
           setTimeout(() => {
             setShowDetection(false);
             setDetectedQR('');
-          }, 2000);
+          }, 3000);
 
           // Call success handler immediately
           onScanSuccess(decodedText);
 
           // Haptic feedback for mobile devices
           if (navigator.vibrate) {
-            navigator.vibrate([50, 100, 50]); // Pattern for QR detection
+            navigator.vibrate(200); // Simple vibration
           }
 
-          // Pause briefly to prevent multiple rapid scans
-          if (scannerRef.current) {
-            scannerRef.current.pause(true);
-            setTimeout(() => {
-              if (scannerRef.current && scannerRef.current.getState() === 3) {
-                scannerRef.current.resume();
-              }
-            }, 1000); // 1 second pause
-          }
+          // No pause - continuous scanning like native camera
         },
         (errorMessage) => {
           // Hide detection indicator when no QR found
@@ -328,17 +323,15 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
 
         {/* Overlay when inactive */}
         {!isActive && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/90">
-            <div className="text-center space-y-4">
-              <div className="p-4 bg-blue-600/20 rounded-full">
-                <QrCode className="h-12 w-12 text-blue-400 mx-auto" />
-              </div>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+            <div className="text-center space-y-3">
+              <Scan className="h-16 w-16 text-white mx-auto" />
               <div>
-                <p className="text-white text-xl font-semibold">
-                  QR Scanner
+                <p className="text-white text-lg font-medium">
+                  Sẵn sàng quét mã QR
                 </p>
-                <p className="text-gray-300 text-base mt-2">
-                  Nhấn để bắt đầu quét
+                <p className="text-gray-400 text-sm">
+                  Nhấn "Bắt đầu quét" để kích hoạt camera
                 </p>
               </div>
             </div>
@@ -413,6 +406,36 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
             </div>
           </div>
         )}
+      </div>
+
+      {/* Hướng dẫn quét QR */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <QrCode className="h-5 w-5 text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-medium text-blue-900 mb-2">Hướng dẫn quét mã QR</h3>
+            <div className="text-sm text-blue-800 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
+                <span>Giữ thiết bị ổn định, cách mã QR khoảng 10-30cm</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
+                <span>Đảm bảo có đủ ánh sáng và mã QR không bị che khuất</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
+                <span>Đưa mã QR vào giữa khung vuông trên màn hình</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
+                <span>Chờ camera tự động nhận diện và quét mã</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
