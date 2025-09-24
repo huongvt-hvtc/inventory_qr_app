@@ -59,7 +59,7 @@ interface AssetDetailModalProps {
 const statusOptions = [
   'Đang sử dụng',
   'Tốt',
-  'Khá', 
+  'Khá',
   'Cũ',
   'Hỏng',
   'Thanh lý',
@@ -282,12 +282,12 @@ export default function AssetDetailModal({
                 </span>
               )}
               <Button
-                size="sm"
+                size="lg"
                 variant="outline"
                 onClick={showQR}
-                className="h-7 px-3 bg-purple-600 border-purple-600 text-white hover:bg-purple-700 text-xs"
+                className="h-12 px-4 bg-purple-600 border-purple-600 text-white hover:bg-purple-700 font-semibold"
               >
-                <QrCode className="h-3 w-3 mr-1" />
+                <QrCode className="h-4 w-4 mr-2" />
                 Xem QR
               </Button>
             </div>
@@ -306,7 +306,7 @@ export default function AssetDetailModal({
                   value={formData.asset_code}
                   onChange={(e) => handleInputChange('asset_code', e.target.value)}
                   placeholder="Nhập mã..."
-                  className="h-8 text-sm font-medium"
+                  className="h-12 text-sm font-medium"
                   required
                 />
               ) : (
@@ -327,7 +327,7 @@ export default function AssetDetailModal({
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Nhập tên..."
-                  className="h-8 text-sm font-medium"
+                  className="h-12 text-sm font-medium"
                   required
                 />
               ) : (
@@ -359,7 +359,7 @@ export default function AssetDetailModal({
                       value={formData.model}
                       onChange={(e) => handleInputChange('model', e.target.value)}
                       placeholder="Nhập model..."
-                      className="h-8 text-sm"
+                      className="h-12 text-sm"
                     />
                   ) : (
                     <div className="text-sm text-gray-700">{asset?.model || '-'}</div>
@@ -376,7 +376,7 @@ export default function AssetDetailModal({
                       value={formData.serial}
                       onChange={(e) => handleInputChange('serial', e.target.value)}
                       placeholder="Nhập serial..."
-                      className="h-8 text-sm"
+                      className="h-12 text-sm"
                     />
                   ) : (
                     <div className="text-sm text-gray-700 font-mono">{asset?.serial || '-'}</div>
@@ -395,7 +395,7 @@ export default function AssetDetailModal({
                     value={formData.tech_code}
                     onChange={(e) => handleInputChange('tech_code', e.target.value)}
                     placeholder="Nhập tech code..."
-                    className="h-8 text-sm"
+                    className="h-12 text-sm"
                   />
                 ) : (
                   <div className="text-sm text-gray-700 font-mono">{asset?.tech_code || '-'}</div>
@@ -421,7 +421,7 @@ export default function AssetDetailModal({
                       value={formData.status}
                       onValueChange={(value) => handleInputChange('status', value)}
                     >
-                      <SelectTrigger className="h-8 text-sm">
+                      <SelectTrigger className="h-12 text-sm">
                         <SelectValue placeholder="Chọn tình trạng" />
                       </SelectTrigger>
                       <SelectContent>
@@ -450,7 +450,7 @@ export default function AssetDetailModal({
                       value={formData.department}
                       onValueChange={(value) => handleInputChange('department', value)}
                     >
-                      <SelectTrigger className="h-8 text-sm">
+                      <SelectTrigger className="h-12 text-sm">
                         <SelectValue placeholder="Chọn bộ phận" />
                       </SelectTrigger>
                       <SelectContent>
@@ -485,7 +485,7 @@ export default function AssetDetailModal({
                     value={formData.location}
                     onChange={(e) => handleInputChange('location', e.target.value)}
                     placeholder="Nhập vị trí..."
-                    className="h-8 text-sm"
+                    className="h-12 text-sm"
                   />
                 ) : (
                   <div className="text-sm text-gray-700">{asset?.location || '-'}</div>
@@ -549,14 +549,14 @@ export default function AssetDetailModal({
           </div>
         </div>
 
-        {/* Compact Footer */}
+        {/* Professional Footer */}
         <DialogFooter className="px-4 py-3 border-t bg-gray-50">
           <div className="flex gap-2 w-full">
             {editMode ? (
               <>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="lg"
                   onClick={() => {
                     if (mode === 'create') {
                       onClose();
@@ -578,25 +578,25 @@ export default function AssetDetailModal({
                     }
                   }}
                   disabled={loading}
-                  className="flex-1 h-8 text-xs"
+                  className="flex-1 h-12 font-semibold"
                 >
-                  <X className="h-3 w-3 mr-1" />
+                  <X className="h-4 w-4 mr-2" />
                   Hủy
                 </Button>
                 <Button
                   onClick={handleSave}
                   disabled={loading}
-                  size="sm"
-                  className="flex-1 h-8 text-xs bg-blue-600 hover:bg-blue-700"
+                  size="lg"
+                  className="flex-1 h-12 font-semibold bg-blue-600 hover:bg-blue-700"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Đang lưu...
                     </>
                   ) : (
                     <>
-                      <Save className="h-3 w-3 mr-1" />
+                      <Save className="h-4 w-4 mr-2" />
                       Lưu
                     </>
                   )}
@@ -606,20 +606,20 @@ export default function AssetDetailModal({
               <>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="lg"
                   onClick={onClose}
-                  className="flex-1 h-8 text-xs"
+                  className="flex-1 h-12 font-semibold"
                 >
                   Đóng
                 </Button>
 
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="lg"
                   onClick={() => setEditMode(true)}
-                  className="flex-1 h-8 text-xs border-blue-600 text-blue-600 hover:bg-blue-50"
+                  className="flex-1 h-12 font-semibold border-blue-600 text-blue-600 hover:bg-blue-50"
                 >
-                  <Edit className="h-3 w-3 mr-1" />
+                  <Edit className="h-4 w-4 mr-2" />
                   Sửa
                 </Button>
 
@@ -627,27 +627,27 @@ export default function AssetDetailModal({
                   <Button
                     onClick={handleUncheck}
                     disabled={loading}
-                    size="sm"
-                    className="flex-1 h-8 text-xs bg-red-600 hover:bg-red-700"
+                    size="lg"
+                    className="flex-1 h-12 font-semibold bg-red-600 hover:bg-red-700"
                   >
-                    <X className="h-3 w-3 mr-1" />
+                    <X className="h-4 w-4 mr-2" />
                     Bỏ kiểm kê
                   </Button>
                 ) : (
                   <Button
                     onClick={handleCheck}
                     disabled={loading || !user}
-                    size="sm"
-                    className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700"
+                    size="lg"
+                    className="flex-1 h-12 font-semibold bg-green-600 hover:bg-green-700"
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Xử lý...
                       </>
                     ) : (
                       <>
-                        <CheckCircle className="h-3 w-3 mr-1" />
+                        <CheckCircle className="h-4 w-4 mr-2" />
                         Kiểm kê
                       </>
                     )}
@@ -729,7 +729,7 @@ export default function AssetDetailModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setShowQRModal(false)}>
+          <Button variant="outline" onClick={() => setShowQRModal(false)} className="h-12 px-6 font-semibold">
             Đóng
           </Button>
         </DialogFooter>

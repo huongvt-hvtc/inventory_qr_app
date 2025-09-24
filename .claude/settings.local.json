@@ -36,7 +36,9 @@
       "Bash(git remote add:*)",
       "Bash(git push:*)",
       "Bash(git remote set-url:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git log --pretty=format:\"%h %ad %s\" --date=short --since=\"2025-09-23\" --until=\"2025-09-23\")",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []

@@ -92,25 +92,34 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
       scannerRef.current = new Html5Qrcode('qr-reader-viewport');
 
       const config = {
-        fps: 10,
+        fps: 30, // Increased from 10 to 30 for faster detection
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          // Square QR box - always square regardless of screen size
+          // Larger scan area for better detection
           const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-          const qrboxSize = Math.floor(minEdgeSize * 0.7); // 70% of smallest dimension
+          const qrboxSize = Math.floor(minEdgeSize * 0.9); // Increased from 0.7 to 0.9
           return {
             width: qrboxSize,
             height: qrboxSize
           };
         },
-        aspectRatio: 16/9, // Fixed 16:9 aspect ratio
+        aspectRatio: 16/9,
         disableFlip: false,
         videoConstraints: {
           facingMode: cameras[currentCameraIndex]?.label?.toLowerCase().includes('front')
             ? "user"
-            : "environment"
+            : "environment",
+          // Enhanced video quality for better QR detection
+          width: { ideal: 1920, min: 640 },
+          height: { ideal: 1080, min: 480 },
+          frameRate: { ideal: 30, min: 15 }
         },
         rememberLastUsedCamera: true,
-        supportedScanTypes: [0] // Only QR codes
+        supportedScanTypes: [0], // Only QR codes
+        // Enhanced detection settings
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        },
+        formatsToSupport: [0] // QR_CODE format
       };
 
       await scannerRef.current.start(
@@ -125,14 +134,14 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
             navigator.vibrate(200);
           }
 
-          // Brief pause to prevent multiple rapid scans
+          // Very brief pause to prevent duplicate scans but allow continuous scanning
           if (scannerRef.current && isActive) {
             scannerRef.current.pause(true);
             setTimeout(() => {
               if (scannerRef.current && isActive) {
                 scannerRef.current.resume();
               }
-            }, 1000);
+            }, 300); // Reduced from 1000ms to 300ms for faster continuous scanning
           }
         },
         (errorMessage) => {
@@ -332,18 +341,6 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
         )}
       </div>
 
-      {/* Instructions */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-4">
-          <h4 className="font-medium text-gray-900 mb-2">Hướng dẫn quét:</h4>
-          <ul className="text-sm text-gray-700 space-y-1">
-            <li>• Giữ khoảng cách 15-30cm từ mã QR</li>
-            <li>• Đảm bảo ánh sáng đầy đủ</li>
-            <li>• Căn chỉnh mã QR vào trung tâm camera</li>
-            <li>• Tự động nhận diện, không cần chụp</li>
-          </ul>
-        </CardContent>
-      </Card>
     </div>
   );
 }
