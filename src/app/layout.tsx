@@ -17,8 +17,8 @@ const beVietnamPro = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "Asset Inventory QR Management",
-  description: "Professional asset inventory management system with QR code tracking",
+  title: "Kiểm kê tài sản",
+  description: "Hệ thống quản lý kiểm kê tài sản chuyên nghiệp với mã QR",
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon.ico",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Asset QR",
+    title: "Kiểm kê",
   },
 };
 
@@ -50,7 +50,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Asset QR" />
+        <meta name="apple-mobile-web-app-title" content="Kiểm kê" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#2563eb" />

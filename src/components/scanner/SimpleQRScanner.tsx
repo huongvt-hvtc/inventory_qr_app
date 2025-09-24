@@ -250,7 +250,7 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
         <Button
           onClick={onToggle}
           variant={isActive ? "destructive" : "default"}
-          className={isActive ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700 text-white"}
+          className={isActive ? "bg-red-600 hover:bg-red-700" : "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"}
           disabled={isLoading}
         >
           {isLoading ? (
@@ -332,18 +332,6 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
         )}
       </div>
 
-      {/* Instructions */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-4">
-          <h4 className="font-medium text-gray-900 mb-2">Hướng dẫn quét:</h4>
-          <ul className="text-sm text-gray-700 space-y-1">
-            <li>• Giữ khoảng cách 15-30cm từ mã QR</li>
-            <li>• Đảm bảo ánh sáng đầy đủ</li>
-            <li>• Căn chỉnh mã QR vào trung tâm camera</li>
-            <li>• Tự động nhận diện, không cần chụp</li>
-          </ul>
-        </CardContent>
-      </Card>
     </div>
   );
 }
