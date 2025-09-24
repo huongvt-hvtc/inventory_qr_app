@@ -95,40 +95,26 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
       scannerRef.current = new Html5Qrcode('qr-reader-viewport');
 
       const config = {
-        fps: 10, // Lower FPS but more processing time per frame like banking apps
+        fps: 10, // Banking app style - slower but more thorough
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          // Full area scanning like native camera
+          // Much larger scan area like native apps
           const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-          const qrboxSize = Math.floor(minEdgeSize * 0.9); // 90% coverage like native apps
           return {
-            width: qrboxSize,
-            height: qrboxSize
+            width: Math.floor(minEdgeSize * 0.9),
+            height: Math.floor(minEdgeSize * 0.9)
           };
         },
-        aspectRatio: 1.0, // Square ratio for better QR detection
+        aspectRatio: 1.333, // 4:3 ratio like native camera apps
         disableFlip: false,
         videoConstraints: {
-          facingMode: cameras[currentCameraIndex]?.label?.toLowerCase().includes('front')
-            ? "user"
+          facingMode: cameras[currentCameraIndex]?.label?.toLowerCase().includes('front') 
+            ? "user" 
             : "environment",
-          // High resolution for better detection like banking apps
-          width: { ideal: 1920, min: 800 },
-          height: { ideal: 1080, min: 600 },
-          frameRate: { ideal: 30, min: 10 },
-          // Auto-focus for better QR detection
-          focusMode: "continuous",
-          // Enhanced constraints for better detection
-          advanced: [{
-            focusMode: "continuous"
-          }]
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
+          frameRate: { ideal: 30 }
         },
-        rememberLastUsedCamera: true,
-        // Support all formats like native camera
-        supportedScanTypes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true
-        },
-        verbose: false
+        rememberLastUsedCamera: true
       };
 
       await scannerRef.current.start(
