@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,12 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
   const [isLoading, setIsLoading] = useState(false);
   const [detectedQR, setDetectedQR] = useState<string>('');
   const [showDetection, setShowDetection] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastScannedTextRef = useRef<string>('');
+  const lastScanTimeRef = useRef<number>(0);
+  const [torchEnabled, setTorchEnabled] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   useEffect(() => {
     checkCameraSupport();
@@ -94,34 +100,68 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
 
       scannerRef.current = new Html5Qrcode('qr-reader-viewport');
 
+      // Auto-adjust FPS based on device performance
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const optimalFPS = isMobile ? 20 : 30;
+
       const config = {
-        fps: 10, // Banking app style - slower but more thorough
+        fps: optimalFPS, // Tự động điều chỉnh FPS theo thiết bị
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          // Much larger scan area like native apps
-          const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+          // Scan toàn bộ màn hình như native camera - không giới hạn vùng scan
+          const boxSize = Math.min(viewfinderWidth, viewfinderHeight);
           return {
-            width: Math.floor(minEdgeSize * 0.9),
-            height: Math.floor(minEdgeSize * 0.9)
+            width: boxSize,
+            height: boxSize
           };
         },
-        aspectRatio: 1.333, // 4:3 ratio like native camera apps
+        aspectRatio: window.innerWidth / window.innerHeight,
         disableFlip: false,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true, // Dùng native barcode API nếu có
+          // Thêm các tính năng thử nghiệm để cải thiện độ nhạy
+        },
+        showTorchButtonIfSupported: true, // Show torch/flashlight button
+        defaultZoomValueIfSupported: 1,
         videoConstraints: {
           facingMode: cameras[currentCameraIndex]?.label?.toLowerCase().includes('front') 
             ? "user" 
             : "environment",
-          width: { ideal: 1280, min: 640 },
-          height: { ideal: 720, min: 480 },
-          frameRate: { ideal: 30 }
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          frameRate: { ideal: 30, min: 20 }, // Balanced for stability
+          // Advanced camera features for better scanning
+          advanced: [
+            { focusMode: "continuous" },
+            { torch: torchEnabled },
+            { zoom: zoomLevel }
+          ]
         },
-        rememberLastUsedCamera: true
+        rememberLastUsedCamera: true,
+        // Optimize for QR codes only
+        formatsToSupport: [0] // QR_CODE only để focus vào QR
       };
 
       await scannerRef.current.start(
         cameras[currentCameraIndex].id,
         config,
         (decodedText) => {
+          // Prevent duplicate scans within 2 seconds
+          const now = Date.now();
+          if (decodedText === lastScannedTextRef.current && 
+              now - lastScanTimeRef.current < 2000) {
+            return;
+          }
+
           console.log('✅ QR Code detected:', decodedText);
+          lastScannedTextRef.current = decodedText;
+          lastScanTimeRef.current = now;
+
+          // Clear searching state
+          setIsSearching(false);
+          if (scanTimeoutRef.current) {
+            clearTimeout(scanTimeoutRef.current);
+            scanTimeoutRef.current = null;
+          }
 
           // Show detection immediately like iPhone Camera
           setDetectedQR(decodedText);
@@ -138,22 +178,37 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
 
           // Haptic feedback for mobile devices
           if (navigator.vibrate) {
-            navigator.vibrate(200); // Simple vibration
+            navigator.vibrate([100, 50, 100]); // Double vibration như iPhone
           }
+
+          // Play sound if available
+          try {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBT2Vy/LTgjMGHm7A7+OZURE');
+            audio.play().catch(() => {});
+          } catch {}
 
           // No pause - continuous scanning like native camera
         },
         (errorMessage) => {
-          // Hide detection indicator when no QR found
+          // Show searching indicator when camera is looking for QR
           if (errorMessage.includes('NotFoundException') ||
               errorMessage.includes('No MultiFormat Readers') ||
               errorMessage.includes('code not found')) {
+            // Start searching animation after 500ms of no detection
+            if (!isSearching && !scanTimeoutRef.current) {
+              scanTimeoutRef.current = setTimeout(() => {
+                setIsSearching(true);
+              }, 500);
+            }
             setShowDetection(false);
             setDetectedQR('');
           } else {
-            console.warn('QR scan error:', errorMessage);
-            if (onScanError) {
-              onScanError(errorMessage);
+            // Only log real errors, not scanning attempts
+            if (!errorMessage.includes('QR code') && !errorMessage.includes('No barcode')) {
+              console.warn('QR scan error:', errorMessage);
+              if (onScanError) {
+                onScanError(errorMessage);
+              }
             }
           }
         }
@@ -334,12 +389,50 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
           </div>
         )}
 
-        {/* iPhone-style scanning indicator */}
+        {/* iPhone-style scanning indicator với searching state */}
         {isActive && !isLoading && (
-          <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-green-600 rounded-full">
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-white">Đang quét...</span>
-          </div>
+          <>
+            <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-green-600 rounded-full">
+              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-white">Đang quét...</span>
+            </div>
+
+            {/* Scanning frame overlay như app banking */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative w-64 h-64">
+                  {/* Corner brackets */}
+                  <div className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-yellow-400 rounded-tl-lg"></div>
+                  <div className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-yellow-400 rounded-tr-lg"></div>
+                  <div className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-yellow-400 rounded-bl-lg"></div>
+                  <div className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-yellow-400 rounded-br-lg"></div>
+                  
+                  {/* Scanning line animation khi đang tìm QR */}
+                  {isSearching && (
+                    <div className="absolute inset-0 overflow-hidden rounded-lg">
+                      <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-yellow-400 to-transparent animate-scan shadow-[0_0_10px_rgba(250,204,21,0.8)]"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Text indicator khi đang tìm với animation */}
+              {isSearching && (
+                <div className="absolute bottom-32 left-0 right-0 text-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-sm rounded-full">
+                    <div className="flex gap-1">
+                      <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                      <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                      <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                    </div>
+                    <p className="text-yellow-400 text-sm font-medium">
+                      Đang tìm mã QR
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         {/* iPhone Camera-style QR Detection Display */}

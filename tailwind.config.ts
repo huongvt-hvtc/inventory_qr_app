@@ -44,6 +44,26 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      keyframes: {
+        scan: {
+          '0%': { transform: 'translateY(0)' },
+          '100%': { transform: 'translateY(256px)' }
+        },
+        'pulse-glow': {
+          '0%, 100%': {
+            opacity: '1',
+            transform: 'scale(1)'
+          },
+          '50%': {
+            opacity: '0.8', 
+            transform: 'scale(1.05)'
+          }
+        }
+      },
+      animation: {
+        scan: 'scan 2s linear infinite',
+        'pulse-glow': 'pulse-glow 2s ease-in-out infinite'
+      },
     },
   },
   plugins: [],
