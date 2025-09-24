@@ -56,24 +56,7 @@ export default function AssetsPage() {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  // Sync with navigation scroll behavior
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      // Same logic as Navigation component
-      if (currentScrollY < lastScrollY || currentScrollY < 10) {
-        setIsHeaderVisible(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        setIsHeaderVisible(false);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  // Remove navigation scroll sync - not needed for new layout
 
   // Modal states
   const [assetDetailModal, setAssetDetailModal] = useState<{ isOpen: boolean; asset: AssetWithInventoryStatus | null; mode: 'view' | 'edit' | 'create' }>({
@@ -334,260 +317,248 @@ export default function AssetsPage() {
   const statuses = Array.from(new Set(assets.map(a => a.status)));
 
   return (
-    <div>
-      {/* Assets Header - Always sticky, but adjusts position based on navigation visibility */}
-      <div className={`sticky bg-white border-b border-gray-200 shadow-sm transition-all duration-300 z-20 ${
-        isHeaderVisible
-          ? 'top-16 md:top-0' // When navigation is visible: directly below nav on mobile, top on desktop
-          : 'top-0' // When navigation is hidden: always at top
-      }`}>
-        {/* Title and Actions */}
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* Header Container - Compact & Professional */}
+      <div className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 relative z-30">
+        {/* Header Section - Matching QR Scanner Layout */}
         <div className="px-6 py-3">
           <div className="flex flex-col gap-2">
-            {/* Title */}
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <FolderOpen className="h-6 w-6 text-blue-600" />
-                Tài sản
-              </h1>
-            </div>
+            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <FolderOpen className="h-6 w-6 text-purple-600" />
+              Quản lý tài sản
+            </h1>
 
-            {/* Dashboard Stats - Single Row */}
+            {/* Dashboard Stats - Matching QR Scanner */}
             <div className="flex items-center gap-6 text-sm md:text-base border-b border-gray-100 pb-2">
-              {/* Total Assets */}
-              <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-bold">Tổng:</span>
-                <span className="font-bold text-blue-600 text-base md:text-lg">{loading ? '...' : assets.length}</span>
-              </div>
-
-              {/* Separator */}
-              <div className="w-px h-5 bg-gray-300"></div>
-
-              {/* Checked Assets */}
-              <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-bold">Đã kiểm:</span>
-                <span className="font-bold text-green-600 text-base md:text-lg">{loading ? '...' : assets.filter(a => a.is_checked).length}</span>
-              </div>
-
-              {/* Separator */}
-              <div className="w-px h-5 bg-gray-300"></div>
-
-              {/* Unchecked Assets */}
-              <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-bold">Chưa kiểm:</span>
-                <span className="font-bold text-orange-600 text-base md:text-lg">{loading ? '...' : assets.filter(a => !a.is_checked).length}</span>
-              </div>
+            {/* Total Assets - Purple */}
+            <div className="flex items-center gap-2">
+              <span className="text-gray-700 font-semibold text-sm md:text-base">Tổng:</span>
+              <span className="font-bold text-purple-600 text-lg md:text-xl">{loading ? '...' : assets.length}</span>
             </div>
 
-            {/* Action Buttons - Professional Design */}
-            <div className="space-y-1">
-              {/* Desktop Layout */}
-              <div className="hidden md:flex items-center gap-2">
-                {/* Primary Actions */}
-                <button
-                  title="Thêm tài sản mới"
-                  disabled={loading}
-                  onClick={handleCreateAsset}
-                  className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Thêm mới</span>
-                </button>
+            <div className="w-px h-5 bg-gray-300"></div>
 
-                <button
-                  title="Nhập dữ liệu từ file Excel"
-                  disabled={loading}
-                  onClick={() => setImportModal(true)}
-                  className="h-9 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-md transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Upload className="h-4 w-4" />
-                  <span>Nhập</span>
-                </button>
+            {/* Checked Assets - Green */}
+            <div className="flex items-center gap-2">
+              <span className="text-gray-700 font-semibold text-sm md:text-base">Đã kiểm:</span>
+              <span className="font-bold text-green-600 text-lg md:text-xl">{loading ? '...' : assets.filter(a => a.is_checked).length}</span>
+            </div>
 
-                <button
-                  title="Xuất dữ liệu ra file Excel"
-                  disabled={loading}
-                  onClick={handleExport}
-                  className="h-9 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-md transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Xuất</span>
-                </button>
+            <div className="w-px h-5 bg-gray-300"></div>
 
-                {/* Vertical Separator - Only when items selected */}
-                {selectedAssets.size > 0 && (
-                  <div className="w-px h-6 bg-gray-300 mx-2"></div>
-                )}
-
-                {/* Selection Actions (only when items selected) */}
-                {selectedAssets.size > 0 && (
-                  <>
-                    <button
-                      title="Đánh dấu đã kiểm kê"
-                      disabled={loading}
-                      onClick={handleCheckAssets}
-                      className="h-9 px-3 bg-white border border-green-600 hover:bg-green-600 hover:text-white text-green-600 text-sm font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                      <span>Check</span>
-                    </button>
-
-                    <button
-                      title="Bỏ đánh dấu kiểm kê"
-                      disabled={loading}
-                      onClick={handleUncheckAssets}
-                      className="h-9 px-3 bg-white border border-orange-600 hover:bg-orange-600 hover:text-white text-orange-600 text-sm font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <X className="h-4 w-4" />
-                      <span>Uncheck</span>
-                    </button>
-
-                    <button
-                      title="In mã QR cho tài sản đã chọn"
-                      disabled={loading}
-                      onClick={handlePrintQR}
-                      className="h-9 px-3 bg-white border border-purple-600 hover:bg-purple-600 hover:text-white text-purple-600 text-sm font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <QrCode className="h-4 w-4" />
-                      <span>In QR</span>
-                    </button>
-
-                    <button
-                      title="Xóa tài sản đã chọn"
-                      disabled={loading}
-                      onClick={handleDeleteAssets}
-                      className="h-9 px-3 bg-white border border-red-600 hover:bg-red-600 hover:text-white text-red-600 text-sm font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span>Xóa</span>
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Mobile Layout */}
-              <div className="md:hidden space-y-2">
-                {/* Primary Actions */}
-                <div className="flex items-center gap-2">
-                  <button
-                    title="Thêm tài sản mới"
-                    disabled={loading}
-                    onClick={handleCreateAsset}
-                    className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Thêm mới</span>
-                  </button>
-
-                  <button
-                    title="Nhập dữ liệu từ file Excel"
-                    disabled={loading}
-                    onClick={() => setImportModal(true)}
-                    className="h-9 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-md transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Upload className="h-4 w-4" />
-                    <span>Nhập</span>
-                  </button>
-
-                  <button
-                    title="Xuất dữ liệu ra file Excel"
-                    disabled={loading}
-                    onClick={handleExport}
-                    className="h-9 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-md transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span>Xuất</span>
-                  </button>
-                </div>
-
-                {/* Selection Actions - Single line on mobile without icons */}
-                {selectedAssets.size > 0 && (
-                  <div className="flex gap-1">
-                    <button
-                      title="Đánh dấu đã kiểm kê"
-                      disabled={loading}
-                      onClick={handleCheckAssets}
-                      className="flex-1 h-9 px-2 bg-white border border-green-600 hover:bg-green-600 hover:text-white text-green-600 text-xs font-medium rounded-md transition-all duration-150 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <span>Check</span>}
-                    </button>
-
-                    <button
-                      title="Bỏ đánh dấu kiểm kê"
-                      disabled={loading}
-                      onClick={handleUncheckAssets}
-                      className="flex-1 h-9 px-2 bg-white border border-orange-600 hover:bg-orange-600 hover:text-white text-orange-600 text-xs font-medium rounded-md transition-all duration-150 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <span>Uncheck</span>
-                    </button>
-
-                    <button
-                      title="In mã QR cho tài sản đã chọn"
-                      disabled={loading}
-                      onClick={handlePrintQR}
-                      className="flex-1 h-9 px-2 bg-white border border-purple-600 hover:bg-purple-600 hover:text-white text-purple-600 text-xs font-medium rounded-md transition-all duration-150 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <span>In QR</span>
-                    </button>
-
-                    <button
-                      title="Xóa tài sản đã chọn"
-                      disabled={loading}
-                      onClick={handleDeleteAssets}
-                      className="flex-1 h-9 px-2 bg-white border border-red-600 hover:bg-red-600 hover:text-white text-red-600 text-xs font-medium rounded-md transition-all duration-150 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <span>Xóa</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+            {/* Unchecked Assets - Blue */}
+            <div className="flex items-center gap-2">
+              <span className="text-gray-700 font-semibold text-sm md:text-base">Chưa kiểm:</span>
+              <span className="font-bold text-blue-600 text-lg md:text-xl">{loading ? '...' : assets.filter(a => !a.is_checked).length}</span>
+            </div>
             </div>
           </div>
         </div>
 
-        {/* Search and Filter Toggle */}
-        <div className="px-6 py-3 bg-gray-50 border-t">
+        {/* Action Buttons - Professional Layout */}
+        <div className="px-4 md:px-6 py-3 bg-white border-b border-gray-100">
+          {/* Desktop Layout */}
+          <div className="hidden md:flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* Primary Actions */}
+              <button
+                disabled={loading}
+                onClick={handleCreateAsset}
+                className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 shadow-sm hover:shadow-md"
+              >
+                <Plus className="h-4 w-4" />
+                Thêm mới
+              </button>
+
+              <button
+                disabled={loading}
+                onClick={() => setImportModal(true)}
+                className="h-10 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 shadow-sm hover:shadow-md"
+              >
+                <Upload className="h-4 w-4" />
+                Nhập
+              </button>
+
+              <button
+                disabled={loading}
+                onClick={handleExport}
+                className="h-10 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 shadow-sm hover:shadow-md"
+              >
+                <Download className="h-4 w-4" />
+                Xuất
+              </button>
+            </div>
+
+            {/* Selection Actions (only when items selected) */}
+            {selectedAssets.size > 0 && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-600 px-3 py-1 bg-gray-100 rounded-full">{selectedAssets.size} đã chọn</span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={loading}
+                    onClick={handleCheckAssets}
+                    className="h-10 px-4 bg-green-50 border border-green-300 hover:bg-green-100 text-green-700 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 shadow-sm hover:shadow-md"
+                  >
+                    <Check className="h-4 w-4" />
+                    Check
+                  </button>
+
+                  <button
+                    disabled={loading}
+                    onClick={handleUncheckAssets}
+                    className="h-10 px-4 bg-orange-50 border border-orange-300 hover:bg-orange-100 text-orange-700 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 shadow-sm hover:shadow-md"
+                  >
+                    <X className="h-4 w-4" />
+                    Uncheck
+                  </button>
+
+                  <button
+                    disabled={loading}
+                    onClick={handlePrintQR}
+                    className="h-10 px-4 bg-purple-50 border border-purple-300 hover:bg-purple-100 text-purple-700 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 shadow-sm hover:shadow-md"
+                  >
+                    <QrCode className="h-4 w-4" />
+                    In QR
+                  </button>
+
+                  <button
+                    disabled={loading}
+                    onClick={handleDeleteAssets}
+                    className="h-10 px-4 bg-red-50 border border-red-300 hover:bg-red-100 text-red-700 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 shadow-sm hover:shadow-md"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Xóa
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Layout */}
+          <div className="md:hidden space-y-3">
+            {/* Primary Actions */}
+            <div className="flex items-center gap-2">
+              <button
+                disabled={loading}
+                onClick={handleCreateAsset}
+                className="h-9 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-50 shadow-sm"
+              >
+                <Plus className="h-4 w-4" />
+                Thêm mới
+              </button>
+
+              <button
+                disabled={loading}
+                onClick={() => setImportModal(true)}
+                className="h-9 px-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-50 shadow-sm"
+              >
+                <Upload className="h-4 w-4" />
+                Nhập
+              </button>
+
+              <button
+                disabled={loading}
+                onClick={handleExport}
+                className="h-9 px-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-50 shadow-sm"
+              >
+                <Download className="h-4 w-4" />
+                Xuất
+              </button>
+            </div>
+
+            {/* Selection Actions on Mobile */}
+            {selectedAssets.size > 0 && (
+              <>
+                <div className="text-center">
+                  <span className="text-sm font-medium text-gray-600 px-3 py-1 bg-gray-100 rounded-full">{selectedAssets.size} đã chọn</span>
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                  <button
+                    disabled={loading}
+                    onClick={handleCheckAssets}
+                    className="h-8 px-2 bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                  >
+                    <Check className="h-3 w-3" />
+                    Check
+                  </button>
+
+                  <button
+                    disabled={loading}
+                    onClick={handleUncheckAssets}
+                    className="h-8 px-2 bg-orange-50 border border-orange-200 hover:bg-orange-100 text-orange-700 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                  >
+                    <X className="h-3 w-3" />
+                    Uncheck
+                  </button>
+
+                  <button
+                    disabled={loading}
+                    onClick={handlePrintQR}
+                    className="h-8 px-2 bg-purple-50 border border-purple-200 hover:bg-purple-100 text-purple-700 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                  >
+                    <QrCode className="h-3 w-3" />
+                    QR
+                  </button>
+
+                  <button
+                    disabled={loading}
+                    onClick={handleDeleteAssets}
+                    className="h-8 px-2 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    Xóa
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="px-4 md:px-6 py-3 bg-gray-50 border-b border-gray-200">
           <div className="flex items-center gap-3">
             {/* Search Box */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Tìm kiếm tài sản..."
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm tài sản theo mã, tên, model, serial..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
                 disabled={loading}
+                className="w-full h-10 pl-12 pr-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed shadow-sm"
               />
             </div>
 
             {/* Filter Toggle Button */}
-            <Button
-              variant="outline"
+            <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`h-10 px-4 font-medium transition-all duration-200 ${
+              disabled={loading}
+              className={`h-10 px-4 font-semibold text-sm rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-sm hover:shadow-md ${
                 hasActiveFilters
-                  ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-500 hover:from-orange-600 hover:to-orange-700 shadow-md transform hover:scale-105'
-                  : 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 hover:border-blue-400'
+                  ? 'bg-orange-500 text-white border border-orange-500 hover:bg-orange-600'
+                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
               }`}
             >
               <Filter className="h-4 w-4" />
-              <span className="ml-2 hidden sm:inline">Bộ lọc</span>
+              <span className="hidden sm:inline">Lọc</span>
               {hasActiveFilters && (
-                <span className="ml-2 bg-white text-orange-600 text-xs font-bold px-2 py-1 rounded-full shadow-sm animate-pulse">
+                <span className="bg-white text-orange-600 text-xs font-bold px-2 py-0.5 rounded-full">
                   {[departmentFilter, statusFilter, inventoryFilter].filter(f => f !== 'all').length}
                 </span>
               )}
-            </Button>
+            </button>
           </div>
 
           {/* Collapsible Advanced Filters */}
           {showFilters && (
-            <div className="mt-2 space-y-2">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="mt-2 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
                 <select
                   value={inventoryFilter}
                   onChange={(e) => setInventoryFilter(e.target.value as 'all' | 'checked' | 'unchecked')}
-                  className="h-9 px-3 py-1 border border-gray-300 rounded-md text-sm"
+                  className="h-8 px-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   disabled={loading}
                 >
                   <option value="all">Tất cả kiểm kê</option>
@@ -598,7 +569,7 @@ export default function AssetsPage() {
                 <select
                   value={departmentFilter}
                   onChange={(e) => setDepartmentFilter(e.target.value)}
-                  className="h-9 px-3 py-1 border border-gray-300 rounded-md text-sm"
+                  className="h-8 px-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   disabled={loading}
                 >
                   <option value="all">Tất cả bộ phận</option>
@@ -610,7 +581,7 @@ export default function AssetsPage() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="h-9 px-3 py-1 border border-gray-300 rounded-md text-sm"
+                  className="h-8 px-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   disabled={loading}
                 >
                   <option value="all">Tất cả tình trạng</option>
@@ -620,145 +591,213 @@ export default function AssetsPage() {
                 </select>
               </div>
 
-              {/* Clear Filters Button */}
-              {hasActiveFilters && (
-                <div className="flex justify-center mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={clearAllFilters}
-                    className="bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-300 text-red-700 hover:from-red-500 hover:to-pink-500 hover:text-white hover:border-red-500 font-semibold shadow-md transform hover:scale-105 transition-all duration-200"
-                  >
-                    <FilterX className="h-4 w-4 mr-2" />
-                    🗑️ Xóa tất cả bộ lọc
-                  </Button>
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-gray-500">
+                  {hasActiveFilters && `${[departmentFilter, statusFilter, inventoryFilter].filter(f => f !== 'all').length} bộ lọc đang áp dụng`}
                 </div>
-              )}
+
+                <div className="flex items-center gap-2">
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearAllFilters}
+                      className="h-7 px-2 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-xs font-medium rounded-md transition-colors flex items-center gap-1"
+                    >
+                      <FilterX className="h-3 w-3" />
+                      Bỏ lọc
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="h-7 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors"
+                  >
+                    Xác nhận
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Status Legend */}
+        <div className="px-4 md:px-6 py-3 bg-blue-50 border-b border-blue-100">
+          <div className="flex items-center gap-8 text-sm font-medium text-gray-700">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-blue-600 rounded-full shadow-sm"></div>
+              <span>Chưa kiểm kê</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-green-600 rounded-full shadow-sm"></div>
+              <span>Đã kiểm kê</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Assets Table */}
-      <div className="pt-4">
-        <Card>
-        <CardContent className="p-0">
-          {loading && assets.length === 0 && (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-              <span className="ml-2 text-gray-600">Đang tải dữ liệu...</span>
-            </div>
-          )}
+      {/* Assets Table - Optimized for maximum space */}
+      <div className="flex-1 overflow-hidden pb-0 md:pb-0">
+        {/* Loading State */}
+        {loading && assets.length === 0 && (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+            <span className="ml-2 text-sm text-gray-600">Đang tải dữ liệu...</span>
+          </div>
+        )}
 
-          {error && assets.length === 0 && (
-            <div className="text-center py-12">
-              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-2">Lỗi kết nối cơ sở dữ liệu</p>
-              <p className="text-sm text-gray-400">Hiển thị dữ liệu mẫu cho demo</p>
-            </div>
-          )}
+        {/* Error State */}
+        {error && assets.length === 0 && (
+          <div className="text-center py-12">
+            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 mb-2">Lỗi kết nối cơ sở dữ liệu</p>
+            <p className="text-sm text-gray-400">Hiển thị dữ liệu mẫu cho demo</p>
+          </div>
+        )}
 
-          <div className="overflow-x-auto max-h-[calc(100vh-180px)] overflow-y-auto">
-            {/* Status Guide - Scrollable inside the table container */}
-            <div className="flex items-center gap-4 px-6 py-2 text-sm text-gray-600 bg-gray-50 border-b border-gray-200">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 bg-blue-600 rounded"></div>
-                <span>Chưa kiểm kê</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 bg-green-600 rounded"></div>
-                <span>Đã kiểm kê</span>
-              </div>
-            </div>
-            <table className="w-full table-auto">
-              <thead className="bg-gray-50 border-b-2 border-gray-200 sticky top-0 z-10 shadow-sm">
+        {/* Table Container */}
+        <div className="h-full overflow-hidden bg-white">
+          <div className="h-full overflow-auto pb-20 md:pb-4">
+            <table className="w-full table-fixed table-optimized">
+              {/* Table Header - Sticky */}
+              <thead className="bg-gray-50 border-b-2 border-gray-200 sticky top-0 z-20" style={{ position: 'sticky', top: 0 }}>
                 <tr>
-                  <th className="w-16 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200">
+                  {/* Desktop Headers */}
+                  <th className="hidden md:table-cell w-12 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>
                     <input
                       type="checkbox"
                       checked={selectedAssets.size === filteredAssets.length && filteredAssets.length > 0}
                       onChange={selectAllAssets}
-                      className="rounded"
+                      className="w-4 h-4 rounded"
                     />
                   </th>
-                  <th className="min-w-[120px] p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200">Mã tài sản</th>
-                  <th className="min-w-[200px] p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200">Tên tài sản</th>
-                  <th className="min-w-[140px] p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200">Model</th>
-                  <th className="min-w-[120px] p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200">Serial</th>
-                  <th className="min-w-[100px] p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200">Tech Code</th>
-                  <th className="min-w-[140px] p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200">Bộ phận</th>
-                  <th className="min-w-[120px] p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200">Tình trạng</th>
-                  <th className="min-w-[160px] p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200">Vị trí</th>
-                  <th className="w-20 p-3 text-center text-sm font-semibold text-gray-900 sticky right-0 bg-gray-50">
-                    Xem
+                  <th className="hidden md:table-cell w-32 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>Mã tài sản</th>
+                  <th className="hidden md:table-cell w-56 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>Tên tài sản</th>
+                  <th className="hidden md:table-cell w-32 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>Model</th>
+                  <th className="hidden md:table-cell w-32 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>Serial</th>
+                  <th className="hidden md:table-cell w-24 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>Tech Code</th>
+                  <th className="hidden md:table-cell w-32 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>Bộ phận</th>
+                  <th className="hidden md:table-cell w-28 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50" style={{ backgroundColor: 'rgb(249 250 251)' }}>Tình trạng</th>
+
+                  {/* Mobile Headers */}
+                  <th className="md:hidden w-12 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedAssets.size === filteredAssets.length && filteredAssets.length > 0}
+                      onChange={selectAllAssets}
+                      className="w-4 h-4 rounded"
+                    />
                   </th>
+                  <th className="md:hidden w-32 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>Mã TS</th>
+                  <th className="md:hidden p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50" style={{ backgroundColor: 'rgb(249 250 251)' }}>Tên tài sản</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+
+              {/* Table Body */}
+              <tbody className="divide-y divide-gray-100">
                 {filteredAssets.map((asset) => (
                   <tr
                     key={asset.id}
-                    onClick={() => toggleSelectAsset(asset.id)}
-                    className={`cursor-pointer hover:bg-gray-50 transition-all duration-200 border-b border-gray-100 ${selectedAssets.has(asset.id) ? 'bg-blue-50 border-l-4 border-blue-500 shadow-sm' : 'hover:shadow-sm'}`}
+                    onClick={(e) => {
+                      if (!(e.target as HTMLElement).closest('input[type="checkbox"]')) {
+                        handleViewAsset(asset);
+                      }
+                    }}
+                    className={`cursor-pointer hover:bg-gray-50 transition-colors ${
+                      selectedAssets.has(asset.id) ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                    }`}
                   >
-                    <td className="p-3">
+                    {/* Desktop Row */}
+                    <td className="hidden md:table-cell p-3">
                       <input
                         type="checkbox"
                         checked={selectedAssets.has(asset.id)}
-                        onChange={() => toggleSelectAsset(asset.id)}
-                        className="rounded"
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          toggleSelectAsset(asset.id);
+                        }}
+                        className="w-4 h-4 rounded"
                       />
                     </td>
-                    <td className="p-3">
-                      <div className={`font-bold text-sm tracking-wide transition-colors duration-300 ${
+                    <td className="hidden md:table-cell p-3">
+                      <div className={`text-sm font-bold break-words ${
                         asset.is_checked ? 'text-green-600' : 'text-blue-600'
                       }`}>
                         {asset.asset_code}
                       </div>
                     </td>
-                    <td className="p-3">
-                      <div className="font-medium text-gray-900 text-sm leading-tight">
+                    <td className="hidden md:table-cell p-3">
+                      <div className="text-sm font-medium text-gray-900 break-words leading-relaxed">
                         {asset.name}
                       </div>
                     </td>
-                    <td className="p-3 text-gray-600 text-sm">{asset.model}</td>
-                    <td className="p-3 text-gray-600 text-sm font-mono">{asset.serial}</td>
-                    <td className="p-3 text-gray-600 truncate">{asset.tech_code}</td>
-                    <td className="p-3 text-gray-600 truncate">{asset.department}</td>
-                    <td className="p-3">
-                      <div className="flex items-center">
-                        <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full whitespace-nowrap shadow-sm ${getStatusColor(asset.status || '')}`}>
-                          {asset.status}
-                        </span>
+                    <td className="hidden md:table-cell p-3">
+                      <div className="text-sm text-gray-600 break-words">
+                        {asset.model}
                       </div>
                     </td>
-                    <td className="p-3 text-gray-600 truncate" title={asset.location}>{asset.location}</td>
-                    <td className="p-3 text-center sticky right-0 bg-white">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
+                    <td className="hidden md:table-cell p-3">
+                      <div className="text-sm text-gray-600 font-mono break-words">
+                        {asset.serial}
+                      </div>
+                    </td>
+                    <td className="hidden md:table-cell p-3">
+                      <div className="text-sm text-gray-600 break-words">
+                        {asset.tech_code}
+                      </div>
+                    </td>
+                    <td className="hidden md:table-cell p-3">
+                      <div className="text-sm text-gray-600 break-words">
+                        {asset.department}
+                      </div>
+                    </td>
+                    <td className="hidden md:table-cell p-3">
+                      <span className={`inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-lg ${getStatusColor(asset.status || '')}`}>
+                        {asset.status}
+                      </span>
+                    </td>
+
+                    {/* Mobile Row */}
+                    <td className="md:hidden p-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedAssets.has(asset.id)}
+                        onChange={(e) => {
                           e.stopPropagation();
-                          handleViewAsset(asset);
+                          toggleSelectAsset(asset.id);
                         }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                        className="w-4 h-4 rounded"
+                      />
+                    </td>
+                    <td className="md:hidden p-3">
+                      <div className={`text-sm font-bold ${
+                        asset.is_checked ? 'text-green-600' : 'text-blue-600'
+                      }`}>
+                        {asset.asset_code}
+                      </div>
+                    </td>
+                    <td className="md:hidden p-3">
+                      <div className="text-sm font-medium text-gray-900 leading-relaxed break-words">
+                        {asset.name}
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1 break-words">
+                        {asset.department} - {asset.status}
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            {filteredAssets.length === 0 && (
+            {/* Empty State */}
+            {filteredAssets.length === 0 && !loading && (
               <div className="text-center py-12">
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">Không tìm thấy tài sản nào</p>
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
 
       {/* Modals */}
       <AssetDetailModal

@@ -177,7 +177,7 @@ export default function LoginPage() {
                         <div className="font-medium text-gray-800">💻 Chrome/Edge:</div>
                         <ol className="list-decimal list-inside space-y-1 ml-2 mt-1">
                           <li>Tìm icon "Install" trên address bar</li>
-                          <li>Hoặc nhấn menu → "Install Asset Inventory QR"</li>
+                          <li>Hoặc nhấn menu → "Install Kiểm kê tài sản"</li>
                           <li>Nhấn "Install"</li>
                         </ol>
                       </div>

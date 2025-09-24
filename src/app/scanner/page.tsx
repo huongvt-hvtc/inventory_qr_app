@@ -202,12 +202,8 @@ export default function ScannerPage() {
 
   return (
     <div>
-      {/* QR Scanner Header - Always sticky, but adjusts position based on navigation visibility */}
-      <div className={`sticky bg-white border-b border-gray-200 shadow-sm transition-all duration-300 z-20 ${
-        isHeaderVisible
-          ? 'top-16 md:top-0' // When navigation is visible: directly below nav on mobile, top on desktop
-          : 'top-0' // When navigation is hidden: always at top
-      }`}>
+      {/* QR Scanner Header - Always sticky at top, no interference with navigation */}
+      <div className="sticky top-0 bg-white border-b border-gray-200 shadow-sm z-20">
         <div className="px-6 py-3">
           <div className="flex flex-col gap-2">
             <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -215,37 +211,37 @@ export default function ScannerPage() {
               QR Scanner
             </h1>
 
-            {/* Dashboard Stats - Same as Assets Page */}
+            {/* Dashboard Stats - Matching Assets Page Colors */}
             <div className="flex items-center gap-6 text-sm md:text-base border-b border-gray-100 pb-2">
-              {/* Total Assets */}
+              {/* Total Assets - Purple like Assets Page */}
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-bold">Tổng:</span>
-                <span className="font-bold text-blue-600 text-base md:text-lg">{loading ? '...' : stats.total_assets}</span>
+                <span className="text-gray-700 font-semibold">Tổng:</span>
+                <span className="font-bold text-purple-600 text-lg md:text-xl">{loading ? '...' : stats.total_assets}</span>
               </div>
 
               {/* Separator */}
               <div className="w-px h-5 bg-gray-300"></div>
 
-              {/* Checked Assets */}
+              {/* Checked Assets - Green like Assets Page */}
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-bold">Đã kiểm:</span>
-                <span className="font-bold text-green-600 text-base md:text-lg">{loading ? '...' : stats.checked_assets}</span>
+                <span className="text-gray-700 font-semibold">Đã kiểm:</span>
+                <span className="font-bold text-green-600 text-lg md:text-xl">{loading ? '...' : stats.checked_assets}</span>
               </div>
 
               {/* Separator */}
               <div className="w-px h-5 bg-gray-300"></div>
 
-              {/* Unchecked Assets */}
+              {/* Unchecked Assets - Blue like Assets Page */}
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-bold">Chưa kiểm:</span>
-                <span className="font-bold text-orange-600 text-base md:text-lg">{loading ? '...' : (stats.total_assets - stats.checked_assets)}</span>
+                <span className="text-gray-700 font-semibold">Chưa kiểm:</span>
+                <span className="font-bold text-blue-600 text-lg md:text-xl">{loading ? '...' : (stats.total_assets - stats.checked_assets)}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="px-6 pt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="px-6 pt-4 pb-24 md:pb-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* QR Scanner */}
         <Card>
           <CardContent className="p-4 space-y-4">
@@ -282,9 +278,6 @@ export default function ScannerPage() {
                       <span className="ml-1 hidden sm:inline">Tìm</span>
                     </Button>
                   </div>
-                  <p className="text-xs text-blue-700">
-                    💡 Có thể tìm theo: Mã tài sản, Tên tài sản, Serial, Tech Code
-                  </p>
                 </form>
               </div>
             </div>

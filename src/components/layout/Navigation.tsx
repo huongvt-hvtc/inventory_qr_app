@@ -22,6 +22,7 @@ import { Card, CardContent } from '@/components/ui/card';
 const navigation = [
   { name: 'Tài sản', href: '/assets', icon: FolderOpen },
   { name: 'QR Scanner', href: '/scanner', icon: QrCode },
+  { name: 'Thiết lập', href: '/settings', icon: User },
 ];
 
 export function Navigation() {
@@ -59,7 +60,7 @@ export function Navigation() {
           <div className="flex h-16 shrink-0 items-center">
             <Package className="h-8 w-8 text-blue-600" />
             <span className="ml-2 text-xl font-semibold text-gray-900">
-              Asset QR
+              Kiểm kê tài sản
             </span>
           </div>
           <nav className="flex flex-1 flex-col">
@@ -135,145 +136,26 @@ export function Navigation() {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
+      {/* Mobile Navigation - Hidden top navigation, only bottom navigation */}
       <div className="md:hidden">
-        {/* Mobile header */}
-        <div className={`fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between bg-white border-b border-gray-200 px-4 transition-transform duration-300 ${
-          isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
-        }`}>
-          <div className="flex items-center">
-            <Package className="h-8 w-8 text-blue-600" />
-            <span className="ml-2 text-xl font-semibold text-gray-900">
-              Asset QR
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            {user && user.picture && (
-              <img
-                src={user.picture}
-                alt={user.name}
-                className="h-8 w-8 rounded-full"
-              />
-            )}
-            <button
-              type="button"
-              className="text-gray-700 hover:text-blue-600"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile menu - Enhanced professional dropdown */}
-        {isMobileMenuOpen && (
-          <div className="fixed top-16 left-0 right-0 z-50 bg-white shadow-xl border-b border-gray-200 backdrop-blur-md">
-            {/* Subtle overlay background */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50"></div>
-
-            <nav className="relative px-4 py-4">
-              {/* Navigation Items Section */}
-              <div className="space-y-1 mb-4">
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 py-1">
-                  Navigation
-                </h3>
-                {navigation.map((item) => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={`flex items-center gap-x-3 rounded-lg px-4 py-3 text-base font-medium transition-all duration-200 ${
-                        isActive
-                          ? 'bg-blue-600 text-white shadow-md'
-                          : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50 hover:shadow-sm'
-                      }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
-                      <span>{item.name}</span>
-                      {isActive && (
-                        <div className="ml-auto w-2 h-2 bg-white rounded-full"></div>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-
-              {/* PWA Install Section */}
-              <div className="mb-4">
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 py-1 mb-2">
-                  Tools
-                </h3>
-                <Button
-                  onClick={() => {
-                    setShowInstallGuide(true);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full justify-start bg-purple-600 text-white hover:bg-purple-700 border-0 rounded-lg py-3 px-4 font-medium text-base shadow-md hover:shadow-lg transition-all duration-200"
-                >
-                  <Info className="h-5 w-5 mr-3" />
-                  <span>Hướng dẫn cài đặt PWA</span>
-                </Button>
-              </div>
-
-              {/* User Profile Section */}
-              {user && (
-                <div className="border-t border-gray-200 pt-4">
-                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 py-1 mb-3">
-                    Account
-                  </h3>
-                  <div className="bg-gray-50 rounded-lg p-4 mb-3">
-                    <div className="flex items-center gap-3 mb-3">
-                      {user.picture ? (
-                        <img
-                          src={user.picture}
-                          alt={user.name}
-                          className="h-10 w-10 rounded-full ring-2 ring-white shadow-sm"
-                        />
-                      ) : (
-                        <User className="h-10 w-10 rounded-full bg-gray-200 p-2 text-gray-600 ring-2 ring-white shadow-sm" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
-                          {user.name}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {user.email}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => {
-                        signOut();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      variant="ghost"
-                      className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg py-2 font-medium transition-colors duration-200"
-                    >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Đăng xuất
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </nav>
-          </div>
-        )}
 
         {/* Mobile bottom navigation - Pro Grab-style Design */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 md:hidden shadow-2xl">
           {/* Minimal padding - just enough to avoid home indicator */}
           <div className="pb-1">
-            <nav className="flex px-4 pt-2 pb-2">
+            <nav className="flex px-2 pt-2 pb-2">
               {navigation.map((item, index) => {
                 const isActive = pathname === item.href;
                 // Define unique colors for each tab
                 const colors = [
+                  {
+                    primary: 'from-purple-500 to-pink-600',
+                    primarySolid: 'bg-purple-500',
+                    bg: 'bg-gradient-to-br from-purple-50 to-pink-50',
+                    text: 'text-purple-600',
+                    shadow: 'shadow-purple-200',
+                    glow: 'shadow-purple-500/20'
+                  },
                   {
                     primary: 'from-blue-500 to-indigo-600',
                     primarySolid: 'bg-blue-500',
@@ -283,12 +165,12 @@ export function Navigation() {
                     glow: 'shadow-blue-500/20'
                   },
                   {
-                    primary: 'from-purple-500 to-pink-600',
-                    primarySolid: 'bg-purple-500',
-                    bg: 'bg-gradient-to-br from-purple-50 to-pink-50',
-                    text: 'text-purple-600',
-                    shadow: 'shadow-purple-200',
-                    glow: 'shadow-purple-500/20'
+                    primary: 'from-green-500 to-emerald-600',
+                    primarySolid: 'bg-green-500',
+                    bg: 'bg-gradient-to-br from-green-50 to-emerald-50',
+                    text: 'text-green-600',
+                    shadow: 'shadow-green-200',
+                    glow: 'shadow-green-500/20'
                   }
                 ];
                 const color = colors[index] || colors[0];
@@ -412,7 +294,7 @@ export function Navigation() {
                         <div className="font-medium text-gray-800">💻 Chrome/Edge:</div>
                         <ol className="list-decimal list-inside space-y-1 ml-2 mt-1">
                           <li>Tìm icon "Install" trên address bar</li>
-                          <li>Hoặc nhấn menu → "Install Asset Inventory QR"</li>
+                          <li>Hoặc nhấn menu → "Install Kiểm kê tài sản"</li>
                           <li>Nhấn "Install"</li>
                         </ol>
                       </div>
