@@ -1,7 +1,7 @@
 {
-  "name": "Kiểm kê tài sản",
-  "short_name": "Kiểm kê",
-  "description": "Hệ thống quản lý kiểm kê tài sản chuyên nghiệp với mã QR",
+  "name": "Asset Inventory QR Management",
+  "short_name": "Asset QR",
+  "description": "Professional asset inventory management system with QR code tracking",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
