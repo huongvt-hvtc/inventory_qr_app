@@ -11,7 +11,8 @@ import {
   HelpCircle,
   Mail,
   Package,
-  X
+  X,
+  Settings
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -27,8 +28,8 @@ export default function SettingsPage() {
       <div className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 relative z-30">
         <div className="px-4 md:px-6 py-4 border-b border-gray-100">
           <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <User className="h-6 w-6 text-green-600" />
-            Thiết lập
+            <Settings className="h-6 w-6 text-green-600" />
+            Cài đặt
           </h1>
         </div>
       </div>

@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const hasShownWelcome = sessionStorage.getItem(welcomeKey);
 
         if (!hasShownWelcome) {
-          toast.success('Chào mừng bạn đến với Asset Inventory QR!');
+          toast.success('Chào mừng bạn đến với Kiểm kê tài sản!');
           sessionStorage.setItem(welcomeKey, 'true');
         }
       }

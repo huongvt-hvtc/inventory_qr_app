@@ -13,7 +13,8 @@ import {
   Info,
   Smartphone,
   Monitor,
-  FolderOpen
+  FolderOpen,
+  Settings
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ import { Card, CardContent } from '@/components/ui/card';
 const navigation = [
   { name: 'Tài sản', href: '/assets', icon: FolderOpen },
   { name: 'QR Scanner', href: '/scanner', icon: QrCode },
-  { name: 'Thiết lập', href: '/settings', icon: User },
+  { name: 'Cài đặt', href: '/settings', icon: Settings },
 ];
 
 export function Navigation() {
