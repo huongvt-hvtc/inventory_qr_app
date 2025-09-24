@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,8 +35,7 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastScannedTextRef = useRef<string>('');
   const lastScanTimeRef = useRef<number>(0);
-  const [torchEnabled, setTorchEnabled] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(1);
+
 
   useEffect(() => {
     checkCameraSupport();
@@ -128,17 +127,10 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
             : "environment",
           width: { ideal: 1920, min: 1280 },
           height: { ideal: 1080, min: 720 },
-          frameRate: { ideal: 30, min: 20 }, // Balanced for stability
-          // Advanced camera features for better scanning
-          advanced: [
-            { focusMode: "continuous" },
-            { torch: torchEnabled },
-            { zoom: zoomLevel }
-          ]
+          frameRate: { ideal: 30, min: 20 } // Balanced for stability
         },
         rememberLastUsedCamera: true,
         // Optimize for QR codes only
-        formatsToSupport: [0] // QR_CODE only để focus vào QR
       };
 
       await scannerRef.current.start(
