@@ -10,7 +10,8 @@ import {
   AlertCircle,
   RefreshCw,
   Scan,
-  Loader2
+  Loader2,
+  QrCode
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -28,6 +29,8 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
   const [cameras, setCameras] = useState<any[]>([]);
   const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [detectedQR, setDetectedQR] = useState<string>('');
+  const [showDetection, setShowDetection] = useState(false);
 
   useEffect(() => {
     checkCameraSupport();
@@ -92,11 +95,11 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
       scannerRef.current = new Html5Qrcode('qr-reader-viewport');
 
       const config = {
-        fps: 30, // Increased from 10 to 30 for faster detection
+        fps: 60, // Increased to 60 FPS for iPhone-like instant detection
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          // Larger scan area for better detection
+          // Full area scanning like iPhone Camera
           const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-          const qrboxSize = Math.floor(minEdgeSize * 0.9); // Increased from 0.7 to 0.9
+          const qrboxSize = Math.floor(minEdgeSize * 0.95); // Nearly full screen
           return {
             width: qrboxSize,
             height: qrboxSize
@@ -108,10 +111,10 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
           facingMode: cameras[currentCameraIndex]?.label?.toLowerCase().includes('front')
             ? "user"
             : "environment",
-          // Enhanced video quality for better QR detection
-          width: { ideal: 1920, min: 640 },
-          height: { ideal: 1080, min: 480 },
-          frameRate: { ideal: 30, min: 15 }
+          // Maximum quality for instant detection
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          frameRate: { ideal: 60, min: 30 }
         },
         rememberLastUsedCamera: true,
         supportedScanTypes: [0], // Only QR codes
@@ -127,28 +130,35 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
         config,
         (decodedText) => {
           console.log('✅ QR Code detected:', decodedText);
+
+          // Show detection immediately like iPhone Camera
+          setDetectedQR(decodedText);
+          setShowDetection(true);
+
+          // Auto-hide detection after 3 seconds
+          setTimeout(() => {
+            setShowDetection(false);
+            setDetectedQR('');
+          }, 3000);
+
+          // Call success handler
           onScanSuccess(decodedText);
-          
+
           // Vibrate if available (mobile)
           if (navigator.vibrate) {
             navigator.vibrate(200);
           }
 
-          // Very brief pause to prevent duplicate scans but allow continuous scanning
-          if (scannerRef.current && isActive) {
-            scannerRef.current.pause(true);
-            setTimeout(() => {
-              if (scannerRef.current && isActive) {
-                scannerRef.current.resume();
-              }
-            }, 300); // Reduced from 1000ms to 300ms for faster continuous scanning
-          }
+          // No pause - continuous scanning like iPhone Camera
         },
         (errorMessage) => {
-          // Suppress routine scanning messages
-          if (!errorMessage.includes('NotFoundException') &&
-              !errorMessage.includes('No MultiFormat Readers') &&
-              !errorMessage.includes('code not found')) {
+          // Hide detection indicator when no QR found
+          if (errorMessage.includes('NotFoundException') ||
+              errorMessage.includes('No MultiFormat Readers') ||
+              errorMessage.includes('code not found')) {
+            setShowDetection(false);
+            setDetectedQR('');
+          } else {
             console.warn('QR scan error:', errorMessage);
             if (onScanError) {
               onScanError(errorMessage);
@@ -332,11 +342,67 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
           </div>
         )}
 
-        {/* Simple scanning indicator */}
+        {/* iPhone-style scanning indicator */}
         {isActive && !isLoading && (
           <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-green-600 rounded-full">
             <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
             <span className="text-sm font-medium text-white">Đang quét...</span>
+          </div>
+        )}
+
+        {/* iPhone Camera-style QR Detection Display */}
+        {showDetection && detectedQR && (
+          <div className="absolute bottom-6 left-4 right-4">
+            <div className="bg-black/80 backdrop-blur-sm rounded-2xl p-4 border border-yellow-400/50">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-yellow-400 rounded-lg">
+                  <QrCode className="h-5 w-5 text-black" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-yellow-400 text-sm font-medium mb-1">
+                    {(() => {
+                      try {
+                        const parsed = JSON.parse(detectedQR);
+                        if (parsed.asset_code) {
+                          return `Asset: ${parsed.asset_code}`;
+                        }
+                        return 'QR Code detected';
+                      } catch {
+                        // Check if it's a URL
+                        if (detectedQR.startsWith('http')) {
+                          return 'Website detected';
+                        }
+                        // Check if it looks like an asset code
+                        if (/^[A-Z]{2}\d+/.test(detectedQR)) {
+                          return `Asset code: ${detectedQR}`;
+                        }
+                        return 'QR Code detected';
+                      }
+                    })()}
+                  </div>
+                  <div className="text-white text-base break-all">
+                    {(() => {
+                      try {
+                        const parsed = JSON.parse(detectedQR);
+                        if (parsed.asset_code && parsed.name) {
+                          return `${parsed.asset_code} - ${parsed.name}`;
+                        } else if (parsed.asset_code) {
+                          return parsed.asset_code;
+                        }
+                        return detectedQR.length > 80 ? `${detectedQR.substring(0, 80)}...` : detectedQR;
+                      } catch {
+                        return detectedQR.length > 80 ? `${detectedQR.substring(0, 80)}...` : detectedQR;
+                      }
+                    })()}
+                  </div>
+                  {detectedQR.length > 80 && (
+                    <div className="text-gray-400 text-xs mt-1">
+                      Tap to view full content
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
