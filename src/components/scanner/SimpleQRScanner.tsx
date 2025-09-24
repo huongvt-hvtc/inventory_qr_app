@@ -95,11 +95,11 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
       scannerRef.current = new Html5Qrcode('qr-reader-viewport');
 
       const config = {
-        fps: 60, // Increased to 60 FPS for iPhone-like instant detection
+        fps: 30, // Optimized for best performance across all devices
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          // Full area scanning like iPhone Camera
+          // Larger scan area for better detection
           const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-          const qrboxSize = Math.floor(minEdgeSize * 0.95); // Nearly full screen
+          const qrboxSize = Math.floor(minEdgeSize * 0.8); // 80% of viewport for wider detection
           return {
             width: qrboxSize,
             height: qrboxSize
@@ -111,18 +111,21 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
           facingMode: cameras[currentCameraIndex]?.label?.toLowerCase().includes('front')
             ? "user"
             : "environment",
-          // Maximum quality for instant detection
-          width: { ideal: 1920, min: 1280 },
-          height: { ideal: 1080, min: 720 },
-          frameRate: { ideal: 60, min: 30 }
+          // Balanced quality for fast detection
+          width: { ideal: 1280, max: 1920, min: 640 },
+          height: { ideal: 720, max: 1080, min: 480 },
+          frameRate: { ideal: 30, min: 15 }
         },
         rememberLastUsedCamera: true,
-        supportedScanTypes: [0], // Only QR codes
+        supportedScanTypes: [0], // Only QR codes for faster processing
         // Enhanced detection settings
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true
         },
-        formatsToSupport: [0] // QR_CODE format
+        formatsToSupport: [0], // QR_CODE format only
+        // Additional optimizations
+        willReadFrequently: true, // Browser optimization
+        verbose: false // Reduce console noise
       };
 
       await scannerRef.current.start(
@@ -135,21 +138,29 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
           setDetectedQR(decodedText);
           setShowDetection(true);
 
-          // Auto-hide detection after 3 seconds
+          // Auto-hide detection after 2 seconds (shorter for better UX)
           setTimeout(() => {
             setShowDetection(false);
             setDetectedQR('');
-          }, 3000);
+          }, 2000);
 
-          // Call success handler
+          // Call success handler immediately
           onScanSuccess(decodedText);
 
-          // Vibrate if available (mobile)
+          // Haptic feedback for mobile devices
           if (navigator.vibrate) {
-            navigator.vibrate(200);
+            navigator.vibrate([50, 100, 50]); // Pattern for QR detection
           }
 
-          // No pause - continuous scanning like iPhone Camera
+          // Pause briefly to prevent multiple rapid scans
+          if (scannerRef.current) {
+            scannerRef.current.pause(true);
+            setTimeout(() => {
+              if (scannerRef.current && scannerRef.current.getState() === 3) {
+                scannerRef.current.resume();
+              }
+            }, 1000); // 1 second pause
+          }
         },
         (errorMessage) => {
           // Hide detection indicator when no QR found
@@ -317,15 +328,17 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
 
         {/* Overlay when inactive */}
         {!isActive && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-            <div className="text-center space-y-3">
-              <Scan className="h-16 w-16 text-white mx-auto" />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/90">
+            <div className="text-center space-y-4">
+              <div className="p-4 bg-blue-600/20 rounded-full">
+                <QrCode className="h-12 w-12 text-blue-400 mx-auto" />
+              </div>
               <div>
-                <p className="text-white text-lg font-medium">
-                  Sẵn sàng quét mã QR
+                <p className="text-white text-xl font-semibold">
+                  QR Scanner
                 </p>
-                <p className="text-gray-400 text-sm">
-                  Nhấn "Bắt đầu quét" để kích hoạt camera
+                <p className="text-gray-300 text-base mt-2">
+                  Nhấn để bắt đầu quét
                 </p>
               </div>
             </div>
@@ -352,35 +365,35 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
 
         {/* iPhone Camera-style QR Detection Display */}
         {showDetection && detectedQR && (
-          <div className="absolute bottom-6 left-4 right-4">
-            <div className="bg-black/80 backdrop-blur-sm rounded-2xl p-4 border border-yellow-400/50">
+          <div className="absolute bottom-6 left-4 right-4 z-30">
+            <div className="bg-black/90 backdrop-blur-md rounded-2xl p-4 border border-yellow-400/30 shadow-2xl">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-yellow-400 rounded-lg">
-                  <QrCode className="h-5 w-5 text-black" />
+                <div className="p-2.5 bg-yellow-400 rounded-xl shadow-lg">
+                  <QrCode className="h-6 w-6 text-black" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-yellow-400 text-sm font-medium mb-1">
+                  <div className="text-yellow-400 text-sm font-semibold mb-1 tracking-wide">
                     {(() => {
                       try {
                         const parsed = JSON.parse(detectedQR);
                         if (parsed.asset_code) {
-                          return `Asset: ${parsed.asset_code}`;
+                          return `Mã tài sản - ${parsed.asset_code}`;
                         }
-                        return 'QR Code detected';
+                        return 'Mã QR được phát hiện';
                       } catch {
-                        // Check if it's a URL
-                        if (detectedQR.startsWith('http')) {
-                          return 'Website detected';
-                        }
                         // Check if it looks like an asset code
                         if (/^[A-Z]{2}\d+/.test(detectedQR)) {
-                          return `Asset code: ${detectedQR}`;
+                          return `Mã tài sản - ${detectedQR}`;
                         }
-                        return 'QR Code detected';
+                        // Check if it's a URL
+                        if (detectedQR.startsWith('http')) {
+                          return 'Liên kết website';
+                        }
+                        return 'Mã QR được phát hiện';
                       }
                     })()}
                   </div>
-                  <div className="text-white text-base break-all">
+                  <div className="text-white text-base font-medium break-all">
                     {(() => {
                       try {
                         const parsed = JSON.parse(detectedQR);
@@ -389,17 +402,12 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
                         } else if (parsed.asset_code) {
                           return parsed.asset_code;
                         }
-                        return detectedQR.length > 80 ? `${detectedQR.substring(0, 80)}...` : detectedQR;
+                        return detectedQR.length > 60 ? `${detectedQR.substring(0, 60)}...` : detectedQR;
                       } catch {
-                        return detectedQR.length > 80 ? `${detectedQR.substring(0, 80)}...` : detectedQR;
+                        return detectedQR.length > 60 ? `${detectedQR.substring(0, 60)}...` : detectedQR;
                       }
                     })()}
                   </div>
-                  {detectedQR.length > 80 && (
-                    <div className="text-gray-400 text-xs mt-1">
-                      Tap to view full content
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
