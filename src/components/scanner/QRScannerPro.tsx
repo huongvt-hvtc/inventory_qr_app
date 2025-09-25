@@ -73,9 +73,22 @@ export default function QRScannerPro({
 
   // Get available cameras
   const loadCameras = useCallback(async () => {
+    console.log('📹 Loading cameras...');
+
     try {
+      // First request basic permissions to get device list
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      console.log('✅ Basic camera permission granted');
+
+      // Stop the temp stream
+      stream.getTracks().forEach(track => track.stop());
+
       const allDevices = await navigator.mediaDevices.enumerateDevices();
+      console.log('📱 All devices:', allDevices);
+
       const videoDevices = allDevices.filter(device => device.kind === 'videoinput');
+      console.log('📷 Video devices:', videoDevices);
+
       setDevices(videoDevices);
 
       // Prefer back camera
@@ -85,10 +98,20 @@ export default function QRScannerPro({
         device.label.toLowerCase().includes('rear')
       );
 
-      setActiveDeviceId(backCamera?.deviceId || videoDevices[0]?.deviceId || '');
+      const selectedDeviceId = backCamera?.deviceId || videoDevices[0]?.deviceId || '';
+      console.log('🎯 Selected camera:', {
+        backCamera: backCamera?.label,
+        selectedDeviceId,
+        totalCameras: videoDevices.length
+      });
+
+      setActiveDeviceId(selectedDeviceId);
+      setStatus(videoDevices.length > 0 ? 'Sẵn sàng quét' : 'Không tìm thấy camera');
+
     } catch (error) {
-      console.error('Failed to enumerate cameras:', error);
-      onError?.('Không thể truy cập danh sách camera');
+      console.error('❌ Failed to enumerate cameras:', error);
+      setStatus('Không thể truy cập camera');
+      onError?.('Không thể truy cập danh sách camera. Vui lòng cấp quyền camera.');
     }
   }, [onError]);
 
@@ -218,34 +241,56 @@ export default function QRScannerPro({
 
   // Start camera and scanning
   const startScanning = useCallback(async () => {
-    if (!activeDeviceId) return;
+    console.log('🚀 Starting camera scan...', { activeDeviceId });
+
+    if (!activeDeviceId) {
+      console.error('❌ No active device ID');
+      setStatus('Không tìm thấy camera');
+      return;
+    }
 
     setIsLoading(true);
     setStatus('Đang khởi động camera...');
 
     try {
-      // Get camera stream with high quality
-      const stream = await navigator.mediaDevices.getUserMedia({
+      console.log('📷 Requesting camera access...');
+
+      // Try with less restrictive constraints first
+      const constraints = {
         video: {
-          deviceId: { exact: activeDeviceId },
           facingMode: 'environment',
-          width: { ideal: 1920, min: 1280 },
-          height: { ideal: 1080, min: 720 },
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
           frameRate: { ideal: 30, min: 15 }
         }
-      });
+      };
 
-      if (!videoRef.current) return;
+      console.log('📷 Using constraints:', constraints);
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('✅ Camera stream obtained:', stream);
+
+      if (!videoRef.current) {
+        console.error('❌ Video ref not available');
+        return;
+      }
 
       videoRef.current.srcObject = stream;
+      console.log('📺 Video source set, attempting to play...');
+
       await videoRef.current.play();
+      console.log('✅ Video playing successfully');
 
       // Store track for capabilities
       const videoTrack = stream.getVideoTracks()[0];
       trackRef.current = videoTrack;
 
+      console.log('📊 Video track settings:', videoTrack.getSettings());
+
       // Check camera capabilities
       const capabilities = videoTrack.getCapabilities();
+      console.log('🎛️ Camera capabilities:', capabilities);
+
       setTorchSupported('torch' in capabilities);
       setZoomSupported('zoom' in capabilities);
 
@@ -254,30 +299,40 @@ export default function QRScannerPro({
         setZoom((settings as any).zoom || 1);
       }
 
-      // Apply initial torch setting
-      if (torchSupported && startTorchOn) {
-        toggleTorch();
-      }
-
       setStatus('Đang quét...');
       setIsActive(true);
 
       // Start appropriate scanning method
+      console.log('🔍 Starting QR scanning...');
       const hasNative = await checkNativeSupport();
       if (hasNative) {
+        console.log('🚀 Using Native BarcodeDetector');
         scanWithNative();
       } else {
+        console.log('📚 Using ZXing fallback');
         scanWithZXing();
       }
 
     } catch (error) {
-      console.error('Failed to start camera:', error);
-      setStatus('Lỗi camera');
-      onError?.('Không thể truy cập camera. Vui lòng kiểm tra quyền.');
+      console.error('❌ Camera error:', error);
+      let errorMessage = 'Không thể truy cập camera';
+
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage = 'Quyền camera bị từ chối. Vui lòng cấp quyền camera trong cài đặt trình duyệt.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = 'Không tìm thấy camera. Vui lòng kiểm tra kết nối camera.';
+        } else if (error.name === 'NotReadableError') {
+          errorMessage = 'Camera đang được sử dụng bởi ứng dụng khác.';
+        }
+      }
+
+      setStatus(errorMessage);
+      onError?.(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }, [activeDeviceId, checkNativeSupport, scanWithNative, scanWithZXing, torchSupported, startTorchOn, onError]);
+  }, [activeDeviceId, checkNativeSupport, scanWithNative, scanWithZXing, onError]);
 
   // Stop scanning
   const stopScanning = useCallback(() => {
