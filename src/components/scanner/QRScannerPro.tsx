@@ -17,7 +17,7 @@ export default function QRScannerPro({
   onResult,
   onError,
   scanRegionRatio = 0.65,
-  detectionDebounceMs = 400,
+  detectionDebounceMs = 200,
   startTorchOn = false,
   className = ''
 }: QRScannerProProps) {
@@ -218,12 +218,12 @@ export default function QRScannerPro({
 
       // Continue scanning at higher frequency for better detection
       if (isActive) {
-        // Use shorter timeout for more responsive detection
+        // Use shorter timeout for maximum sensitivity
         setTimeout(() => {
           if (isActive) {
             requestAnimationFrame(scan);
           }
-        }, 50); // 20 FPS for more responsive detection
+        }, 33); // 30 FPS for maximum sensitivity
       }
     };
 
@@ -273,13 +273,16 @@ export default function QRScannerPro({
     try {
       console.log('📷 Requesting camera access...');
 
-      // Try with less restrictive constraints first
+      // Optimized constraints for maximum QR sensitivity
       const constraints = {
         video: {
           facingMode: 'environment',
-          width: { ideal: 1280, min: 640 },
-          height: { ideal: 720, min: 480 },
-          frameRate: { ideal: 30, min: 15 }
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          frameRate: { ideal: 30, min: 20 },
+          focusMode: 'continuous',
+          exposureMode: 'continuous',
+          whiteBalanceMode: 'continuous'
         }
       };
 

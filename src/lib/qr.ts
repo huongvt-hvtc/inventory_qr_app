@@ -4,8 +4,8 @@ import type { AssetWithInventoryStatus, QRCodeData, PrintLayout } from '@/types'
 
 // Generate QR code data string
 export function generateQRCodeData(asset: AssetWithInventoryStatus): string {
-  // Simple format: asset_code for easy scanning
-  return asset.asset_code;
+  // URL format for better recognition by phones and apps
+  return `https://inventory.app/asset/${asset.asset_code}`;
 }
 
 // Generate QR code as data URL
@@ -19,13 +19,13 @@ export async function generateQRCode(data: string, options: {
 } = {}): Promise<string> {
   try {
     const qrOptions = {
-      width: options.width || 200,
-      margin: options.margin || 2,
+      width: options.width || 400,
+      margin: options.margin || 4,
       color: {
         dark: options.color?.dark || '#000000',
         light: options.color?.light || '#FFFFFF',
       },
-      errorCorrectionLevel: 'M' as const,
+      errorCorrectionLevel: 'H' as const, // High error correction for better scanning
     };
 
     return await QRCode.toDataURL(data, qrOptions);
@@ -46,7 +46,7 @@ export async function generateBulkQRCodes(assets: AssetWithInventoryStatus[]): P
   for (const asset of assets) {
     try {
       const qrData = generateQRCodeData(asset);
-      const qrCode = await generateQRCode(qrData, { width: 300 });
+      const qrCode = await generateQRCode(qrData, { width: 512 });
 
       results.push({
         asset,
@@ -346,5 +346,5 @@ export function createPreviewHTML(
 // Generate single QR code for asset detail view
 export async function generateAssetQRCode(asset: AssetWithInventoryStatus): Promise<string> {
   const qrData = generateQRCodeData(asset);
-  return await generateQRCode(qrData, { width: 256 });
+  return await generateQRCode(qrData, { width: 512 });
 }

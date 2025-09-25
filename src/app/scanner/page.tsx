@@ -14,7 +14,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAssets } from '@/hooks/useAssets';
-import QRScannerPro from '@/components/scanner/QRScannerPro';
+import SimpleScanner from '@/components/scanner/SimpleScanner';
 import AssetDetailModal from '@/components/assets/AssetDetailModal';
 import { AssetWithInventoryStatus } from '@/types';
 import toast from 'react-hot-toast';
@@ -83,18 +83,36 @@ export default function ScannerPage() {
 
     let assetCode = decodedText.trim();
 
-    // Try to parse JSON if it's our QR format
+    // Try to extract asset code from different formats
     try {
-      const parsed = JSON.parse(decodedText);
-      console.log('📋 Parsed QR data:', parsed);
+      // Check if it's URL format: https://inventory.app/asset/IT001
+      const urlMatch = decodedText.match(/\/asset\/([^\/\?#]+)/);
+      if (urlMatch) {
+        assetCode = urlMatch[1];
+        console.log('✅ Extracted asset_code from URL:', assetCode);
+      }
+      // Try to parse JSON format
+      else if (decodedText.startsWith('{')) {
+        const parsed = JSON.parse(decodedText);
+        console.log('📋 Parsed QR data:', parsed);
 
-      if (parsed.asset_code) {
-        assetCode = parsed.asset_code;
-        console.log('✅ Using asset_code from JSON:', assetCode);
+        if (parsed.asset_code) {
+          assetCode = parsed.asset_code;
+          console.log('✅ Using asset_code from JSON:', assetCode);
+        }
+      }
+      // Check for ASSET: prefix format
+      else if (decodedText.startsWith('ASSET:')) {
+        assetCode = decodedText.replace('ASSET:', '');
+        console.log('✅ Extracted asset_code from ASSET prefix:', assetCode);
+      }
+      // Use raw text as asset code
+      else {
+        console.log('📝 Using raw text as asset code:', assetCode);
       }
     } catch (parseError) {
-      // If it's not JSON, use the raw text as asset code
-      console.log('📝 Using raw text as asset code:', assetCode);
+      // If parsing fails, use the raw text as asset code
+      console.log('📝 Parse failed, using raw text as asset code:', assetCode);
     }
 
     console.log('🔍 Searching for asset with code:', assetCode);
@@ -242,14 +260,12 @@ export default function ScannerPage() {
 
       <div className="flex-1 overflow-auto">
         <div className="px-6 pt-4 pb-24 md:pb-4 grid grid-cols-1 lg:grid-cols-2 gap-4" data-scroll="true">
-        {/* Ultra QR Scanner Pro */}
+        {/* Simple QR Scanner */}
         <Card className="lg:col-span-2">
           <CardContent className="p-4">
-            <QRScannerPro
-              onResult={handleQRScanSuccess}
-              onError={handleQRScanError}
-              scanRegionRatio={0.8}
-              detectionDebounceMs={200}
+            <SimpleScanner
+              onScanSuccess={handleQRScanSuccess}
+              onScanError={handleQRScanError}
             />
           </CardContent>
         </Card>
