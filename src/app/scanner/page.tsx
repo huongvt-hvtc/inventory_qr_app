@@ -14,8 +14,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAssets } from '@/hooks/useAssets';
-import SimpleQRScanner from '@/components/scanner/SimpleQRScanner';
-import NativeQRScanner from '@/components/scanner/NativeQRScanner';
+import QRScannerPro from '@/components/scanner/QRScannerPro';
 import AssetDetailModal from '@/components/assets/AssetDetailModal';
 import { AssetWithInventoryStatus } from '@/types';
 import toast from 'react-hot-toast';
@@ -29,7 +28,6 @@ export default function ScannerPage() {
     uncheckAssets
   } = useAssets();
 
-  const [isScanning, setIsScanning] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [scannedAsset, setScannedAsset] = useState<AssetWithInventoryStatus | null>(null);
   const [assetDetailModal, setAssetDetailModal] = useState<{ isOpen: boolean; asset: AssetWithInventoryStatus | null; mode: 'view' | 'edit' }>({
@@ -40,21 +38,6 @@ export default function ScannerPage() {
   const [recentScans, setRecentScans] = useState<AssetWithInventoryStatus[]>([]);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const [useNativeScanner, setUseNativeScanner] = useState(false);
-  
-  // Check for native scanner support
-  useEffect(() => {
-    if ('BarcodeDetector' in window) {
-      (window as any).BarcodeDetector.getSupportedFormats().then((formats: string[]) => {
-        if (formats.includes('qr_code')) {
-          setUseNativeScanner(true);
-          console.log('🎉 Using Native BarcodeDetector API!');
-        }
-      }).catch(() => {
-        console.log('📷 Using HTML5 QR Scanner');
-      });
-    }
-  }, []);
 
   // Sync with navigation scroll behavior
   useEffect(() => {
@@ -259,54 +242,44 @@ export default function ScannerPage() {
 
       <div className="flex-1 overflow-auto">
         <div className="px-6 pt-4 pb-24 md:pb-4 grid grid-cols-1 lg:grid-cols-2 gap-4" data-scroll="true">
-        {/* QR Scanner */}
+        {/* Ultra QR Scanner Pro */}
+        <Card className="lg:col-span-2">
+          <CardContent className="p-4">
+            <QRScannerPro
+              onResult={handleQRScanSuccess}
+              onError={handleQRScanError}
+              scanRegionRatio={0.65}
+              detectionDebounceMs={400}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Manual Input */}
         <Card>
-          <CardContent className="p-4 space-y-4">
-            {useNativeScanner ? (
-              <NativeQRScanner
-                onScanSuccess={handleQRScanSuccess}
-                onScanError={handleQRScanError}
-                isActive={isScanning}
-                onToggle={() => setIsScanning(!isScanning)}
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Keyboard className="h-5 w-5 text-blue-600" />
+              Nhập mã thủ công
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <form onSubmit={handleManualSubmit} className="space-y-3">
+              <Input
+                type="text"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                placeholder="Nhập mã tài sản (VD: IT001, HR001...)"
+                className="bg-white border-blue-200 focus:border-blue-500 focus:ring-blue-500"
               />
-            ) : (
-              <SimpleQRScanner
-                onScanSuccess={handleQRScanSuccess}
-                onScanError={handleQRScanError}
-                isActive={isScanning}
-                onToggle={() => setIsScanning(!isScanning)}
-              />
-            )}
-
-            {/* Manual Input */}
-            <div className="space-y-2">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Keyboard className="h-5 w-5 text-blue-600" />
-                  <span className="font-medium text-blue-900">Nhập mã thủ công</span>
-                </div>
-
-                <form onSubmit={handleManualSubmit} className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      value={manualCode}
-                      onChange={(e) => setManualCode(e.target.value)}
-                      placeholder="Nhập mã tài sản thủ công (VD: IT001, HR001...)"
-                      className="flex-1 bg-white border-blue-200 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                    <Button
-                      type="submit"
-                      disabled={!manualCode.trim()}
-                      className="bg-blue-600 hover:bg-blue-700 px-4"
-                    >
-                      <Search className="h-4 w-4" />
-                      <span className="ml-1 hidden sm:inline">Tìm</span>
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
+              <Button
+                type="submit"
+                disabled={!manualCode.trim()}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Tìm kiếm tài sản
+              </Button>
+            </form>
           </CardContent>
         </Card>
 

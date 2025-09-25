@@ -41,7 +41,9 @@
       "Bash(git log:*)",
       "Bash(sudo npm uninstall:*)",
       "Bash(sudo npm install:*)",
-      "Bash(pnpm:*)"
+      "Bash(pnpm:*)",
+      "Bash(claude doctor)",
+      "Bash(claude --version)"
     ],
     "deny": [],
     "ask": []
