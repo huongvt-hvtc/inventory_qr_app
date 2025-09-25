@@ -143,17 +143,15 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
       const optimalFPS = isMobile ? 20 : 30;
 
       const config = {
-        fps: 10, // Giảm FPS để cải thiện hiệu suất và độ chính xác
+        fps: 30, // Tăng FPS lên như native camera
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          // Tăng vùng scan để dễ quét hơn
-          const minDimension = Math.min(viewfinderWidth, viewfinderHeight);
-          const scanSize = Math.floor(minDimension * 0.8); // 80% kích thước viewport
+          // Scan toàn bộ viewport như iOS native camera
           return {
-            width: scanSize,
-            height: scanSize
+            width: viewfinderWidth,
+            height: viewfinderHeight
           };
         },
-        aspectRatio: 1.0, // Tỷ lệ vuông để dễ focus
+        aspectRatio: window.innerWidth / window.innerHeight,
         disableFlip: false,
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true,
@@ -163,30 +161,63 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
           facingMode: cameras[currentCameraIndex]?.label?.toLowerCase().includes('front')
             ? "user"
             : "environment",
-          width: { ideal: 1280, min: 640 }, // Giảm resolution để cải thiện hiệu suất
-          height: { ideal: 720, min: 480 },
-          frameRate: { ideal: 15, min: 10 } // Giảm frameRate để ổn định hơn
+          width: { ideal: 1920, min: 1280 }, // Tăng resolution cho độ chính xác cao
+          height: { ideal: 1080, min: 720 },
+          frameRate: { ideal: 30, min: 20 }, // FrameRate cao như native
+          zoom: { ideal: 1, min: 1, max: 3 } // Enable zoom nếu supported
         },
         rememberLastUsedCamera: true,
+        supportedScanTypes: [0, 1, 2] // QR Code, Data Matrix, Code 128
       };
+
+      // Detect iOS for special handling
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
       // Try multiple configurations for better compatibility
       let scanStarted = false;
       const configs = [
-        // Optimized config
-        config,
-        // Fallback config 1: Simpler settings
-        {
-          fps: 5,
-          qrbox: 250,
+        // iOS optimized config
+        isIOS ? {
+          fps: 30,
+          qrbox: { width: 300, height: 300 }, // Fixed size like iOS
           aspectRatio: 1.0,
+          disableFlip: false,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true,
+          },
+          videoConstraints: {
+            facingMode: "environment",
+            width: { ideal: 1920, min: 1280 },
+            height: { ideal: 1080, min: 720 },
+            frameRate: { ideal: 30, min: 20 }
+          }
+        } : config,
+        // High performance config
+        {
+          fps: 20,
+          qrbox: (w: number, h: number) => {
+            const size = Math.min(w, h) * 0.9;
+            return { width: size, height: size };
+          },
+          aspectRatio: 1.0,
+          videoConstraints: {
+            facingMode: "environment",
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
+            frameRate: { ideal: 20, min: 15 }
+          }
+        },
+        // Fallback config
+        {
+          fps: 10,
+          qrbox: 250,
           videoConstraints: {
             facingMode: "environment"
           }
         },
-        // Fallback config 2: Most basic settings
+        // Last resort config
         {
-          fps: 3,
+          fps: 5,
           qrbox: 200,
         }
       ];
@@ -199,10 +230,10 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
             cameras[currentCameraIndex].id,
             configs[i],
             (decodedText) => {
-              // Prevent duplicate scans within 1 second
+              // Prevent duplicate scans within 500ms (iOS-like responsiveness)
               const now = Date.now();
               if (decodedText === lastScannedTextRef.current &&
-                  now - lastScanTimeRef.current < 1000) {
+                  now - lastScanTimeRef.current < 500) {
                 return;
               }
 
@@ -210,56 +241,71 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
               lastScannedTextRef.current = decodedText;
               lastScanTimeRef.current = now;
 
-              // Clear searching state
+              // Clear searching state immediately
               setIsSearching(false);
               if (scanTimeoutRef.current) {
                 clearTimeout(scanTimeoutRef.current);
                 scanTimeoutRef.current = null;
               }
 
-              // Show detection immediately
+              // Show detection immediately like iOS
               setDetectedQR(decodedText);
               setShowDetection(true);
 
-              // Auto-hide detection after 3 seconds
+              // Auto-hide detection after 2 seconds (faster like iOS)
               setTimeout(() => {
                 setShowDetection(false);
                 setDetectedQR('');
-              }, 3000);
+              }, 2000);
 
-              // Call success handler immediately
-              onScanSuccess(decodedText);
-
-              // Haptic feedback for mobile devices
+              // Immediate feedback like iOS
               if (navigator.vibrate) {
-                navigator.vibrate([100, 50, 100]);
+                navigator.vibrate([100]); // Single quick vibration like iOS
               }
 
-              // Play sound if available
+              // Immediate success callback
+              onScanSuccess(decodedText);
+
+              // Play iOS-like sound
               try {
-                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBT2Vy/LTgjMGHm7A7+OZURE');
-                audio.play().catch(() => {});
+                const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 1000; // iOS-like beep frequency
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
               } catch {}
             },
             (errorMessage) => {
-              // Handle scan errors more gracefully
+              // Handle scan errors more gracefully - suppress most scanning noise
               if (errorMessage.includes('NotFoundException') ||
                   errorMessage.includes('No MultiFormat Readers') ||
                   errorMessage.includes('code not found') ||
-                  errorMessage.includes('No QR code')) {
-                // Start searching animation after 800ms of no detection
+                  errorMessage.includes('No QR code') ||
+                  errorMessage.includes('no pattern found')) {
+                // Much faster searching animation - 300ms like iOS
                 if (!isSearching && !scanTimeoutRef.current) {
                   scanTimeoutRef.current = setTimeout(() => {
                     setIsSearching(true);
-                  }, 800);
+                  }, 300);
                 }
+                // Don't show any error state - keep scanning silently
                 setShowDetection(false);
                 setDetectedQR('');
               } else {
-                // Only log real errors
-                console.warn('QR scan error:', errorMessage);
-                if (onScanError) {
-                  onScanError(errorMessage);
+                // Only log genuine technical errors, not scan attempts
+                if (!errorMessage.includes('QR') && !errorMessage.includes('barcode')) {
+                  console.warn('QR scan error:', errorMessage);
+                  if (onScanError) {
+                    onScanError(errorMessage);
+                  }
                 }
               }
             }
