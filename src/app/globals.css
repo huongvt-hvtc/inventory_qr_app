@@ -171,25 +171,46 @@
   padding-right: env(safe-area-inset-right);
 }
 
-/* Prevent overscroll bounce on iOS in PWA */
+/* Mobile scrolling improvements */
 @media (display-mode: standalone) {
   body {
-    overscroll-behavior: none;
+    overscroll-behavior-y: none; /* Prevent pull-to-refresh only */
+    overscroll-behavior-x: auto; /* Allow horizontal scrolling */
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Prevent pull-to-refresh */
+  /* Enable proper scrolling in PWA mode */
   html, body {
     overflow-x: hidden;
-    position: fixed;
+    overflow-y: auto; /* Allow vertical scrolling */
     width: 100%;
-    height: 100%;
+    height: 100vh;
+    height: -webkit-fill-available;
   }
 
   .min-h-screen {
     min-height: 100vh;
     min-height: -webkit-fill-available;
-    overflow-y: auto;
+  }
+}
+
+/* Mobile touch scrolling improvements */
+@media (max-width: 768px) {
+  /* Enable smooth scrolling on mobile */
+  * {
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure scrollable containers work properly */
+  .overflow-auto,
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Fix table scrolling on mobile */
+  .table-scroll-container {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: auto;
   }
 }

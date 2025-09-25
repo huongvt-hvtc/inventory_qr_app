@@ -201,7 +201,7 @@ export default function ScannerPage() {
   };
 
   return (
-    <div>
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* QR Scanner Header - Always sticky at top, no interference with navigation */}
       <div className="sticky top-0 bg-white border-b border-gray-200 shadow-sm z-20">
         <div className="px-6 py-3">
@@ -241,7 +241,8 @@ export default function ScannerPage() {
         </div>
       </div>
 
-      <div className="px-6 pt-4 pb-24 md:pb-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="flex-1 overflow-auto">
+        <div className="px-6 pt-4 pb-24 md:pb-4 grid grid-cols-1 lg:grid-cols-2 gap-4" data-scroll="true">
         {/* QR Scanner */}
         <Card>
           <CardContent className="p-4 space-y-4">
@@ -352,6 +353,8 @@ export default function ScannerPage() {
         onCheck={handleAssetCheck}
         onUncheck={handleAssetUncheck}
       />
+        </div>
+      </div>
     </div>
   );
 }

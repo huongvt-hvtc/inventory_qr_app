@@ -12,41 +12,30 @@ export default function MobilePWAFix() {
       }
     }
 
-    // Prevent pull-to-refresh on mobile
-    let lastY = 0;
+    // Only prevent pull-to-refresh at the very top of the page
+    // Allow normal scrolling everywhere else
     const preventPullToRefresh = (e: TouchEvent) => {
-      const y = e.touches[0].pageY;
-      const scrollTop = window.scrollY;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const touchY = e.touches[0].clientY;
 
-      if (scrollTop === 0 && y > lastY) {
-        e.preventDefault();
-      }
-      lastY = y;
-    };
-
-    // Prevent iOS elastic scrolling that can trigger reloads
-    const preventElasticScroll = (e: TouchEvent) => {
-      if (e.touches.length > 1) return;
-
-      const scrollTop = window.scrollY;
-      const scrollHeight = document.documentElement.scrollHeight;
-      const clientHeight = document.documentElement.clientHeight;
-
-      if (scrollTop === 0 && e.touches[0].pageY > 0) {
-        e.preventDefault();
-      }
-
-      if (scrollTop + clientHeight >= scrollHeight && e.touches[0].pageY < 0) {
-        e.preventDefault();
+      // Only prevent pull-to-refresh if:
+      // 1. We're at the very top of the page (scrollTop === 0)
+      // 2. The user is scrolling down from the top (touchY is moving down)
+      // 3. The touch is in the upper portion of the screen (not in scrollable content)
+      if (scrollTop === 0 && touchY < 100) {
+        const target = e.target as Element;
+        // Don't prevent if the target is inside a scrollable container
+        if (!target.closest('.overflow-auto, .overflow-y-auto, [data-scroll="true"]')) {
+          e.preventDefault();
+        }
       }
     };
 
-    document.addEventListener('touchmove', preventPullToRefresh, { passive: false });
-    document.addEventListener('touchmove', preventElasticScroll, { passive: false });
+    // Add event listener with passive: false only for the specific pull-to-refresh case
+    document.addEventListener('touchstart', preventPullToRefresh, { passive: false });
 
     return () => {
-      document.removeEventListener('touchmove', preventPullToRefresh);
-      document.removeEventListener('touchmove', preventElasticScroll);
+      document.removeEventListener('touchstart', preventPullToRefresh);
     };
   }, []);
 
