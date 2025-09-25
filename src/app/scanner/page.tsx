@@ -248,8 +248,8 @@ export default function ScannerPage() {
             <QRScannerPro
               onResult={handleQRScanSuccess}
               onError={handleQRScanError}
-              scanRegionRatio={0.65}
-              detectionDebounceMs={400}
+              scanRegionRatio={0.8}
+              detectionDebounceMs={200}
             />
           </CardContent>
         </Card>

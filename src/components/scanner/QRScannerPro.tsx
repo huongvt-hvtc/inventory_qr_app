@@ -159,7 +159,10 @@ export default function QRScannerPro({
     lastDetectionRef.current = { text, time: now };
 
     console.log('🎯 QR Detected:', text);
-    setStatus(`Đã quét: ${text.substring(0, 20)}${text.length > 20 ? '...' : ''}`);
+    setStatus(`Đã quét thành công! Đang xử lý...`);
+
+    // Stop scanning immediately after successful detection
+    setIsActive(false);
 
     // Feedback
     playBeep();
@@ -175,8 +178,17 @@ export default function QRScannerPro({
       }, 200);
     }
 
+    // Process result
     onResult(text);
-  }, [detectionDebounceMs, onResult, playBeep, vibrate]);
+
+    // Auto restart scanning after 2 seconds for next QR
+    setTimeout(() => {
+      if (!isActive) {  // Only restart if still not active
+        setStatus('Sẵn sàng quét QR tiếp theo');
+      }
+    }, 2000);
+
+  }, [detectionDebounceMs, onResult, playBeep, vibrate, isActive]);
 
   // Native BarcodeDetector scanning
   const scanWithNative = useCallback(async () => {
@@ -204,8 +216,14 @@ export default function QRScannerPro({
         }
       }
 
+      // Continue scanning at higher frequency for better detection
       if (isActive) {
-        requestAnimationFrame(scan);
+        // Use shorter timeout for more responsive detection
+        setTimeout(() => {
+          if (isActive) {
+            requestAnimationFrame(scan);
+          }
+        }, 50); // 20 FPS for more responsive detection
       }
     };
 
