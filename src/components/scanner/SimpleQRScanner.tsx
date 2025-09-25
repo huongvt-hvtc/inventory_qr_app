@@ -213,14 +213,7 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
             facingMode: "environment",
             width: { ideal: isIOS ? 3840 : 2560, min: 1920 }, // 4K on iOS
             height: { ideal: isIOS ? 2160 : 1440, min: 1080 },
-            frameRate: { ideal: isIOS ? 60 : 30, min: 24 },
-            ...(isIOS && {
-              advanced: [
-                { focusMode: "continuous" },
-                { exposureMode: "continuous" }, 
-                { whiteBalanceMode: "continuous" }
-              ]
-            })
+            frameRate: { ideal: isIOS ? 60 : 30, min: 24 }
           },
           formatsToSupport: [ 0 ] // Only QR for speed
         },
