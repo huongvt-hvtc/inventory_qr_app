@@ -60,25 +60,35 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
       }
 
       try {
-        // Request camera permission with specific constraints
-        const stream = await navigator.mediaDevices.getUserMedia({
+        // Request camera permission with mobile-optimized constraints
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const constraints = isMobile ? {
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          }
+        } : {
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: 1280, min: 640 },
-            height: { ideal: 720, min: 480 }
+            width: { ideal: 1920, min: 1280 },
+            height: { ideal: 1080, min: 720 }
           }
-        });
+        };
+        
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         stream.getTracks().forEach(track => track.stop());
         setPermissionStatus('granted');
 
-        // Retry camera enumeration up to 3 times
+        // Retry camera enumeration up to 5 times with better timing
         let devices: any[] = [];
         let retryCount = 0;
-        const maxRetries = 3;
+        const maxRetries = 5;
 
         while (devices.length === 0 && retryCount < maxRetries) {
           try {
-            await new Promise(resolve => setTimeout(resolve, 500 * retryCount)); // Progressive delay
+            // Short delay for mobile devices to initialize
+            await new Promise(resolve => setTimeout(resolve, 200 + (200 * retryCount)));
             devices = await Html5Qrcode.getCameras();
             console.log(`📷 Camera scan attempt ${retryCount + 1}: Found ${devices.length} cameras`);
             retryCount++;
@@ -136,16 +146,22 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
     try {
       console.log('🚀 Starting QR scanner with camera:', cameras[currentCameraIndex]);
 
-      scannerRef.current = new Html5Qrcode('qr-reader-viewport');
+      scannerRef.current = new Html5Qrcode('qr-reader-viewport', {
+        verbose: false, // Disable verbose logging for performance
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        }
+      } as any);
 
       // Auto-adjust FPS based on device performance
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       const optimalFPS = isMobile ? 20 : 30;
 
+      // Ultra-optimized config for mobile - như iOS native camera
       const config = {
-        fps: 30, // Tăng FPS lên như native camera
+        fps: 30, // Max FPS như native
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          // Scan toàn bộ viewport như iOS native camera
+          // CRITICAL: Scan toàn bộ viewport để phát hiện QR ở bất kỳ vị trí nào
           return {
             width: viewfinderWidth,
             height: viewfinderHeight
@@ -154,71 +170,104 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
         aspectRatio: window.innerWidth / window.innerHeight,
         disableFlip: false,
         experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true,
+          useBarCodeDetectorIfSupported: true, // Dùng native barcode detector nếu có
         },
         showTorchButtonIfSupported: true,
         videoConstraints: {
           facingMode: cameras[currentCameraIndex]?.label?.toLowerCase().includes('front')
             ? "user"
             : "environment",
-          width: { ideal: 1920, min: 1280 }, // Tăng resolution cho độ chính xác cao
-          height: { ideal: 1080, min: 720 },
-          frameRate: { ideal: 30, min: 20 }, // FrameRate cao như native
-          zoom: { ideal: 1, min: 1, max: 3 } // Enable zoom nếu supported
+          width: { ideal: 4096, min: 1920 }, // Ultra HD để quét QR nhỏ
+          height: { ideal: 2160, min: 1080 },
+          frameRate: { ideal: 60, min: 30 }, // 60 FPS như native iOS
+          advanced: [
+            // Auto-focus continuous như iOS native
+            { focusMode: "continuous" },
+            { zoom: 1.0 }
+          ]
         },
         rememberLastUsedCamera: true,
-        supportedScanTypes: [0, 1, 2] // QR Code, Data Matrix, Code 128
+        formatsToSupport: [ 0 ] // Chỉ QR Code để tăng tốc độ
       };
 
       // Detect iOS for special handling
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/i.test(navigator.userAgent);
 
       // Try multiple configurations for better compatibility
       let scanStarted = false;
       const configs = [
-        // iOS optimized config
-        isIOS ? {
-          fps: 30,
-          qrbox: { width: 300, height: 300 }, // Fixed size like iOS
-          aspectRatio: 1.0,
+        // Primary: Full viewport scan với Ultra HD như native camera
+        {
+          fps: isIOS ? 60 : 30, // iOS hỗ trợ 60fps
+          qrbox: (w: number, h: number) => {
+            // CRITICAL: Scan toàn màn hình, không giới hạn
+            return { width: w, height: h };
+          },
+          aspectRatio: window.innerWidth / window.innerHeight,
           disableFlip: false,
           experimentalFeatures: {
             useBarCodeDetectorIfSupported: true,
           },
           videoConstraints: {
             facingMode: "environment",
+            width: { ideal: isIOS ? 3840 : 2560, min: 1920 }, // 4K on iOS
+            height: { ideal: isIOS ? 2160 : 1440, min: 1080 },
+            frameRate: { ideal: isIOS ? 60 : 30, min: 24 },
+            ...(isIOS && {
+              advanced: [
+                { focusMode: "continuous" },
+                { exposureMode: "continuous" }, 
+                { whiteBalanceMode: "continuous" }
+              ]
+            })
+          },
+          formatsToSupport: [ 0 ] // Only QR for speed
+        },
+        // Fallback 1: Full viewport với HD
+        {
+          fps: 25,
+          qrbox: (w: number, h: number) => {
+            // Vẫn scan toàn viewport
+            return { width: w, height: h };
+          },
+          aspectRatio: window.innerWidth / window.innerHeight,
+          videoConstraints: {
+            facingMode: "environment",
             width: { ideal: 1920, min: 1280 },
             height: { ideal: 1080, min: 720 },
-            frameRate: { ideal: 30, min: 20 }
-          }
-        } : config,
-        // High performance config
+            frameRate: { ideal: 25, min: 20 }
+          },
+          formatsToSupport: [ 0 ]
+        },
+        // Fallback 2: Center area scan với HD  
         {
           fps: 20,
           qrbox: (w: number, h: number) => {
-            const size = Math.min(w, h) * 0.9;
-            return { width: size, height: size };
+            // 80% viewport để tăng performance nhưng vẫn đủ rộng
+            const width = Math.floor(w * 0.8);
+            const height = Math.floor(h * 0.8);
+            return { width, height };
           },
-          aspectRatio: 1.0,
           videoConstraints: {
             facingMode: "environment",
-            width: { ideal: 1280, min: 640 },
-            height: { ideal: 720, min: 480 },
+            width: { ideal: 1280, min: 960 },
+            height: { ideal: 720, min: 540 },
             frameRate: { ideal: 20, min: 15 }
-          }
+          },
+          formatsToSupport: [ 0 ]
         },
-        // Fallback config
+        // Last resort: Fixed box nhưng lớn hơn
         {
-          fps: 10,
-          qrbox: 250,
+          fps: 15,
+          qrbox: { width: 350, height: 350 }, // Lớn hơn để dễ quét
           videoConstraints: {
-            facingMode: "environment"
-          }
-        },
-        // Last resort config
-        {
-          fps: 5,
-          qrbox: 200,
+            facingMode: "environment",
+            width: { min: 640 },
+            height: { min: 480 },
+            frameRate: { min: 10 }
+          },
+          formatsToSupport: [ 0 ]
         }
       ];
 
@@ -230,10 +279,10 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
             cameras[currentCameraIndex].id,
             configs[i],
             (decodedText) => {
-              // Prevent duplicate scans within 500ms (iOS-like responsiveness)
+              // Prevent duplicate scans within 200ms (faster response như iOS native)
               const now = Date.now();
               if (decodedText === lastScannedTextRef.current &&
-                  now - lastScanTimeRef.current < 500) {
+                  now - lastScanTimeRef.current < 200) {
                 return;
               }
 
@@ -266,21 +315,31 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
               // Immediate success callback
               onScanSuccess(decodedText);
 
-              // Play iOS-like sound
+              // Play iOS-like sound với 2 beeps
               try {
                 const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.frequency.value = 1000; // iOS-like beep frequency
-                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.1);
+                
+                // First beep
+                const osc1 = audioContext.createOscillator();
+                const gain1 = audioContext.createGain();
+                osc1.connect(gain1);
+                gain1.connect(audioContext.destination);
+                osc1.frequency.value = 1200;
+                gain1.gain.setValueAtTime(0.15, audioContext.currentTime);
+                gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+                osc1.start(audioContext.currentTime);
+                osc1.stop(audioContext.currentTime + 0.05);
+                
+                // Second beep (higher pitch)
+                const osc2 = audioContext.createOscillator();
+                const gain2 = audioContext.createGain();
+                osc2.connect(gain2);
+                gain2.connect(audioContext.destination);
+                osc2.frequency.value = 1400;
+                gain2.gain.setValueAtTime(0.15, audioContext.currentTime + 0.08);
+                gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.13);
+                osc2.start(audioContext.currentTime + 0.08);
+                osc2.stop(audioContext.currentTime + 0.13);
               } catch {}
             },
             (errorMessage) => {
@@ -290,11 +349,11 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
                   errorMessage.includes('code not found') ||
                   errorMessage.includes('No QR code') ||
                   errorMessage.includes('no pattern found')) {
-                // Much faster searching animation - 300ms like iOS
+                // Ultra fast searching animation - 100ms như iOS native
                 if (!isSearching && !scanTimeoutRef.current) {
                   scanTimeoutRef.current = setTimeout(() => {
                     setIsSearching(true);
-                  }, 300);
+                  }, 100);
                 }
                 // Don't show any error state - keep scanning silently
                 setShowDetection(false);

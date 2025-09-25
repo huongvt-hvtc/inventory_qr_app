@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAssets } from '@/hooks/useAssets';
 import SimpleQRScanner from '@/components/scanner/SimpleQRScanner';
+import NativeQRScanner from '@/components/scanner/NativeQRScanner';
 import AssetDetailModal from '@/components/assets/AssetDetailModal';
 import { AssetWithInventoryStatus } from '@/types';
 import toast from 'react-hot-toast';
@@ -39,6 +40,21 @@ export default function ScannerPage() {
   const [recentScans, setRecentScans] = useState<AssetWithInventoryStatus[]>([]);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [useNativeScanner, setUseNativeScanner] = useState(false);
+  
+  // Check for native scanner support
+  useEffect(() => {
+    if ('BarcodeDetector' in window) {
+      (window as any).BarcodeDetector.getSupportedFormats().then((formats: string[]) => {
+        if (formats.includes('qr_code')) {
+          setUseNativeScanner(true);
+          console.log('🎉 Using Native BarcodeDetector API!');
+        }
+      }).catch(() => {
+        console.log('📷 Using HTML5 QR Scanner');
+      });
+    }
+  }, []);
 
   // Sync with navigation scroll behavior
   useEffect(() => {
@@ -246,12 +262,21 @@ export default function ScannerPage() {
         {/* QR Scanner */}
         <Card>
           <CardContent className="p-4 space-y-4">
-            <SimpleQRScanner
-              onScanSuccess={handleQRScanSuccess}
-              onScanError={handleQRScanError}
-              isActive={isScanning}
-              onToggle={() => setIsScanning(!isScanning)}
-            />
+            {useNativeScanner ? (
+              <NativeQRScanner
+                onScanSuccess={handleQRScanSuccess}
+                onScanError={handleQRScanError}
+                isActive={isScanning}
+                onToggle={() => setIsScanning(!isScanning)}
+              />
+            ) : (
+              <SimpleQRScanner
+                onScanSuccess={handleQRScanSuccess}
+                onScanError={handleQRScanError}
+                isActive={isScanning}
+                onToggle={() => setIsScanning(!isScanning)}
+              />
+            )}
 
             {/* Manual Input */}
             <div className="space-y-2">
