@@ -60,22 +60,61 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
       }
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        // Request camera permission with specific constraints
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 }
+          }
+        });
         stream.getTracks().forEach(track => track.stop());
         setPermissionStatus('granted');
 
-        const devices = await Html5Qrcode.getCameras();
-        console.log('📷 Available cameras:', devices);
+        // Retry camera enumeration up to 3 times
+        let devices: any[] = [];
+        let retryCount = 0;
+        const maxRetries = 3;
+
+        while (devices.length === 0 && retryCount < maxRetries) {
+          try {
+            await new Promise(resolve => setTimeout(resolve, 500 * retryCount)); // Progressive delay
+            devices = await Html5Qrcode.getCameras();
+            console.log(`📷 Camera scan attempt ${retryCount + 1}: Found ${devices.length} cameras`);
+            retryCount++;
+          } catch (cameraError) {
+            console.warn(`Camera enumeration attempt ${retryCount + 1} failed:`, cameraError);
+            retryCount++;
+          }
+        }
+
+        console.log('📷 Final available cameras:', devices);
         setCameras(devices);
 
         if (devices.length > 0) {
-          // Prefer back camera for mobile devices
+          // Smart camera selection: prefer back/environment camera
+          let selectedIndex = 0;
+
+          // Try to find back/rear/environment camera
           const backCameraIndex = devices.findIndex(device =>
             device.label.toLowerCase().includes('back') ||
             device.label.toLowerCase().includes('rear') ||
             device.label.toLowerCase().includes('environment')
           );
-          setCurrentCameraIndex(backCameraIndex !== -1 ? backCameraIndex : 0);
+
+          // If no back camera found, try to find camera with highest resolution
+          if (backCameraIndex === -1) {
+            // Use the last camera (often the higher quality one on mobile)
+            selectedIndex = devices.length - 1;
+          } else {
+            selectedIndex = backCameraIndex;
+          }
+
+          console.log(`📷 Selected camera ${selectedIndex}: ${devices[selectedIndex].label}`);
+          setCurrentCameraIndex(selectedIndex);
+        } else {
+          console.error('❌ No cameras found after retries');
+          setIsSupported(false);
         }
       } catch (error) {
         console.error('Camera permission denied:', error);
@@ -104,107 +143,151 @@ export default function SimpleQRScanner({ onScanSuccess, onScanError, isActive, 
       const optimalFPS = isMobile ? 20 : 30;
 
       const config = {
-        fps: optimalFPS, // Tự động điều chỉnh FPS theo thiết bị
+        fps: 10, // Giảm FPS để cải thiện hiệu suất và độ chính xác
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          // Scan toàn bộ màn hình như native camera - không giới hạn vùng scan
-          const boxSize = Math.min(viewfinderWidth, viewfinderHeight);
+          // Tăng vùng scan để dễ quét hơn
+          const minDimension = Math.min(viewfinderWidth, viewfinderHeight);
+          const scanSize = Math.floor(minDimension * 0.8); // 80% kích thước viewport
           return {
-            width: boxSize,
-            height: boxSize
+            width: scanSize,
+            height: scanSize
           };
         },
-        aspectRatio: window.innerWidth / window.innerHeight,
+        aspectRatio: 1.0, // Tỷ lệ vuông để dễ focus
         disableFlip: false,
         experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true, // Dùng native barcode API nếu có
-          // Thêm các tính năng thử nghiệm để cải thiện độ nhạy
+          useBarCodeDetectorIfSupported: true,
         },
-        showTorchButtonIfSupported: true, // Show torch/flashlight button
-        defaultZoomValueIfSupported: 1,
+        showTorchButtonIfSupported: true,
         videoConstraints: {
-          facingMode: cameras[currentCameraIndex]?.label?.toLowerCase().includes('front') 
-            ? "user" 
+          facingMode: cameras[currentCameraIndex]?.label?.toLowerCase().includes('front')
+            ? "user"
             : "environment",
-          width: { ideal: 1920, min: 1280 },
-          height: { ideal: 1080, min: 720 },
-          frameRate: { ideal: 30, min: 20 } // Balanced for stability
+          width: { ideal: 1280, min: 640 }, // Giảm resolution để cải thiện hiệu suất
+          height: { ideal: 720, min: 480 },
+          frameRate: { ideal: 15, min: 10 } // Giảm frameRate để ổn định hơn
         },
         rememberLastUsedCamera: true,
-        // Optimize for QR codes only
       };
 
-      await scannerRef.current.start(
-        cameras[currentCameraIndex].id,
+      // Try multiple configurations for better compatibility
+      let scanStarted = false;
+      const configs = [
+        // Optimized config
         config,
-        (decodedText) => {
-          // Prevent duplicate scans within 2 seconds
-          const now = Date.now();
-          if (decodedText === lastScannedTextRef.current && 
-              now - lastScanTimeRef.current < 2000) {
-            return;
+        // Fallback config 1: Simpler settings
+        {
+          fps: 5,
+          qrbox: 250,
+          aspectRatio: 1.0,
+          videoConstraints: {
+            facingMode: "environment"
           }
-
-          console.log('✅ QR Code detected:', decodedText);
-          lastScannedTextRef.current = decodedText;
-          lastScanTimeRef.current = now;
-
-          // Clear searching state
-          setIsSearching(false);
-          if (scanTimeoutRef.current) {
-            clearTimeout(scanTimeoutRef.current);
-            scanTimeoutRef.current = null;
-          }
-
-          // Show detection immediately like iPhone Camera
-          setDetectedQR(decodedText);
-          setShowDetection(true);
-
-          // Auto-hide detection after 3 seconds
-          setTimeout(() => {
-            setShowDetection(false);
-            setDetectedQR('');
-          }, 3000);
-
-          // Call success handler immediately
-          onScanSuccess(decodedText);
-
-          // Haptic feedback for mobile devices
-          if (navigator.vibrate) {
-            navigator.vibrate([100, 50, 100]); // Double vibration như iPhone
-          }
-
-          // Play sound if available
-          try {
-            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBT2Vy/LTgjMGHm7A7+OZURE');
-            audio.play().catch(() => {});
-          } catch {}
-
-          // No pause - continuous scanning like native camera
         },
-        (errorMessage) => {
-          // Show searching indicator when camera is looking for QR
-          if (errorMessage.includes('NotFoundException') ||
-              errorMessage.includes('No MultiFormat Readers') ||
-              errorMessage.includes('code not found')) {
-            // Start searching animation after 500ms of no detection
-            if (!isSearching && !scanTimeoutRef.current) {
-              scanTimeoutRef.current = setTimeout(() => {
-                setIsSearching(true);
-              }, 500);
-            }
-            setShowDetection(false);
-            setDetectedQR('');
-          } else {
-            // Only log real errors, not scanning attempts
-            if (!errorMessage.includes('QR code') && !errorMessage.includes('No barcode')) {
-              console.warn('QR scan error:', errorMessage);
-              if (onScanError) {
-                onScanError(errorMessage);
+        // Fallback config 2: Most basic settings
+        {
+          fps: 3,
+          qrbox: 200,
+        }
+      ];
+
+      for (let i = 0; i < configs.length && !scanStarted; i++) {
+        try {
+          console.log(`🔄 Trying scanner config ${i + 1}/${configs.length}`);
+
+          await scannerRef.current.start(
+            cameras[currentCameraIndex].id,
+            configs[i],
+            (decodedText) => {
+              // Prevent duplicate scans within 1 second
+              const now = Date.now();
+              if (decodedText === lastScannedTextRef.current &&
+                  now - lastScanTimeRef.current < 1000) {
+                return;
+              }
+
+              console.log('✅ QR Code detected:', decodedText);
+              lastScannedTextRef.current = decodedText;
+              lastScanTimeRef.current = now;
+
+              // Clear searching state
+              setIsSearching(false);
+              if (scanTimeoutRef.current) {
+                clearTimeout(scanTimeoutRef.current);
+                scanTimeoutRef.current = null;
+              }
+
+              // Show detection immediately
+              setDetectedQR(decodedText);
+              setShowDetection(true);
+
+              // Auto-hide detection after 3 seconds
+              setTimeout(() => {
+                setShowDetection(false);
+                setDetectedQR('');
+              }, 3000);
+
+              // Call success handler immediately
+              onScanSuccess(decodedText);
+
+              // Haptic feedback for mobile devices
+              if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+              }
+
+              // Play sound if available
+              try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBT2Vy/LTgjMGHm7A7+OZURE');
+                audio.play().catch(() => {});
+              } catch {}
+            },
+            (errorMessage) => {
+              // Handle scan errors more gracefully
+              if (errorMessage.includes('NotFoundException') ||
+                  errorMessage.includes('No MultiFormat Readers') ||
+                  errorMessage.includes('code not found') ||
+                  errorMessage.includes('No QR code')) {
+                // Start searching animation after 800ms of no detection
+                if (!isSearching && !scanTimeoutRef.current) {
+                  scanTimeoutRef.current = setTimeout(() => {
+                    setIsSearching(true);
+                  }, 800);
+                }
+                setShowDetection(false);
+                setDetectedQR('');
+              } else {
+                // Only log real errors
+                console.warn('QR scan error:', errorMessage);
+                if (onScanError) {
+                  onScanError(errorMessage);
+                }
               }
             }
+          );
+
+          scanStarted = true;
+          console.log(`✅ Scanner started successfully with config ${i + 1}`);
+          break;
+
+        } catch (configError) {
+          console.warn(`❌ Config ${i + 1} failed:`, configError);
+          if (i < configs.length - 1) {
+            console.log(`🔄 Trying next config...`);
+            // Reset scanner before trying next config
+            if (scannerRef.current) {
+              try {
+                await scannerRef.current.stop();
+                scannerRef.current.clear();
+              } catch {}
+            }
+            scannerRef.current = new Html5Qrcode('qr-reader-viewport');
           }
         }
-      );
+      }
+
+      if (!scanStarted) {
+        throw new Error('Không thể khởi động camera với bất kỳ cấu hình nào');
+      }
 
       console.log('✅ QR scanner started successfully');
     } catch (error) {
