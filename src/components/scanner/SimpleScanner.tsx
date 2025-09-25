@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode'
 import { throttle } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Camera, CameraOff, CheckCircle } from 'lucide-react'
 
 interface ScannerProps {
   onScanSuccess: (result: string) => void
@@ -10,6 +12,8 @@ interface ScannerProps {
 export default function SimpleScanner({ onScanSuccess, onScanError }: ScannerProps) {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [isScanning, setIsScanning] = useState(false)
+  const [permissionGranted, setPermissionGranted] = useState(false)
 
   // Throttle scan success to prevent multiple rapid scans
   const throttledSuccess = useRef(
@@ -18,8 +22,8 @@ export default function SimpleScanner({ onScanSuccess, onScanError }: ScannerPro
     }, 2000)
   ).current
 
-  useEffect(() => {
-    if (!containerRef.current) return
+  const startScanner = () => {
+    if (!containerRef.current || scannerRef.current) return
 
     const config = {
       fps: 10,
@@ -28,6 +32,7 @@ export default function SimpleScanner({ onScanSuccess, onScanError }: ScannerPro
       supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
       aspectRatio: 1.0,
       showTorchButtonIfSupported: true,
+      showZoomSliderIfSupported: false,
       experimentalFeatures: {
         useBarCodeDetectorIfSupported: true
       }
@@ -41,29 +46,94 @@ export default function SimpleScanner({ onScanSuccess, onScanError }: ScannerPro
 
     scanner.render(
       (decodedText) => {
+        console.log('QR Scanned:', decodedText)
         throttledSuccess(decodedText)
       },
       (error) => {
-        // Ignore common errors
-        if (!error.includes('NotFoundException')) {
-          console.error('Scan error:', error)
+        // Ignore common scanning errors
+        if (!error.includes('NotFoundException') &&
+            !error.includes('No barcode or QR code detected')) {
+          console.warn('Scan error:', error)
           onScanError?.(error)
         }
       }
     )
 
     scannerRef.current = scanner
+    setIsScanning(true)
+    setPermissionGranted(true)
+  }
 
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(console.error)
-      }
+  const stopScanner = () => {
+    if (scannerRef.current) {
+      scannerRef.current.clear().catch(console.error)
+      scannerRef.current = null
     }
-  }, [throttledSuccess, onScanError])
+    setIsScanning(false)
+  }
+
+  const toggleScanner = () => {
+    if (isScanning) {
+      stopScanner()
+    } else {
+      startScanner()
+    }
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopScanner()
+    }
+  }, [])
 
   return (
-    <div>
-      <div id="simple-qr-reader" ref={containerRef} className="w-full"></div>
+    <div className="space-y-4">
+      {/* Scanner Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={toggleScanner}
+            variant={isScanning ? "destructive" : "default"}
+            className={isScanning ? "" : "bg-green-600 hover:bg-green-700 text-white"}
+          >
+            {isScanning ? (
+              <>
+                <CameraOff className="h-4 w-4 mr-2" />
+                Dừng quét
+              </>
+            ) : (
+              <>
+                <Camera className="h-4 w-4 mr-2" />
+                Bắt đầu quét
+              </>
+            )}
+          </Button>
+
+          {isScanning && (
+            <div className="flex items-center gap-1 text-green-600">
+              <CheckCircle className="h-4 w-4" />
+              <span className="text-sm font-medium">Đang quét...</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Scanner Area */}
+      <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ minHeight: '400px' }}>
+        <div id="simple-qr-reader" ref={containerRef} className="w-full"></div>
+
+        {!isScanning && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <Camera className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-500 text-sm">
+                Nhấn "Bắt đầu quét" để kích hoạt camera
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
 
       <style jsx global>{`
         #simple-qr-reader {
