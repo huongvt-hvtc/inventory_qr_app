@@ -348,12 +348,14 @@ export default function QRScannerPro({
     loadCameras();
   }, [loadCameras]);
 
-  // Auto-start when device is selected
-  useEffect(() => {
-    if (activeDeviceId && !isActive && !isLoading) {
+  // Manual start/stop controls
+  const handleToggleScanning = () => {
+    if (isActive) {
+      stopScanning();
+    } else if (activeDeviceId) {
       startScanning();
     }
-  }, [activeDeviceId, isActive, isLoading, startScanning]);
+  };
 
   // Cleanup on unmount
   useEffect(() => {
@@ -444,6 +446,34 @@ export default function QRScannerPro({
       {/* Bottom controls */}
       <div className="absolute left-0 right-0 bottom-0 p-4">
         <div className="flex items-center justify-between gap-3">
+          {/* Start/Stop scanning button */}
+          <button
+            onClick={handleToggleScanning}
+            disabled={isLoading || !activeDeviceId}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm active:scale-95 transition-all disabled:opacity-50 ${
+              isActive
+                ? 'bg-red-600 text-white hover:bg-red-700'
+                : 'bg-green-600 text-white hover:bg-green-700'
+            }`}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Đang khởi động...
+              </>
+            ) : isActive ? (
+              <>
+                <Camera className="h-4 w-4" />
+                Dừng quét
+              </>
+            ) : (
+              <>
+                <Camera className="h-4 w-4" />
+                Bắt đầu quét
+              </>
+            )}
+          </button>
+
           {/* Camera switch */}
           {devices.length > 1 && (
             <button
