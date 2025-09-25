@@ -342,6 +342,7 @@ export default function ScannerPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Asset Detail Modal */}
@@ -353,8 +354,6 @@ export default function ScannerPage() {
         onCheck={handleAssetCheck}
         onUncheck={handleAssetUncheck}
       />
-        </div>
-      </div>
     </div>
   );
 }
