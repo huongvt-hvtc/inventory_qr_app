@@ -239,7 +239,7 @@ export default function AssetsPage() {
       await checkAssets(Array.from(selectedAssets), userName);
       setSelectedAssets(new Set());
       setRecheckConfirm({ isOpen: false, assets: [] });
-      toast.success('Đã cập nhật lại kiểm kê cho các tài sản đã chọn');
+      // Toast được hiển thị bởi useAssets hook, không cần duplicate
     } catch (error) {
       console.error('Error rechecking assets:', error);
       toast.error('Có lỗi xảy ra khi kiểm kê lại');

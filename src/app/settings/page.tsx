@@ -181,13 +181,16 @@ export default function SettingsPage() {
                         <span className="font-medium">Nhà sáng lập:</span> ngoctmn
                       </p>
                       <p className="flex items-center gap-2">
+                        <Mail className="h-3 w-3" />
+                        <span className="font-medium">Liên hệ:</span> mr.ngoctmn@gmail.com
+                      </p>
+                      <p className="flex items-center gap-2">
                         <Package className="h-3 w-3" />
                         <span className="font-medium">Phiên bản:</span> 1.0.0
                       </p>
-                    </div>
-                    <div className="text-right md:text-left">
-                      <p className="text-gray-400">
-                        © 2024 Kiểm kê tài sản
+                      <p className="flex items-center gap-2">
+                        <Package className="h-3 w-3" />
+                        <span className="font-medium">Cập nhật lần cuối:</span> {new Date().toLocaleDateString('vi-VN')}
                       </p>
                     </div>
                   </div>

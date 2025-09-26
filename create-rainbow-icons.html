@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rainbow Gradient App Icons Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .icons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .icon-item {
+            text-align: center;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            background: #fafafa;
+        }
+        .icon-item h3 {
+            margin: 10px 0 5px 0;
+            color: #333;
+        }
+        .icon-item p {
+            margin: 0;
+            color: #666;
+            font-size: 12px;
+        }
+        canvas {
+            border-radius: 20%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+        }
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .instructions h3 {
+            color: #333;
+            margin-top: 0;
+        }
+        .instructions ol {
+            color: #666;
+        }
+        .preview-large {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .preview-large canvas {
+            border-radius: 25%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌈 Rainbow Gradient App Icons Generator</h1>
+
+        <div class="preview-large">
+            <h2>Preview (512x512)</h2>
+            <canvas id="preview" width="200" height="200"></canvas>
+        </div>
+
+        <div class="icons-grid" id="iconsGrid"></div>
+
+        <div class="instructions">
+            <h3>📋 Hướng dẫn sử dụng:</h3>
+            <ol>
+                <li>Click các nút "Download" để tải xuống từng icon size</li>
+                <li>Lưu các file vào thư mục <code>public/</code> của project</li>
+                <li>Đặt tên file theo format: <code>icon-72.png</code>, <code>icon-96.png</code>, v.v.</li>
+                <li>Icons sẽ tự động được sử dụng khi user "Add to Home Screen"</li>
+                <li>Gradient rainbow sẽ tạo hiệu ứng đẹp mắt trên iOS và Android</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
+
+        function createRainbowGradientIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = size;
+            canvas.height = size;
+
+            // Create rainbow gradient background
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#ff0080');    // Pink/Magenta
+            gradient.addColorStop(0.14, '#ff0040'); // Red-Pink
+            gradient.addColorStop(0.28, '#ff8000'); // Orange
+            gradient.addColorStop(0.42, '#ffff00'); // Yellow
+            gradient.addColorStop(0.56, '#80ff00'); // Yellow-Green
+            gradient.addColorStop(0.70, '#00ff80'); // Green
+            gradient.addColorStop(0.84, '#0080ff'); // Blue
+            gradient.addColorStop(1, '#8000ff');    // Purple
+
+            // Draw background with gradient
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // Add subtle overlay for better contrast
+            const overlayGradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+            overlayGradient.addColorStop(0, 'rgba(255,255,255,0.1)');
+            overlayGradient.addColorStop(1, 'rgba(0,0,0,0.2)');
+            ctx.fillStyle = overlayGradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // Draw Lucide Package icon (same as app loading)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.lineWidth = size * 0.04;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            const iconSize = size * 0.5;
+            const centerX = size / 2;
+            const centerY = size / 2;
+
+            // Scale factor for the icon paths
+            const scale = iconSize / 24;
+
+            // Lucide Package icon path (24x24 original)
+            ctx.beginPath();
+
+            // Main package box outline
+            const boxLeft = centerX - 10 * scale;
+            const boxRight = centerX + 10 * scale;
+            const boxTop = centerY - 8 * scale;
+            const boxBottom = centerY + 8 * scale;
+
+            // Draw the main rectangle
+            ctx.strokeRect(boxLeft, boxTop, 20 * scale, 16 * scale);
+
+            // Top flap line
+            ctx.beginPath();
+            ctx.moveTo(boxLeft, boxTop + 4 * scale);
+            ctx.lineTo(boxRight, boxTop + 4 * scale);
+            ctx.stroke();
+
+            // Center vertical line
+            ctx.beginPath();
+            ctx.moveTo(centerX, boxTop);
+            ctx.lineTo(centerX, boxTop + 4 * scale);
+            ctx.stroke();
+
+            // Handle on top
+            const handleY = boxTop - 2 * scale;
+            ctx.beginPath();
+            ctx.moveTo(centerX - 3 * scale, handleY);
+            ctx.lineTo(centerX + 3 * scale, handleY);
+            ctx.stroke();
+
+            // Small connecting lines for handle
+            ctx.beginPath();
+            ctx.moveTo(centerX - 3 * scale, handleY);
+            ctx.lineTo(centerX - 3 * scale, boxTop);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(centerX + 3 * scale, handleY);
+            ctx.lineTo(centerX + 3 * scale, boxTop);
+            ctx.stroke();
+        }
+
+        function downloadCanvas(canvas, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function createIconItem(size) {
+            const canvas = document.createElement('canvas');
+            createRainbowGradientIcon(canvas, size);
+
+            const div = document.createElement('div');
+            div.className = 'icon-item';
+            div.innerHTML = `
+                <h3>${size}x${size}</h3>
+                <p>icon-${size}.png</p>
+                <button class="download-btn" onclick="downloadCanvas(this.parentElement.querySelector('canvas'), 'icon-${size}.png')">
+                    Download
+                </button>
+            `;
+
+            div.insertBefore(canvas, div.querySelector('button'));
+            return div;
+        }
+
+        // Create preview
+        const previewCanvas = document.getElementById('preview');
+        createRainbowGradientIcon(previewCanvas, 200);
+
+        // Create all icon sizes
+        const grid = document.getElementById('iconsGrid');
+        iconSizes.forEach(size => {
+            grid.appendChild(createIconItem(size));
+        });
+    </script>
+</body>
+</html>

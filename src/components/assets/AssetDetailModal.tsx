@@ -152,7 +152,7 @@ export default function AssetDetailModal({
     try {
       const userName = user.name || user.email || 'Unknown User';
       await onCheck(asset.id, userName);
-      toast.success('✅ Đã xác nhận kiểm kê');
+      // Toast được hiển thị bởi useAssets hook, không cần duplicate
       onClose();
     } catch (error) {
       toast.error('Có lỗi xảy ra khi kiểm kê');
@@ -167,7 +167,7 @@ export default function AssetDetailModal({
     setLoading(true);
     try {
       await onUncheck(asset.id);
-      toast.success('Đã bỏ kiểm kê');
+      // Toast được hiển thị bởi useAssets hook, không cần duplicate
       onClose();
     } catch (error) {
       toast.error('Có lỗi xảy ra khi bỏ kiểm kê');
@@ -234,7 +234,7 @@ export default function AssetDetailModal({
   return (
     <>
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] md:max-h-[85vh] flex flex-col p-0 mx-2 md:mx-auto">
+      <DialogContent className="w-[95vw] max-w-md md:max-w-2xl max-h-[80vh] md:max-h-[85vh] flex flex-col p-0">
         {/* Compact Header */}
         <DialogHeader className="px-4 py-3 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
           <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -332,7 +332,7 @@ export default function AssetDetailModal({
         </div>
 
         {/* Compact Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto px-4 py-3">
+        <div className="flex-1 overflow-y-auto px-4 py-3 modal-scrollbar min-h-0">
           <div className="space-y-3">
 
             {/* Technical Details Group */}
@@ -659,7 +659,7 @@ export default function AssetDetailModal({
 
     {/* QR Code Modal */}
     <Dialog open={showQRModal} onOpenChange={setShowQRModal}>
-      <DialogContent className="max-w-3xl max-h-[80vh] md:max-h-[85vh] overflow-y-auto mx-2 md:mx-auto">
+      <DialogContent className="max-w-3xl max-h-[80vh] md:max-h-[85vh] overflow-y-auto mx-2 md:mx-auto modal-scrollbar">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5" />

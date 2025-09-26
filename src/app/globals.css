@@ -68,6 +68,59 @@
     display: none;
   }
 
+  /* Custom scrollbar for modal forms - more visible on mobile */
+  .modal-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #9CA3AF #F3F4F6;
+  }
+
+  .modal-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .modal-scrollbar::-webkit-scrollbar-track {
+    background: #F3F4F6;
+    border-radius: 4px;
+  }
+
+  .modal-scrollbar::-webkit-scrollbar-thumb {
+    background: #9CA3AF;
+    border-radius: 4px;
+    border: 1px solid #E5E7EB;
+  }
+
+  .modal-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #6B7280;
+  }
+
+  /* For mobile - make scrollbar more prominent */
+  @media (max-width: 768px) {
+    .modal-scrollbar::-webkit-scrollbar {
+      width: 14px;
+    }
+
+    .modal-scrollbar::-webkit-scrollbar-track {
+      background: #E5E7EB;
+      border-radius: 7px;
+    }
+
+    .modal-scrollbar::-webkit-scrollbar-thumb {
+      background: #4B5563;
+      border-radius: 7px;
+      border: 2px solid #E5E7EB;
+      box-shadow: inset 0 0 1px rgba(0,0,0,0.1);
+    }
+
+    .modal-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #374151;
+    }
+
+    /* Force scrollbar to always show on mobile */
+    .modal-scrollbar {
+      overflow-y: scroll !important;
+    }
+  }
+
   /* Professional table styling */
   .table-optimized {
     font-variant-numeric: tabular-nums;

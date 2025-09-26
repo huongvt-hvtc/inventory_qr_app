@@ -44,7 +44,8 @@
       "Bash(pnpm:*)",
       "Bash(claude doctor)",
       "Bash(claude --version)",
-      "Bash(openssl:*)"
+      "Bash(openssl:*)",
+      "Bash(open /Users/ngoctmn/Documents/development/inventory-qr-app/create-rainbow-icons.html)"
     ],
     "deny": [],
     "ask": []

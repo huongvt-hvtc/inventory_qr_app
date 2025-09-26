@@ -44,6 +44,18 @@ export default function ScannerPage() {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
+  // Sync recent scans with latest asset data
+  useEffect(() => {
+    if (recentScans.length > 0 && assets.length > 0) {
+      setRecentScans(prevScans =>
+        prevScans.map(scan => {
+          const updatedAsset = assets.find(asset => asset.id === scan.id);
+          return updatedAsset || scan;
+        })
+      );
+    }
+  }, [assets, recentScans.length]);
+
   // Sync with navigation scroll behavior
   useEffect(() => {
     const handleScroll = () => {

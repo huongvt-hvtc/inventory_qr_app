@@ -225,6 +225,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setSupabaseUser(null);
       toast.success('Đã đăng xuất thành công');
+
+      // Redirect to login page
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
       toast.error('Lỗi đăng xuất');
