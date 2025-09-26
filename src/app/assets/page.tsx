@@ -467,12 +467,38 @@ export default function AssetsPage() {
               </button>
             </div>
 
-            {/* Selection Actions on Mobile */}
+            {/* Selection Controls and Actions */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={selectAllAssets}
+                  disabled={loading}
+                  className="h-8 px-3 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-md transition-colors flex items-center gap-1 disabled:opacity-50"
+                >
+                  {selectedAssets.size === filteredAssets.length && filteredAssets.length > 0 ? (
+                    <>
+                      <X className="h-3 w-3" />
+                      Bỏ chọn
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-3 w-3" />
+                      Chọn tất cả
+                    </>
+                  )}
+                </button>
+                
+                {selectedAssets.size > 0 && (
+                  <span className="text-sm font-medium text-gray-600 px-3 py-1 bg-gray-100 rounded-full">
+                    {selectedAssets.size} đã chọn
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Selection Actions */}
             {selectedAssets.size > 0 && (
               <>
-                <div className="text-center">
-                  <span className="text-sm font-medium text-gray-600 px-3 py-1 bg-gray-100 rounded-full">{selectedAssets.size} đã chọn</span>
-                </div>
                 <div className="grid grid-cols-4 gap-1">
                   <button
                     disabled={loading}
@@ -662,13 +688,8 @@ export default function AssetsPage() {
               <thead className="bg-gray-50 border-b-2 border-gray-200 sticky top-0 z-20" style={{ position: 'sticky', top: 0 }}>
                 <tr>
                   {/* Desktop Headers */}
-                  <th className="hidden md:table-cell w-12 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedAssets.size === filteredAssets.length && filteredAssets.length > 0}
-                      onChange={selectAllAssets}
-                      className="w-4 h-4 rounded"
-                    />
+                  <th className="hidden md:table-cell w-12 p-3 text-center text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>
+                    <Eye className="h-4 w-4 mx-auto text-gray-600" />
                   </th>
                   <th className="hidden md:table-cell w-32 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>Mã tài sản</th>
                   <th className="hidden md:table-cell w-56 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>Tên tài sản</th>
@@ -679,13 +700,8 @@ export default function AssetsPage() {
                   <th className="hidden md:table-cell w-28 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50" style={{ backgroundColor: 'rgb(249 250 251)' }}>Tình trạng</th>
 
                   {/* Mobile Headers */}
-                  <th className="md:hidden w-12 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedAssets.size === filteredAssets.length && filteredAssets.length > 0}
-                      onChange={selectAllAssets}
-                      className="w-4 h-4 rounded"
-                    />
+                  <th className="md:hidden w-12 p-3 text-center text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>
+                    <Eye className="h-4 w-4 mx-auto text-gray-600" />
                   </th>
                   <th className="md:hidden w-32 p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-r border-gray-200" style={{ backgroundColor: 'rgb(249 250 251)' }}>Mã TS</th>
                   <th className="md:hidden p-3 text-left text-sm font-semibold text-gray-900 bg-gray-50" style={{ backgroundColor: 'rgb(249 250 251)' }}>Tên tài sản</th>
@@ -698,25 +714,27 @@ export default function AssetsPage() {
                   <tr
                     key={asset.id}
                     onClick={(e) => {
-                      if (!(e.target as HTMLElement).closest('input[type="checkbox"]')) {
-                        handleViewAsset(asset);
+                      // Prevent selection when clicking on the eye icon
+                      if (!(e.target as HTMLElement).closest('.view-button')) {
+                        toggleSelectAsset(asset.id);
                       }
                     }}
                     className={`cursor-pointer hover:bg-gray-50 transition-colors ${
                       selectedAssets.has(asset.id) ? 'bg-blue-50 border-l-4 border-blue-500' : ''
                     }`}
                   >
-                    {/* Desktop Row */}
-                    <td className="hidden md:table-cell p-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedAssets.has(asset.id)}
-                        onChange={(e) => {
+                    {/* Desktop Row - View Button */}
+                    <td className="hidden md:table-cell p-3 text-center">
+                      <button
+                        onClick={(e) => {
                           e.stopPropagation();
-                          toggleSelectAsset(asset.id);
+                          handleViewAsset(asset);
                         }}
-                        className="w-4 h-4 rounded"
-                      />
+                        className="view-button w-8 h-8 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg flex items-center justify-center transition-colors group"
+                        title="Xem chi tiết tài sản"
+                      >
+                        <Eye className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                      </button>
                     </td>
                     <td className="hidden md:table-cell p-3">
                       <div className={`text-sm font-bold break-words ${
@@ -756,17 +774,18 @@ export default function AssetsPage() {
                       </span>
                     </td>
 
-                    {/* Mobile Row */}
-                    <td className="md:hidden p-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedAssets.has(asset.id)}
-                        onChange={(e) => {
+                    {/* Mobile Row - View Button */}
+                    <td className="md:hidden p-3 text-center">
+                      <button
+                        onClick={(e) => {
                           e.stopPropagation();
-                          toggleSelectAsset(asset.id);
+                          handleViewAsset(asset);
                         }}
-                        className="w-4 h-4 rounded"
-                      />
+                        className="view-button w-10 h-10 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-xl flex items-center justify-center transition-colors group"
+                        title="Xem chi tiết tài sản"
+                      >
+                        <Eye className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                      </button>
                     </td>
                     <td className="md:hidden p-3">
                       <div className={`text-sm font-bold ${
