@@ -35,9 +35,9 @@ function enhanceImageData(imageData: ImageData): void {
   // Apply contrast and brightness adjustments
   for (let i = 0; i < data.length; i += 4) {
     // Get RGB values
-    let r = data[i]
-    let g = data[i + 1]
-    let b = data[i + 2]
+    const r = data[i]
+    const g = data[i + 1]
+    const b = data[i + 2]
     
     // Convert to grayscale
     const gray = 0.299 * r + 0.587 * g + 0.114 * b
@@ -82,7 +82,6 @@ export function detectQRWithJsQR(video: HTMLVideoElement): string | null {
 export function getCameraConfig() {
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
   const isMacOS = /Mac OS X/.test(navigator.userAgent)
-  const isWindows = /Windows/.test(navigator.userAgent)
   
   if (isMobile) {
     return {
@@ -103,13 +102,7 @@ export function getCameraConfig() {
         width: { min: 640, ideal: 1280, max: 1920 },
         height: { min: 480, ideal: 720, max: 1080 },
         aspectRatio: { ideal: 1.333 }, // 4:3 for most MacBook cameras
-        frameRate: { ideal: 30, max: 30 },
-        // Advanced settings for better focus
-        advanced: [
-          { focusMode: 'continuous' },
-          { exposureMode: 'continuous' },
-          { whiteBalanceMode: 'continuous' }
-        ]
+        frameRate: { ideal: 30, max: 30 }
       },
       audio: false
     }

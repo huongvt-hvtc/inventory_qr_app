@@ -6,12 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   QrCode,
-  Camera,
-  CameraOff,
   Keyboard,
   XCircle,
-  Search,
-  Loader2
+  Search
 } from 'lucide-react';
 import { useAssets } from '@/hooks/useAssets';
 import EnhancedScanner from '@/components/scanner/EnhancedScanner';
