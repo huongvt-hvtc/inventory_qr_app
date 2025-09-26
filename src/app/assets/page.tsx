@@ -470,8 +470,8 @@ export default function AssetsPage() {
 
   // Get unique departments and statuses for filters from all assets
   const totalAssets = allAssets.length > 0 ? allAssets : assets;
-  const departments = Array.from(new Set(totalAssets.map(a => a.department)));
-  const statuses = Array.from(new Set(totalAssets.map(a => a.status)));
+  const departments = Array.from(new Set(totalAssets.map(a => a.department).filter(dept => dept && dept.trim() !== ''))) as string[];
+  const statuses = Array.from(new Set(totalAssets.map(a => a.status).filter(status => status && status.trim() !== ''))) as string[];
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -991,6 +991,8 @@ export default function AssetsPage() {
         onSave={handleAssetSave}
         onCheck={(assetId, checkedBy) => checkAssets([assetId], checkedBy)}
         onUncheck={(assetId) => uncheckAssets([assetId])}
+        existingDepartments={departments}
+        existingStatuses={statuses}
       />
 
       <QRPrintModal
@@ -1060,15 +1062,15 @@ export default function AssetsPage() {
       {/* Check Confirmation Dialog */}
       {checkConfirm.isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col">
             {/* Header */}
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                  <Check className="h-7 w-7 text-green-600" />
+            <div className="p-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Check className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">
+                  <h3 className="text-lg font-bold text-gray-900">
                     Xác nhận kiểm kê
                   </h3>
                   <p className="text-sm text-gray-600">
@@ -1079,20 +1081,20 @@ export default function AssetsPage() {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-hidden p-6">
+            <div className="flex-1 overflow-hidden p-4">
               {checkConfirm.alreadyChecked.length > 0 && (
-                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center">
-                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center">
+                      <AlertCircle className="h-3 w-3 text-amber-600" />
                     </div>
                     <p className="text-sm font-semibold text-amber-800">
                       {checkConfirm.alreadyChecked.length} tài sản đã được kiểm kê:
                     </p>
                   </div>
-                  <div className="max-h-32 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-amber-300 scrollbar-track-amber-100">
+                  <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-amber-300 scrollbar-track-amber-100">
                     {checkConfirm.alreadyChecked.map(asset => (
-                      <div key={asset.id} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-amber-200">
+                      <div key={asset.id} className="flex items-start gap-3 p-2 bg-white rounded-lg border border-amber-200">
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-amber-900 text-sm break-words">{asset.asset_code}</div>
                           <div className="text-xs text-amber-700 break-words leading-relaxed mt-1">{asset.name}</div>
@@ -1115,11 +1117,11 @@ export default function AssetsPage() {
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-gray-100">
-              <div className="flex gap-3 justify-end">
+            <div className="p-4 border-t border-gray-100">
+              <div className="flex flex-col gap-3">
                 <button
                   onClick={() => setCheckConfirm({ isOpen: false, assets: [], alreadyChecked: [] })}
-                  className="h-11 px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                  className="h-11 px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
                 >
                   Hủy bỏ
                 </button>
@@ -1127,7 +1129,7 @@ export default function AssetsPage() {
                 {checkConfirm.alreadyChecked.length > 0 && (
                   <button
                     onClick={() => executeCheckAssets(true)}
-                    className="h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
+                    className="h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
                   >
                     Chỉ kiểm kê chưa kiểm
                   </button>
@@ -1135,7 +1137,7 @@ export default function AssetsPage() {
 
                 <button
                   onClick={() => executeCheckAssets(false)}
-                  className="h-11 px-6 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
+                  className="h-11 px-6 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
                 >
                   {checkConfirm.alreadyChecked.length > 0 ? 'Kiểm kê lại tất cả' : 'Xác nhận kiểm kê'}
                 </button>

@@ -69,7 +69,9 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
           model: asset.model,
           serial: asset.serial,
           tech_code: asset.tech_code,
-          department: asset.department
+          department: asset.department,
+          status: asset.status,
+          location: asset.location
         });
 
         const qrDataUrl = await generateQRCode(qrContent);
@@ -137,7 +139,8 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
       toast.loading(`Đang chuẩn bị in ${assetCount} mã QR... 50%`, { id: toastId });
     }
 
-    let printStarted = false;
+    let printDialogOpened = false;
+    let userConfirmedPrint = false;
     let cleanupExecuted = false;
 
     const cleanup = () => {
@@ -158,7 +161,7 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
     };
 
     const beforePrintHandler = () => {
-      printStarted = true;
+      printDialogOpened = true;
       // Update progress when print dialog opens
       if (toastId) {
         toast.loading(`Đang in ${assetCount} mã QR... 90%`, { id: toastId });
@@ -166,14 +169,34 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
     };
 
     const afterPrintHandler = () => {
-      // Only show success message if print actually started
-      if (printStarted) {
-        // Dismiss progress toast first
-        if (toastId) {
-          toast.dismiss(toastId);
+      // Use a simple timeout to differentiate between print and cancel
+      // When user actually prints, there's usually a slight delay
+      // When user cancels, the afterprint event fires immediately
+      let hasShownResult = false;
+
+      // Check immediately for cancel (quick close)
+      setTimeout(() => {
+        if (!hasShownResult && printDialogOpened) {
+          // This is likely a cancel - no success message
+          hasShownResult = true;
+          if (toastId) {
+            toast.dismiss(toastId);
+          }
         }
-        toast.success(`✅ Đã gửi ${assetCount} mã QR đến máy in`);
-      }
+      }, 50);
+
+      // Check with delay for actual print
+      setTimeout(() => {
+        if (!hasShownResult && printDialogOpened) {
+          // This suggests actual printing occurred
+          hasShownResult = true;
+          userConfirmedPrint = true;
+          if (toastId) {
+            toast.dismiss(toastId);
+          }
+          toast.success(`✅ Đã gửi ${assetCount} mã QR đến máy in`);
+        }
+      }, 500);
 
       cleanup();
 
@@ -198,7 +221,7 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
 
     // Fallback cleanup in case events don't fire (safety net)
     setTimeout(() => {
-      if (!printStarted) {
+      if (!printDialogOpened) {
         cleanup();
         window.removeEventListener('beforeprint', beforePrintHandler);
         window.removeEventListener('afterprint', afterPrintHandler);
@@ -213,75 +236,65 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
 
     return (
       <Card className="p-6 break-inside-avoid h-full border border-gray-400 shadow-lg bg-white">
-        <div className="flex gap-6 h-full">
-          {/* Left side - QR Code and Asset Code */}
-          <div className="flex flex-col items-center justify-center space-y-4 flex-shrink-0">
-            <div className="bg-gray-50 p-3 rounded-lg border border-gray-300 shadow-sm">
-              <img
-                src={qrDataUrl}
-                alt={`QR Code for ${asset.asset_code}`}
-                className="w-28 h-28"
-              />
-            </div>
-            <div className="px-3 py-2 rounded-lg font-bold text-lg text-center text-blue-700 bg-blue-50 border border-blue-200">
-              {asset.asset_code}
+        <div className="flex flex-col h-full">
+          {/* Asset Name - Full Width Header */}
+          <div className="mb-4 pb-3 border-b-2 border-blue-200">
+            <div className="font-extrabold text-xl text-gray-900 leading-tight break-words">
+              {asset.name}
             </div>
           </div>
 
-          {/* Right side - Asset Information */}
-          <div className="flex-1 flex flex-col justify-start py-2">
-            {/* Asset Name */}
-            <div className="mb-4 pb-3 border-b-2 border-blue-200">
-              <div className="font-extrabold text-xl text-gray-900 leading-tight">
-                {asset.name}
+          {/* Content Row */}
+          <div className="flex gap-6 flex-1">
+            {/* Left side - QR Code and Asset Code */}
+            <div className="flex flex-col items-center justify-center space-y-4 flex-shrink-0">
+              <div className="bg-gray-50 p-3 rounded-lg border border-gray-300 shadow-sm">
+                <img
+                  src={qrDataUrl}
+                  alt={`QR Code for ${asset.asset_code}`}
+                  className="w-28 h-28"
+                />
+              </div>
+              <div className="px-3 py-2 rounded-lg font-bold text-lg text-center text-blue-700 bg-blue-50 border border-blue-200">
+                {asset.asset_code}
               </div>
             </div>
 
-            {/* Asset Details */}
-            <div className="space-y-3 flex-1 text-sm">
-              {asset.model && (
+            {/* Right side - Asset Details */}
+            <div className="flex-1 flex flex-col justify-start py-2">
+              <div className="space-y-3 flex-1 text-sm">
                 <div className="flex items-center py-1">
                   <span className="font-semibold text-gray-600 w-20 text-sm">Model:</span>
-                  <span className="text-gray-900 font-medium text-sm">{asset.model}</span>
+                  <span className="text-gray-900 font-medium text-sm">{asset.model || 'N/A'}</span>
                 </div>
-              )}
 
-              {asset.serial && (
                 <div className="flex items-center py-1">
                   <span className="font-semibold text-gray-600 w-20 text-sm">Serial:</span>
-                  <span className="text-gray-900 font-medium text-sm font-mono">{asset.serial}</span>
+                  <span className="text-gray-900 font-medium text-sm font-mono">{asset.serial || 'N/A'}</span>
                 </div>
-              )}
 
-              {asset.tech_code && (
                 <div className="flex items-center py-1">
                   <span className="font-semibold text-gray-600 w-20 text-sm">Tech Code:</span>
-                  <span className="text-gray-900 font-medium text-sm font-mono">{asset.tech_code}</span>
+                  <span className="text-gray-900 font-medium text-sm font-mono">{asset.tech_code || 'N/A'}</span>
                 </div>
-              )}
 
-              {asset.department && (
                 <div className="flex items-center py-1">
                   <span className="font-semibold text-gray-600 w-20 text-sm">Bộ phận:</span>
-                  <span className="text-blue-700 font-bold text-sm">{asset.department}</span>
+                  <span className="text-gray-900 font-medium text-sm">{asset.department || 'N/A'}</span>
                 </div>
-              )}
 
-              {asset.status && (
                 <div className="flex items-center py-1">
                   <span className="font-semibold text-gray-600 w-20 text-sm">Tình trạng:</span>
-                  <span className="font-semibold text-gray-900 text-sm">
-                    {asset.status}
+                  <span className="text-gray-900 font-medium text-sm">
+                    {asset.status || 'N/A'}
                   </span>
                 </div>
-              )}
 
-              {asset.location && (
                 <div className="flex items-center py-1">
                   <span className="font-semibold text-gray-600 w-20 text-sm">Vị trí:</span>
-                  <span className="text-gray-900 font-medium text-sm">{asset.location}</span>
+                  <span className="text-gray-900 font-medium text-sm">{asset.location || 'N/A'}</span>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -309,50 +322,57 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
             ) : (
               <div className="space-y-6">
                 {/* Print Preview */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium text-gray-900">
-                      Xem trước
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-gray-600 font-medium">
-                        Trang {currentPage}/{totalPages}
-                      </span>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                          disabled={currentPage === 1}
-                        >
-                          Trang trước
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                          disabled={currentPage === totalPages}
-                        >
-                          Trang sau
-                        </Button>
+                <div className="bg-gray-50 rounded-lg">
+                  {/* Sticky Header */}
+                  <div className="sticky top-0 z-10 bg-gray-50 p-4 rounded-t-lg border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium text-gray-900">
+                        Xem trước
+                      </h3>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-600 font-medium">
+                          Trang {currentPage}/{totalPages}
+                        </span>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            Trang trước
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                            disabled={currentPage === totalPages}
+                          >
+                            Trang sau
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* QR Grid - Optimized 2 columns, 4 rows (8 QR codes per page) */}
-                  <div className="grid grid-cols-2 gap-2 auto-rows-fr">
+                  {/* Content Area */}
+                  <div className="p-4 pt-0">
+
+                  {/* QR Grid - Responsive: 1 column on mobile, 2 columns on desktop */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 auto-rows-fr">
                     {Array.from({ length: qrPerPage }, (_, index) => {
                       const qrCodeData = currentQRCodes[index];
                       return qrCodeData ? (
-                        <div key={startIndex + index} className="min-h-[160px]">
+                        <div key={startIndex + index} className="min-h-[200px] md:min-h-[160px]">
                           <QRCodeCard qrCodeData={qrCodeData} />
                         </div>
                       ) : (
-                        <div key={`empty-${index}`} className="min-h-[160px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 text-sm">
+                        <div key={`empty-${index}`} className="min-h-[200px] md:min-h-[160px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 text-sm">
                           Empty Slot {index + 1}
                         </div>
                       );
                     })}
+                  </div>
                   </div>
                 </div>
 
@@ -364,6 +384,7 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
                     <p>• Số trang: {totalPages}</p>
                     <p>• Khổ giấy: A4</p>
                     <p>• Bố cục: 2 cột × 3 hàng (6 mã QR/trang)</p>
+                    <p className="text-xs text-blue-600">• Preview: 1 cột (mobile) / 2 cột (desktop)</p>
                   </div>
                 </div>
               </div>
@@ -417,7 +438,7 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
 
           @page {
             size: A4 portrait;
-            margin: 15mm;
+            margin: 12mm;
           }
 
           @media print {
@@ -430,11 +451,14 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
           .print-container {
             display: grid !important;
             grid-template-columns: 1fr 1fr !important;
-            gap: 3mm !important;
+            grid-template-rows: repeat(3, 1fr) !important;
+            gap: 2mm !important;
             width: 100% !important;
-            max-width: 210mm !important;
+            max-width: 186mm !important;
+            height: 273mm !important;
             margin: 0 auto !important;
             padding: 0 !important;
+            box-sizing: border-box !important;
           }
 
           .print-area {
@@ -448,45 +472,50 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
             page-break-inside: avoid !important;
             border: 2px solid #1f2937 !important;
             background: white !important;
-            padding: 4mm !important;
-            width: 99mm !important;
-            height: 93mm !important;
-            border-radius: 3mm !important;
+            padding: 3mm !important;
+            width: 92mm !important;
+            height: 89mm !important;
+            border-radius: 2mm !important;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
             display: flex !important;
             flex-direction: column !important;
             position: relative !important;
             overflow: hidden !important;
+            box-sizing: border-box !important;
           }
 
           /* Tên tài sản - Title */
           .print-qr-card .asset-name-header {
-            font-size: 13pt !important;
-            font-weight: 800 !important;
+            font-size: 10pt !important;
+            font-weight: 700 !important;
             color: #1f2937 !important;
             text-align: center !important;
-            margin-bottom: 2mm !important;
-            padding: 2mm !important;
+            margin-bottom: 1.5mm !important;
+            padding: 1.5mm !important;
             background: #f8f9fa !important;
             border: 1px solid #d1d5db !important;
-            border-radius: 2mm !important;
+            border-radius: 1.5mm !important;
             line-height: 1.2 !important;
-            max-height: 12mm !important;
+            height: 15mm !important;
             overflow: hidden !important;
             display: -webkit-box !important;
             -webkit-line-clamp: 2 !important;
             -webkit-box-orient: vertical !important;
             white-space: normal !important;
             box-shadow: none !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            box-sizing: border-box !important;
           }
 
           /* Main content area */
           .print-qr-card .asset-content {
             display: flex !important;
-            gap: 5mm !important;
+            gap: 3mm !important;
             flex: 1 !important;
             align-items: flex-start !important;
-            padding-top: 1mm !important;
+            height: calc(89mm - 15mm - 1.5mm - 3mm) !important;
+            overflow: hidden !important;
           }
 
           /* QR Code section */
@@ -494,38 +523,41 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
-            gap: 2mm !important;
-            width: 32mm !important;
+            gap: 1mm !important;
+            width: 28mm !important;
             flex-shrink: 0 !important;
           }
 
           .print-qr-card .qr-code-container {
             background: #f8fafc !important;
-            padding: 2mm !important;
+            padding: 1mm !important;
             border: 1px solid #e2e8f0 !important;
-            border-radius: 2mm !important;
+            border-radius: 1mm !important;
             box-shadow: none !important;
           }
 
           .print-qr-card .qr-code {
-            width: 28mm !important;
-            height: 28mm !important;
+            width: 24mm !important;
+            height: 24mm !important;
             display: block !important;
           }
 
           .print-qr-card .asset-code {
-            font-size: 12pt !important;
-            font-weight: bold !important;
+            font-size: 9pt !important;
+            font-weight: 600 !important;
             color: #2563eb !important;
             background: none !important;
-            padding: 1mm 0 !important;
+            padding: 0.5mm 0 !important;
             border-radius: 0 !important;
             text-align: center !important;
-            min-width: 28mm !important;
-            line-height: 1.2 !important;
+            width: 28mm !important;
+            line-height: 1.1 !important;
             box-shadow: none !important;
-            letter-spacing: 0.3px !important;
+            letter-spacing: 0.2px !important;
             border: none !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
           }
 
           /* Details section */
@@ -534,24 +566,25 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
             display: flex !important;
             flex-direction: column !important;
             justify-content: flex-start !important;
-            gap: 2mm !important;
-            padding: 2mm !important;
+            gap: 1mm !important;
+            padding: 1.5mm !important;
             background: #fafbfc !important;
             border: 1px solid #e5e7eb !important;
-            border-radius: 2mm !important;
+            border-radius: 1mm !important;
             box-shadow: none !important;
-            height: fit-content !important;
             overflow: hidden !important;
+            box-sizing: border-box !important;
           }
 
           .print-qr-card .detail-item {
             display: flex !important;
-            font-size: 10pt !important;
-            line-height: 1.3 !important;
+            line-height: 1.2 !important;
             align-items: flex-start !important;
-            padding: 1mm 0 !important;
+            padding: 0.5mm 0 !important;
             border-bottom: 1px solid #f1f3f4 !important;
             overflow: hidden !important;
+            height: auto !important;
+            max-height: 8mm !important;
           }
 
           .print-qr-card .detail-item:last-child {
@@ -559,32 +592,57 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
           }
 
           .print-qr-card .detail-label {
-            font-weight: 700 !important;
+            font-size: 8pt !important;
+            font-weight: 600 !important;
             color: #374151 !important;
-            width: 18mm !important;
+            width: 15mm !important;
             flex-shrink: 0 !important;
-            font-size: 9pt !important;
           }
 
           .print-qr-card .detail-value {
+            font-size: 8pt !important;
+            font-weight: 400 !important;
             color: #1f2937 !important;
-            font-weight: 500 !important;
-            font-size: 10pt !important;
             word-break: break-word !important;
-            line-height: 1.3 !important;
+            line-height: 1.2 !important;
             overflow-wrap: break-word !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
           }
 
           .print-qr-card .department-value {
+            font-size: 8pt !important;
+            font-weight: 500 !important;
             color: #1d4ed8 !important;
-            font-weight: bold !important;
             background: none !important;
             padding: 0 !important;
             border-radius: 0 !important;
             border: none !important;
-            font-size: 10pt !important;
+            display: inline !important;
+          }
+
+          .print-qr-card .status-value {
+            font-size: 8pt !important;
+            font-weight: 500 !important;
+            color: #059669 !important;
+            background: none !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+            border: none !important;
+            display: inline !important;
+          }
+
+          .print-qr-card .location-value {
+            font-size: 8pt !important;
+            font-weight: 500 !important;
+            color: #7c3aed !important;
+            background: none !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+            border: none !important;
             display: inline !important;
           }
 
@@ -644,12 +702,12 @@ export default function QRPrintModal({ assets, isOpen, onClose }: QRPrintModalPr
 
                       <div className="detail-item">
                         <span className="detail-label">Tình trạng:</span>
-                        <span className="detail-value">{asset.status || 'N/A'}</span>
+                        <span className="detail-value status-value">{asset.status || 'N/A'}</span>
                       </div>
 
                       <div className="detail-item">
                         <span className="detail-label">Vị trí:</span>
-                        <span className="detail-value">{asset.location || 'N/A'}</span>
+                        <span className="detail-value location-value">{asset.location || 'N/A'}</span>
                       </div>
                     </div>
                   </div>

@@ -13,19 +13,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import {
   QrCode,
   Edit,
-  Check,
   X,
   Save,
-  Calendar,
   User,
   Loader2,
   CheckCircle,
@@ -55,27 +46,11 @@ interface AssetDetailModalProps {
   onCheck?: (assetId: string, checkedBy: string) => Promise<void>;
   onUncheck?: (assetId: string) => Promise<void>;
   mode?: 'view' | 'edit' | 'create';
+  existingDepartments?: string[];
+  existingStatuses?: string[];
 }
 
-const statusOptions = [
-  'Đang sử dụng',
-  'Tốt',
-  'Khá',
-  'Cũ',
-  'Hỏng',
-  'Thanh lý',
-  'Mất'
-];
 
-const departmentOptions = [
-  'IT Department',
-  'HR Department',
-  'Finance Department',
-  'Operations Department',
-  'Marketing Department',
-  'Admin Department',
-  'Sales Department'
-];
 
 export default function AssetDetailModal({
   asset,
@@ -84,7 +59,9 @@ export default function AssetDetailModal({
   onSave,
   onCheck,
   onUncheck,
-  mode = 'view'
+  mode = 'view',
+  existingDepartments = [],
+  existingStatuses = []
 }: AssetDetailModalProps) {
   const { user } = useAuth();
   const [editMode, setEditMode] = useState(mode === 'edit' || mode === 'create');
@@ -426,21 +403,22 @@ export default function AssetDetailModal({
                     Bộ phận
                   </label>
                   {editMode ? (
-                    <Select
-                      value={formData.department}
-                      onValueChange={(value) => handleInputChange('department', value)}
-                    >
-                      <SelectTrigger className="h-12 text-sm">
-                        <SelectValue placeholder="Chọn bộ phận" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departmentOptions.map((dept) => (
-                          <SelectItem key={dept} value={dept}>
-                            {dept}
-                          </SelectItem>
+                    <>
+                      <Input
+                        value={formData.department}
+                        onChange={(e) => handleInputChange('department', e.target.value)}
+                        placeholder="Nhập tên bộ phận..."
+                        className="h-12 text-sm"
+                        list="departments-datalist"
+                      />
+                      <datalist id="departments-datalist">
+                        {existingDepartments
+                          .filter(dept => dept && dept.trim() !== '')
+                          .map((dept) => (
+                          <option key={dept} value={dept} />
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </datalist>
+                    </>
                   ) : (
                     <div className="text-sm text-gray-700 break-words">{asset?.department || '-'}</div>
                   )}
@@ -462,21 +440,22 @@ export default function AssetDetailModal({
                     Tình trạng
                   </label>
                   {editMode ? (
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value) => handleInputChange('status', value)}
-                    >
-                      <SelectTrigger className="h-12 text-sm">
-                        <SelectValue placeholder="Chọn tình trạng" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statusOptions.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {status}
-                          </SelectItem>
+                    <>
+                      <Input
+                        value={formData.status}
+                        onChange={(e) => handleInputChange('status', e.target.value)}
+                        placeholder="Nhập tình trạng..."
+                        className="h-12 text-sm"
+                        list="statuses-datalist"
+                      />
+                      <datalist id="statuses-datalist">
+                        {existingStatuses
+                          .filter(status => status && status.trim() !== '')
+                          .map((status) => (
+                          <option key={status} value={status} />
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </datalist>
+                    </>
                   ) : (
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(asset?.status || '')}`}>
                       {asset?.status}
