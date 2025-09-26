@@ -80,9 +80,10 @@ export default function AssetsPage() {
 
   // Handle search and filter changes
   useEffect(() => {
-    // If no search term and no filters, just load all assets
+    // If no search term and no filters, load all assets
     if (!searchTerm && departmentFilter === 'all' && statusFilter === 'all' && inventoryFilter === 'all') {
-      return; // Let the initial load from useAssets handle this
+      loadAssets(true); // Load full list when no filters
+      return;
     }
 
     const filters = {
@@ -96,10 +97,29 @@ export default function AssetsPage() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, departmentFilter, statusFilter, inventoryFilter, searchAssets]);
+  }, [searchTerm, departmentFilter, statusFilter, inventoryFilter, searchAssets, loadAssets]);
 
   // Use assets directly from hook (already filtered)
   const filteredAssets = assets;
+  
+  // Total stats (unfiltered) for dashboard
+  const [totalStats, setTotalStats] = useState({
+    total: 0,
+    checked: 0,
+    unchecked: 0
+  });
+
+  // Update total stats when assets change (from loadAssets, not searchAssets)
+  useEffect(() => {
+    if (!searchTerm && departmentFilter === 'all' && statusFilter === 'all' && inventoryFilter === 'all') {
+      // Only update total stats when showing unfiltered data
+      setTotalStats({
+        total: assets.length,
+        checked: assets.filter(a => a.is_checked).length,
+        unchecked: assets.filter(a => !a.is_checked).length
+      });
+    }
+  }, [assets, searchTerm, departmentFilter, statusFilter, inventoryFilter]);
 
   const toggleSelectAsset = (assetId: string) => {
     const newSelected = new Set(selectedAssets);
@@ -333,11 +353,14 @@ export default function AssetsPage() {
   // Check if any filters are active
   const hasActiveFilters = departmentFilter !== 'all' || statusFilter !== 'all' || inventoryFilter !== 'all';
 
-  // Clear all filters
+  // Clear all filters and reload full assets
   const clearAllFilters = () => {
     setDepartmentFilter('all');
     setStatusFilter('all');
     setInventoryFilter('all');
+    setSearchTerm('');
+    // Reload full assets list
+    loadAssets(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -372,7 +395,7 @@ export default function AssetsPage() {
             {/* Total Assets - Purple */}
             <div className="flex items-center gap-2">
               <span className="text-gray-700 font-semibold text-sm md:text-base">Tổng:</span>
-              <span className="font-bold text-purple-600 text-lg md:text-xl">{loading ? '...' : assets.length}</span>
+              <span className="font-bold text-purple-600 text-lg md:text-xl">{loading ? '...' : totalStats.total}</span>
             </div>
 
             <div className="w-px h-5 bg-gray-300"></div>
@@ -380,7 +403,7 @@ export default function AssetsPage() {
             {/* Checked Assets - Green */}
             <div className="flex items-center gap-2">
               <span className="text-gray-700 font-semibold text-sm md:text-base">Đã kiểm:</span>
-              <span className="font-bold text-green-600 text-lg md:text-xl">{loading ? '...' : assets.filter(a => a.is_checked).length}</span>
+              <span className="font-bold text-green-600 text-lg md:text-xl">{loading ? '...' : totalStats.checked}</span>
             </div>
 
             <div className="w-px h-5 bg-gray-300"></div>
@@ -388,7 +411,7 @@ export default function AssetsPage() {
             {/* Unchecked Assets - Blue */}
             <div className="flex items-center gap-2">
               <span className="text-gray-700 font-semibold text-sm md:text-base">Chưa kiểm:</span>
-              <span className="font-bold text-blue-600 text-lg md:text-xl">{loading ? '...' : assets.filter(a => !a.is_checked).length}</span>
+              <span className="font-bold text-blue-600 text-lg md:text-xl">{loading ? '...' : totalStats.unchecked}</span>
             </div>
             </div>
           </div>
@@ -760,7 +783,7 @@ export default function AssetsPage() {
                     }}
                     className={`cursor-pointer transition-colors ${
                       selectedAssets.has(asset.id) 
-                        ? 'bg-blue-100 border-l-4 border-blue-600 shadow-sm hover:bg-blue-200' 
+                        ? 'bg-yellow-100 border-l-4 border-yellow-600 shadow-sm hover:bg-yellow-200' 
                         : 'hover:bg-gray-50'
                     }`}
                   >
