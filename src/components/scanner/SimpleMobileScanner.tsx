@@ -7,9 +7,10 @@ import toast from 'react-hot-toast'
 
 interface SimpleMobileScannerProps {
   onScanSuccess: (result: string) => void
+  shouldPauseScanning?: boolean // Add prop to control scanning
 }
 
-export default function SimpleMobileScanner({ onScanSuccess }: SimpleMobileScannerProps) {
+export default function SimpleMobileScanner({ onScanSuccess, shouldPauseScanning = false }: SimpleMobileScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isScanning, setIsScanning] = useState(false)
@@ -166,16 +167,16 @@ export default function SimpleMobileScanner({ onScanSuccess }: SimpleMobileScann
     setIsScanning(false)
   }, [stream])
 
-  // Scanning loop
+  // Scanning loop - pause when modal is open
   useEffect(() => {
-    if (!isScanning) return
+    if (!isScanning || shouldPauseScanning) return
 
     const intervalId = setInterval(() => {
       scanQRCode()
     }, 500) // Scan every 500ms
 
     return () => clearInterval(intervalId)
-  }, [isScanning, scanQRCode])
+  }, [isScanning, scanQRCode, shouldPauseScanning])
 
   // Cleanup on unmount - remove dependency to prevent re-runs
   useEffect(() => {
@@ -211,10 +212,17 @@ export default function SimpleMobileScanner({ onScanSuccess }: SimpleMobileScann
             </Button>
           )}
 
-          {isScanning && (
+          {isScanning && !shouldPauseScanning && (
             <div className="flex items-center gap-1 text-green-600">
               <div className="h-2 w-2 bg-green-600 rounded-full animate-ping" />
               <span className="text-xs font-medium">Scanning...</span>
+            </div>
+          )}
+
+          {isScanning && shouldPauseScanning && (
+            <div className="flex items-center gap-1 text-orange-600">
+              <div className="h-2 w-2 bg-orange-600 rounded-full" />
+              <span className="text-xs font-medium">Paused</span>
             </div>
           )}
         </div>

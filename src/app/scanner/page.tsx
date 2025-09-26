@@ -271,17 +271,32 @@ export default function ScannerPage() {
             {/* Left Column: Scanner + Manual Input */}
             <div className="space-y-4">
               {/* QR Scanner */}
-              <Card>
+              <Card className="relative">
                 <CardContent className="p-4">
                   {isMobile ? (
                     <SimpleMobileScanner
                       onScanSuccess={handleQRScanSuccess}
+                      shouldPauseScanning={assetDetailModal.isOpen}
                     />
                   ) : (
                     <EnhancedScanner
                       onScanSuccess={handleQRScanSuccess}
                       onScanError={handleQRScanError}
                     />
+                  )}
+                  
+                  {/* Show pause overlay when modal is open */}
+                  {assetDetailModal.isOpen && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg z-10">
+                      <div className="bg-white rounded-lg p-4 text-center">
+                        <div className="text-orange-600 font-medium mb-2">
+                          Scanner tạm dừng
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Đóng cửa sổ chi tiết để tiếp tục quét
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </CardContent>
               </Card>
