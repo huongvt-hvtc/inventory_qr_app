@@ -14,7 +14,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAssets } from '@/hooks/useAssets';
-import SimpleScanner from '@/components/scanner/SimpleScanner';
+import EnhancedScanner from '@/components/scanner/EnhancedScanner';
 import AssetDetailModal from '@/components/assets/AssetDetailModal';
 import { AssetWithInventoryStatus } from '@/types';
 import toast from 'react-hot-toast';
@@ -259,103 +259,112 @@ export default function ScannerPage() {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <div className="px-6 pt-4 pb-24 md:pb-4 grid grid-cols-1 lg:grid-cols-2 gap-4" data-scroll="true">
-        {/* Simple QR Scanner */}
-        <Card className="lg:col-span-2">
-          <CardContent className="p-4">
-            <SimpleScanner
-              onScanSuccess={handleQRScanSuccess}
-              onScanError={handleQRScanError}
-            />
-          </CardContent>
-        </Card>
+        <div className="px-6 pt-4 pb-24 md:pb-4">
+          {/* Desktop: 2 columns layout, Mobile: stack */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            
+            {/* Left Column: Scanner + Manual Input */}
+            <div className="space-y-4">
+              {/* QR Scanner */}
+              <Card>
+                <CardContent className="p-4">
+                  <EnhancedScanner
+                    onScanSuccess={handleQRScanSuccess}
+                    onScanError={handleQRScanError}
+                  />
+                </CardContent>
+              </Card>
 
-        {/* Manual Input */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2">
-              <Keyboard className="h-5 w-5 text-blue-600" />
-              Nhập mã thủ công
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <form onSubmit={handleManualSubmit} className="space-y-3">
-              <Input
-                type="text"
-                value={manualCode}
-                onChange={(e) => setManualCode(e.target.value)}
-                placeholder="Nhập mã tài sản (VD: IT001, HR001...)"
-                className="bg-white border-blue-200 focus:border-blue-500 focus:ring-blue-500"
-              />
-              <Button
-                type="submit"
-                disabled={!manualCode.trim()}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                <Search className="h-4 w-4 mr-2" />
-                Tìm kiếm tài sản
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Recent Scans */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>
-              Kiểm kê gần đây
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-2">
-              {recentScans.map((scan) => (
-                <div
-                  key={scan.id}
-                  className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => setAssetDetailModal({ isOpen: true, asset: scan, mode: 'view' })}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-gray-900">{scan.asset_code}</span>
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                          scan.is_checked
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {scan.is_checked ? 'Đã kiểm' : 'Chưa kiểm'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 truncate">{scan.name}</p>
-                      <div className="mt-2 text-xs text-gray-500">
-                        <p>Bộ phận: {scan.department}</p>
-                        {scan.is_checked && scan.checked_by && (
-                          <>
-                            <p>Người kiểm: {scan.checked_by}</p>
-                            <p>Thời gian: {scan.checked_at ? formatDate(scan.checked_at) : 'N/A'}</p>
-                          </>
-                        )}
-                        {!scan.is_checked && (
-                          <p className="text-orange-600 font-medium">Chưa được kiểm kê</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {recentScans.length === 0 && (
-                <div className="text-center py-6">
-                  <XCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">Chưa có lần quét nào</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Quét QR code hoặc nhập mã tài sản để bắt đầu
-                  </p>
-                </div>
-              )}
+              {/* Manual Input */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2">
+                    <Keyboard className="h-5 w-5 text-blue-600" />
+                    Nhập mã thủ công
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <form onSubmit={handleManualSubmit} className="space-y-3">
+                    <Input
+                      type="text"
+                      value={manualCode}
+                      onChange={(e) => setManualCode(e.target.value)}
+                      placeholder="Nhập mã tài sản (VD: IT001, HR001...)"
+                      className="bg-white border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={!manualCode.trim()}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      Tìm kiếm tài sản
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Right Column: Recent Scans */}
+            <div className="space-y-4">
+              <Card className="h-full">
+                <CardHeader className="pb-3">
+                  <CardTitle>
+                    Kiểm kê gần đây
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                    {recentScans.map((scan) => (
+                      <div
+                        key={scan.id}
+                        className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => setAssetDetailModal({ isOpen: true, asset: scan, mode: 'view' })}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-gray-900">{scan.asset_code}</span>
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                scan.is_checked
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {scan.is_checked ? 'Đã kiểm' : 'Chưa kiểm'}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 truncate">{scan.name}</p>
+                            <div className="mt-2 text-xs text-gray-500">
+                              <p>Bộ phận: {scan.department}</p>
+                              {scan.is_checked && scan.checked_by && (
+                                <>
+                                  <p>Người kiểm: {scan.checked_by}</p>
+                                  <p>Thời gian: {scan.checked_at ? formatDate(scan.checked_at) : 'N/A'}</p>
+                                </>
+                              )}
+                              {!scan.is_checked && (
+                                <p className="text-orange-600 font-medium">Chưa được kiểm kê</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {recentScans.length === 0 && (
+                      <div className="text-center py-16">
+                        <XCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500 text-sm font-medium">Chưa có lần quét nào</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Quét QR code hoặc nhập mã tài sản để bắt đầu
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
 
