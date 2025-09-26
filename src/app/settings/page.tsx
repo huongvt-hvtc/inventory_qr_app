@@ -35,7 +35,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-4 md:p-6 pb-32 md:pb-6" data-scroll="true">
+      <div className="flex-1 overflow-auto p-4 md:p-6 pb-40 md:pb-6" data-scroll="true">
         <div className="max-w-4xl mx-auto space-y-6">
 
           {/* Account Information */}

@@ -22,8 +22,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // PWA Debug: Check if running in standalone mode
+    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    console.log('🔍 PWA Debug - Running mode:', {
+      isStandalone,
+      userAgent: navigator.userAgent,
+      displayMode: window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
+    });
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔍 PWA Debug - Initial session check:', {
+        hasSession: !!session,
+        userEmail: session?.user?.email,
+        isStandalone
+      });
+
       if (session?.user) {
         setSupabaseUser(session.user);
         loadUserProfile(session.user);
@@ -36,11 +50,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
       console.log('🔄 Auth state changed:', {
         event,
         userEmail: session?.user?.email,
         hasSession: !!session,
-        sessionId: session?.access_token?.substring(0, 20) + '...' || 'none'
+        sessionId: session?.access_token?.substring(0, 20) + '...' || 'none',
+        isStandalone
       });
 
       if (session?.user) {
@@ -49,6 +66,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await loadUserProfile(session.user);
       } else {
         console.log('❌ No session, clearing user state...');
+
+        // Show PWA-specific message for session loss
+        if (event === 'SIGNED_OUT' && isStandalone) {
+          toast('Vui lòng đăng nhập lại trong PWA app', {
+            icon: '🔐',
+            duration: 4000
+          });
+        }
+
         setSupabaseUser(null);
         setUser(null);
         setLoading(false);
@@ -205,12 +231,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshSession = async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) throw error;
+
+      console.log('🔄 Session refreshed successfully');
+      return data.session;
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+      throw error;
+    }
+  };
+
   const value = {
     user,
     supabaseUser,
     loading,
     signInWithGoogle,
-    signOut
+    signOut,
+    refreshSession
   };
 
   return (

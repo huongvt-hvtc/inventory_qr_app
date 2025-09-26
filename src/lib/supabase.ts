@@ -57,18 +57,37 @@ export const db = {
   // Asset management
   async getAssets(): Promise<AssetWithInventoryStatus[]> {
     try {
+      const isStandalone = typeof window !== 'undefined' && (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches);
+      console.log('🔍 PWA Debug - Supabase getAssets called:', {
+        isStandalone,
+        supabaseUrl: supabaseUrl.substring(0, 30) + '...',
+        hasAnonKey: !!supabaseAnonKey
+      });
+
       // Skip the custom function for now and use the reliable fallback query
       // TODO: Fix the custom function's ambiguous column reference issue
       console.log('Using fallback query for assets with inventory status');
 
       // Fallback: Use basic queries
+      console.log('🔍 PWA Debug - Making assets request...', { isStandalone });
       const { data: assets, error: assetsError } = await supabase
         .from('assets')
         .select('*')
         .order('created_at', { ascending: false });
 
+      console.log('🔍 PWA Debug - Assets request result:', {
+        hasData: !!assets,
+        dataLength: assets?.length,
+        hasError: !!assetsError,
+        error: assetsError,
+        isStandalone
+      });
+
       if (assetsError) {
-        console.error('Error fetching assets:', assetsError);
+        console.error('🔍 PWA Debug - Error fetching assets:', {
+          error: assetsError,
+          isStandalone
+        });
         throw assetsError;
       }
 

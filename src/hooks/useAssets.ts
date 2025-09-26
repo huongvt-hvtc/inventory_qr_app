@@ -18,11 +18,28 @@ export function useAssets() {
   const [assets, setAssets] = useState<AssetWithInventoryStatus[]>(() => {
     if (typeof window !== 'undefined') {
       try {
+        const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+        console.log('🔍 PWA Debug - useAssets init:', {
+          isStandalone,
+          windowDefined: typeof window !== 'undefined'
+        });
+
         const cachedData = localStorage.getItem(ASSETS_CACHE_KEY);
         const cacheExpiry = localStorage.getItem(CACHE_EXPIRY_KEY);
 
+        console.log('🔍 PWA Debug - Cache check:', {
+          hasCachedData: !!cachedData,
+          hasCacheExpiry: !!cacheExpiry,
+          isExpired: cacheExpiry ? Date.now() >= parseInt(cacheExpiry) : true,
+          isStandalone
+        });
+
         if (cachedData && cacheExpiry && Date.now() < parseInt(cacheExpiry)) {
           const parsedData = JSON.parse(cachedData);
+          console.log('🔍 PWA Debug - Using cached data:', {
+            assetCount: parsedData.length,
+            isStandalone
+          });
           // Mark as initialized if we have cached data
           setTimeout(() => { isInitialized.current = true; }, 0);
           return parsedData;
@@ -31,6 +48,7 @@ export function useAssets() {
         console.error('Error loading cached assets:', error);
       }
     }
+    console.log('🔍 PWA Debug - No cached data, returning empty array');
     return [];
   });
 
@@ -78,12 +96,23 @@ export function useAssets() {
   };
 
   const loadAssets = async (forceRefresh = false) => {
+    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    console.log('🔍 PWA Debug - loadAssets called:', {
+      forceRefresh,
+      isOnline: navigator.onLine,
+      isStandalone
+    });
+
     // If offline, load from offline storage
     if (!navigator.onLine) {
       try {
         setLoading(true);
         setError(null);
         const offlineData = await offlineStorage.getOfflineAssets();
+        console.log('🔍 PWA Debug - Offline data loaded:', {
+          count: offlineData.length,
+          isStandalone
+        });
         if (offlineData.length > 0) {
           setAssets(offlineData);
           console.log('📴 Loaded assets from offline storage');
@@ -118,14 +147,27 @@ export function useAssets() {
     try {
       setLoading(true);
       setError(null);
+      console.log('🔍 PWA Debug - Fetching assets from database...', { isStandalone });
       const data = await db.getAssets();
+      console.log('🔍 PWA Debug - Assets fetched successfully:', {
+        count: data.length,
+        isStandalone,
+        firstAsset: data[0] ? {
+          id: data[0].id,
+          asset_code: data[0].asset_code,
+          name: data[0].name
+        } : null
+      });
       setAssets(data);
       cacheAssets(data);
 
       // Store assets offline for future offline access
       await offlineStorage.storeAssetsOffline(data);
     } catch (err) {
-      console.error('Error loading assets:', err);
+      console.error('🔍 PWA Debug - Error loading assets:', {
+        error: err,
+        isStandalone
+      });
       setError('Failed to load assets');
       // Fallback to mock data for demo
       setAssets([

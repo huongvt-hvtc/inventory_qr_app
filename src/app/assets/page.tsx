@@ -32,7 +32,17 @@ import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function AssetsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+
+  // PWA Debug: Check authentication and redirect if needed
+  useEffect(() => {
+    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+    if (!authLoading && !user && isStandalone) {
+      console.log('🔍 PWA Debug - No user in standalone mode, redirecting to login');
+      window.location.href = '/';
+    }
+  }, [user, authLoading]);
   const {
     assets,
     loading,
