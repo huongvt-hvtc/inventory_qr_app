@@ -36,7 +36,7 @@ export default function AssetsPage() {
 
   // PWA Debug: Check authentication and redirect if needed
   useEffect(() => {
-    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    const isStandalone = (window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches;
 
     if (!authLoading && !user && isStandalone) {
       console.log('🔍 PWA Debug - No user in standalone mode, redirecting to login');

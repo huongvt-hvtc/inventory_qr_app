@@ -18,7 +18,7 @@ export function useAssets() {
   const [assets, setAssets] = useState<AssetWithInventoryStatus[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+        const isStandalone = (window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches;
         console.log('🔍 PWA Debug - useAssets init:', {
           isStandalone,
           windowDefined: typeof window !== 'undefined'
@@ -96,7 +96,7 @@ export function useAssets() {
   };
 
   const loadAssets = async (forceRefresh = false) => {
-    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    const isStandalone = (window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches;
     console.log('🔍 PWA Debug - loadAssets called:', {
       forceRefresh,
       isOnline: navigator.onLine,

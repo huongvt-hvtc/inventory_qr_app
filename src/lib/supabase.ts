@@ -57,7 +57,7 @@ export const db = {
   // Asset management
   async getAssets(): Promise<AssetWithInventoryStatus[]> {
     try {
-      const isStandalone = typeof window !== 'undefined' && (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches);
+      const isStandalone = typeof window !== 'undefined' && ((window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches);
       console.log('🔍 PWA Debug - Supabase getAssets called:', {
         isStandalone,
         supabaseUrl: supabaseUrl.substring(0, 30) + '...',

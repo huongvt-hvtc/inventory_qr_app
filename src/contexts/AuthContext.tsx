@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // PWA Debug: Check if running in standalone mode
-    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    const isStandalone = (window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches;
     console.log('🔍 PWA Debug - Running mode:', {
       isStandalone,
       userAgent: navigator.userAgent,
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+      const isStandalone = (window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches;
 
       console.log('🔄 Auth state changed:', {
         event,
