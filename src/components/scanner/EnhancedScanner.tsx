@@ -343,7 +343,7 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
         const elementsToHide = container.querySelectorAll('button, select, div:not([id="enhanced-qr-reader__scan_region"]), span')
         elementsToHide.forEach(element => {
           const videoElement = element.querySelector('video')
-          if (!videoElement) {
+          if (!videoElement && element instanceof HTMLElement) {
             element.style.display = 'none'
           }
         })
