@@ -39,7 +39,8 @@ import {
   Building,
   Settings,
   Tag,
-  Cpu
+  Cpu,
+  Copy
 } from 'lucide-react';
 import { AssetWithInventoryStatus } from '@/types';
 import toast from 'react-hot-toast';
@@ -310,8 +311,24 @@ export default function AssetDetailModal({
                   required
                 />
               ) : (
-                <div className={`font-bold text-base ${asset?.is_checked ? 'text-green-600' : 'text-blue-600'}`}>
-                  {asset?.asset_code}
+                <div className="flex items-center gap-2">
+                  <div className={`font-bold text-base ${asset?.is_checked ? 'text-green-600' : 'text-blue-600'}`}>
+                    {asset?.asset_code}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (asset?.asset_code) {
+                        navigator.clipboard.writeText(asset.asset_code);
+                        toast.success('Đã copy mã tài sản!');
+                      }
+                    }}
+                    className="h-8 w-8 p-0 shrink-0"
+                    title="Copy mã tài sản"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
                 </div>
               )}
             </div>
@@ -662,7 +679,7 @@ export default function AssetDetailModal({
 
     {/* QR Code Modal */}
     <Dialog open={showQRModal} onOpenChange={setShowQRModal}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5" />
@@ -670,62 +687,62 @@ export default function AssetDetailModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="p-4 md:p-6">
+        <div className="p-3 md:p-6">
           {qrLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-              <span className="ml-2 text-gray-600">Đang tạo mã QR...</span>
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              <span className="ml-2 text-gray-600 text-sm">Đang tạo mã QR...</span>
             </div>
           ) : qrCodeUrl && asset ? (
-            <div className="bg-white border-2 border-gray-300 rounded-lg p-4 md:p-6">
+            <div className="bg-white border-2 border-gray-300 rounded-lg p-3 md:p-6">
               {/* Mobile Layout: Stacked */}
-              <div className="md:hidden space-y-6">
+              <div className="md:hidden space-y-4">
                 {/* QR Code - Mobile */}
-                <div className="flex flex-col items-center space-y-3">
+                <div className="flex flex-col items-center space-y-2">
                   <img
                     src={qrCodeUrl}
                     alt={`QR Code for ${asset.asset_code}`}
-                    className="w-40 h-40 border-2 border-gray-300 p-2 bg-white"
+                    className="w-32 h-32 border-2 border-gray-300 p-1 bg-white"
                   />
-                  <div className="px-4 py-2 bg-blue-600 text-white font-bold text-lg rounded">
+                  <div className="px-3 py-1.5 bg-blue-600 text-white font-bold text-sm rounded">
                     {asset.asset_code}
                   </div>
                 </div>
 
                 {/* Asset Info - Mobile: Single Column, One Line Per Field */}
-                <div className="space-y-3">
-                  <h3 className="font-bold text-lg mb-3 pb-2 border-b border-gray-300 break-words leading-tight">
+                <div className="space-y-2">
+                  <h3 className="font-bold text-base mb-2 pb-2 border-b border-gray-300 break-words leading-tight">
                     {asset.name}
                   </h3>
 
-                  <div className="space-y-2 text-sm">
-                    <div className="bg-gray-50 p-3 rounded">
-                      <span className="font-semibold text-gray-600 block mb-1">Model:</span>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="bg-gray-50 p-2 rounded">
+                      <span className="font-semibold text-gray-600 block mb-0.5">Model:</span>
                       <p className="text-gray-900 break-words">{asset.model || 'N/A'}</p>
                     </div>
 
-                    <div className="bg-white p-3 rounded border">
-                      <span className="font-semibold text-gray-600 block mb-1">Serial:</span>
+                    <div className="bg-white p-2 rounded border">
+                      <span className="font-semibold text-gray-600 block mb-0.5">Serial:</span>
                       <p className="text-gray-900 font-mono break-words">{asset.serial || 'N/A'}</p>
                     </div>
 
-                    <div className="bg-gray-50 p-3 rounded">
-                      <span className="font-semibold text-gray-600 block mb-1">Tech Code:</span>
+                    <div className="bg-gray-50 p-2 rounded">
+                      <span className="font-semibold text-gray-600 block mb-0.5">Tech Code:</span>
                       <p className="text-gray-900 font-mono break-words">{asset.tech_code || 'N/A'}</p>
                     </div>
 
-                    <div className="bg-white p-3 rounded border">
-                      <span className="font-semibold text-gray-600 block mb-1">Bộ phận:</span>
+                    <div className="bg-white p-2 rounded border">
+                      <span className="font-semibold text-gray-600 block mb-0.5">Bộ phận:</span>
                       <p className="text-gray-900 break-words">{asset.department || 'N/A'}</p>
                     </div>
 
-                    <div className="bg-gray-50 p-3 rounded">
-                      <span className="font-semibold text-gray-600 block mb-1">Tình trạng:</span>
+                    <div className="bg-gray-50 p-2 rounded">
+                      <span className="font-semibold text-gray-600 block mb-0.5">Tình trạng:</span>
                       <p className="text-gray-900 break-words">{asset.status || 'N/A'}</p>
                     </div>
 
-                    <div className="bg-white p-3 rounded border">
-                      <span className="font-semibold text-gray-600 block mb-1">Vị trí:</span>
+                    <div className="bg-white p-2 rounded border">
+                      <span className="font-semibold text-gray-600 block mb-0.5">Vị trí:</span>
                       <p className="text-gray-900 break-words">{asset.location || 'N/A'}</p>
                     </div>
                   </div>
@@ -783,8 +800,8 @@ export default function AssetDetailModal({
           ) : null}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowQRModal(false)} className="h-12 px-6 font-semibold">
+        <DialogFooter className="pt-3">
+          <Button variant="outline" onClick={() => setShowQRModal(false)} className="h-10 md:h-12 px-4 md:px-6 font-semibold w-full md:w-auto">
             Đóng
           </Button>
         </DialogFooter>
