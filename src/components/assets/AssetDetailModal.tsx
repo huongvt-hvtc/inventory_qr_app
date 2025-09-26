@@ -257,7 +257,7 @@ export default function AssetDetailModal({
   return (
     <>
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[95vh] flex flex-col p-0">
+      <DialogContent className="max-w-2xl max-h-[80vh] md:max-h-[85vh] flex flex-col p-0 mx-2 md:mx-auto">
         {/* Compact Header */}
         <DialogHeader className="px-4 py-3 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
           <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -311,8 +311,8 @@ export default function AssetDetailModal({
                   required
                 />
               ) : (
-                <div className="flex items-center gap-2">
-                  <div className={`font-bold text-base ${asset?.is_checked ? 'text-green-600' : 'text-blue-600'}`}>
+                <div className="flex items-start gap-2">
+                  <div className={`font-bold text-base break-words flex-1 min-w-0 ${asset?.is_checked ? 'text-green-600' : 'text-blue-600'}`}>
                     {asset?.asset_code}
                   </div>
                   <Button
@@ -324,7 +324,7 @@ export default function AssetDetailModal({
                         toast.success('Đã copy mã tài sản!');
                       }
                     }}
-                    className="h-8 w-8 p-0 shrink-0"
+                    className="h-8 w-8 p-0 shrink-0 mt-0.5"
                     title="Copy mã tài sản"
                   >
                     <Copy className="h-4 w-4" />
@@ -401,29 +401,57 @@ export default function AssetDetailModal({
                 </div>
               </div>
 
-              {/* Tech Code */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-600 flex items-center gap-1">
-                  <Cpu className="h-3 w-3 text-gray-400" />
-                  Tech Code
-                </label>
-                {editMode ? (
-                  <Input
-                    value={formData.tech_code}
-                    onChange={(e) => handleInputChange('tech_code', e.target.value)}
-                    placeholder="Nhập tech code..."
-                    className="h-12 text-sm"
-                  />
-                ) : (
-                  <div className="text-sm text-gray-700 font-mono break-words">{asset?.tech_code || '-'}</div>
-                )}
+              {/* Tech Code & Department Row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600 flex items-center gap-1">
+                    <Cpu className="h-3 w-3 text-gray-400" />
+                    Tech Code
+                  </label>
+                  {editMode ? (
+                    <Input
+                      value={formData.tech_code}
+                      onChange={(e) => handleInputChange('tech_code', e.target.value)}
+                      placeholder="Nhập tech code..."
+                      className="h-12 text-sm"
+                    />
+                  ) : (
+                    <div className="text-sm text-gray-700 font-mono break-words">{asset?.tech_code || '-'}</div>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600 flex items-center gap-1">
+                    <Building className="h-3 w-3 text-gray-400" />
+                    Bộ phận
+                  </label>
+                  {editMode ? (
+                    <Select
+                      value={formData.department}
+                      onValueChange={(value) => handleInputChange('department', value)}
+                    >
+                      <SelectTrigger className="h-12 text-sm">
+                        <SelectValue placeholder="Chọn bộ phận" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departmentOptions.map((dept) => (
+                          <SelectItem key={dept} value={dept}>
+                            {dept}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="text-sm text-gray-700 break-words">{asset?.department || '-'}</div>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Status & Department Group */}
+            {/* Status & Location Group */}
             <div className="bg-blue-50 rounded-lg p-3 space-y-3">
               <h3 className="text-xs font-semibold text-blue-700 uppercase tracking-wide border-b border-blue-200 pb-1">
-                Trạng thái & Quản lý
+                Trạng thái & Vị trí
               </h3>
 
               <div className="grid grid-cols-2 gap-3">
@@ -456,58 +484,31 @@ export default function AssetDetailModal({
                   )}
                 </div>
 
-                {/* Department */}
+                {/* Location */}
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-600 flex items-center gap-1">
-                    <Building className="h-3 w-3 text-gray-400" />
-                    Bộ phận
+                    <MapPin className="h-3 w-3 text-gray-400" />
+                    Vị trí
                   </label>
                   {editMode ? (
-                    <Select
-                      value={formData.department}
-                      onValueChange={(value) => handleInputChange('department', value)}
-                    >
-                      <SelectTrigger className="h-12 text-sm">
-                        <SelectValue placeholder="Chọn bộ phận" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departmentOptions.map((dept) => (
-                          <SelectItem key={dept} value={dept}>
-                            {dept}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      value={formData.location}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      placeholder="Nhập vị trí..."
+                      className="h-12 text-sm"
+                    />
                   ) : (
-                    <div className="text-sm text-gray-700 break-words">{asset?.department || '-'}</div>
+                    <div className="text-sm text-gray-700 break-words">{asset?.location || '-'}</div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Location & Notes Group */}
+            {/* Notes Group */}
             <div className="bg-green-50 rounded-lg p-3 space-y-3">
               <h3 className="text-xs font-semibold text-green-700 uppercase tracking-wide border-b border-green-200 pb-1">
-                Vị trí & Ghi chú
+                Thông tin khác
               </h3>
-
-              {/* Location */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-600 flex items-center gap-1">
-                  <MapPin className="h-3 w-3 text-gray-400" />
-                  Vị trí
-                </label>
-                {editMode ? (
-                  <Input
-                    value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                    placeholder="Nhập vị trí..."
-                    className="h-12 text-sm"
-                  />
-                ) : (
-                  <div className="text-sm text-gray-700 break-words">{asset?.location || '-'}</div>
-                )}
-              </div>
 
               {/* Notes */}
               <div className="space-y-1">
@@ -679,11 +680,11 @@ export default function AssetDetailModal({
 
     {/* QR Code Modal */}
     <Dialog open={showQRModal} onOpenChange={setShowQRModal}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[80vh] md:max-h-[85vh] overflow-y-auto mx-2 md:mx-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5" />
-            Mã QR - {asset?.asset_code}
+            Mã QR
           </DialogTitle>
         </DialogHeader>
 
@@ -715,35 +716,29 @@ export default function AssetDetailModal({
                     {asset.name}
                   </h3>
 
-                  <div className="space-y-1.5 text-xs">
+                  <div className="space-y-1 text-xs">
                     <div className="bg-gray-50 p-2 rounded">
-                      <span className="font-semibold text-gray-600 block mb-0.5">Model:</span>
-                      <p className="text-gray-900 break-words">{asset.model || 'N/A'}</p>
+                      <span className="font-semibold text-gray-600">Model:</span> <span className="text-gray-900 break-words">{asset.model || 'N/A'}</span>
                     </div>
 
                     <div className="bg-white p-2 rounded border">
-                      <span className="font-semibold text-gray-600 block mb-0.5">Serial:</span>
-                      <p className="text-gray-900 font-mono break-words">{asset.serial || 'N/A'}</p>
+                      <span className="font-semibold text-gray-600">Serial:</span> <span className="text-gray-900 font-mono break-words">{asset.serial || 'N/A'}</span>
                     </div>
 
                     <div className="bg-gray-50 p-2 rounded">
-                      <span className="font-semibold text-gray-600 block mb-0.5">Tech Code:</span>
-                      <p className="text-gray-900 font-mono break-words">{asset.tech_code || 'N/A'}</p>
+                      <span className="font-semibold text-gray-600">Tech Code:</span> <span className="text-gray-900 font-mono break-words">{asset.tech_code || 'N/A'}</span>
                     </div>
 
                     <div className="bg-white p-2 rounded border">
-                      <span className="font-semibold text-gray-600 block mb-0.5">Bộ phận:</span>
-                      <p className="text-gray-900 break-words">{asset.department || 'N/A'}</p>
+                      <span className="font-semibold text-gray-600">Bộ phận:</span> <span className="text-gray-900 break-words">{asset.department || 'N/A'}</span>
                     </div>
 
                     <div className="bg-gray-50 p-2 rounded">
-                      <span className="font-semibold text-gray-600 block mb-0.5">Tình trạng:</span>
-                      <p className="text-gray-900 break-words">{asset.status || 'N/A'}</p>
+                      <span className="font-semibold text-gray-600">Tình trạng:</span> <span className="text-gray-900 break-words">{asset.status || 'N/A'}</span>
                     </div>
 
                     <div className="bg-white p-2 rounded border">
-                      <span className="font-semibold text-gray-600 block mb-0.5">Vị trí:</span>
-                      <p className="text-gray-900 break-words">{asset.location || 'N/A'}</p>
+                      <span className="font-semibold text-gray-600">Vị trí:</span> <span className="text-gray-900 break-words">{asset.location || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
