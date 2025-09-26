@@ -670,16 +670,71 @@ export default function AssetDetailModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           {qrLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
               <span className="ml-2 text-gray-600">Đang tạo mã QR...</span>
             </div>
           ) : qrCodeUrl && asset ? (
-            <div className="bg-white border-2 border-gray-300 rounded-lg p-6">
-              <div className="flex gap-6">
-                {/* QR Code */}
+            <div className="bg-white border-2 border-gray-300 rounded-lg p-4 md:p-6">
+              {/* Mobile Layout: Stacked */}
+              <div className="md:hidden space-y-6">
+                {/* QR Code - Mobile */}
+                <div className="flex flex-col items-center space-y-3">
+                  <img
+                    src={qrCodeUrl}
+                    alt={`QR Code for ${asset.asset_code}`}
+                    className="w-40 h-40 border-2 border-gray-300 p-2 bg-white"
+                  />
+                  <div className="px-4 py-2 bg-blue-600 text-white font-bold text-lg rounded">
+                    {asset.asset_code}
+                  </div>
+                </div>
+
+                {/* Asset Info - Mobile: Single Column, One Line Per Field */}
+                <div className="space-y-3">
+                  <h3 className="font-bold text-lg mb-3 pb-2 border-b border-gray-300 break-words leading-tight">
+                    {asset.name}
+                  </h3>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="bg-gray-50 p-3 rounded">
+                      <span className="font-semibold text-gray-600 block mb-1">Model:</span>
+                      <p className="text-gray-900 break-words">{asset.model || 'N/A'}</p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded border">
+                      <span className="font-semibold text-gray-600 block mb-1">Serial:</span>
+                      <p className="text-gray-900 font-mono break-words">{asset.serial || 'N/A'}</p>
+                    </div>
+
+                    <div className="bg-gray-50 p-3 rounded">
+                      <span className="font-semibold text-gray-600 block mb-1">Tech Code:</span>
+                      <p className="text-gray-900 font-mono break-words">{asset.tech_code || 'N/A'}</p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded border">
+                      <span className="font-semibold text-gray-600 block mb-1">Bộ phận:</span>
+                      <p className="text-gray-900 break-words">{asset.department || 'N/A'}</p>
+                    </div>
+
+                    <div className="bg-gray-50 p-3 rounded">
+                      <span className="font-semibold text-gray-600 block mb-1">Tình trạng:</span>
+                      <p className="text-gray-900 break-words">{asset.status || 'N/A'}</p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded border">
+                      <span className="font-semibold text-gray-600 block mb-1">Vị trí:</span>
+                      <p className="text-gray-900 break-words">{asset.location || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop Layout: Side by Side */}
+              <div className="hidden md:flex gap-6">
+                {/* QR Code - Desktop */}
                 <div className="flex flex-col items-center space-y-3">
                   <img
                     src={qrCodeUrl}
@@ -691,7 +746,7 @@ export default function AssetDetailModal({
                   </div>
                 </div>
 
-                {/* Asset Info */}
+                {/* Asset Info - Desktop */}
                 <div className="flex-1 space-y-2">
                   <h3 className="font-bold text-xl mb-4 pb-2 border-b-2 border-gray-300 break-words leading-tight">
                     {asset.name}
