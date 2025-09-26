@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,11 +12,18 @@ import {
 } from 'lucide-react';
 import { useAssets } from '@/hooks/useAssets';
 import EnhancedScanner from '@/components/scanner/EnhancedScanner';
+import MobileScanner from '@/components/scanner/MobileScanner';
 import AssetDetailModal from '@/components/assets/AssetDetailModal';
 import { AssetWithInventoryStatus } from '@/types';
 import toast from 'react-hot-toast';
 
 export default function ScannerPage() {
+  // Detect if mobile
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+  }, []);
   const {
     assets,
     loading,
@@ -71,7 +78,7 @@ export default function ScannerPage() {
     ) || null;
   };
 
-  const handleQRScanSuccess = (decodedText: string) => {
+  const handleQRScanSuccess = useCallback((decodedText: string) => {
     console.log('📱 QR Scan Result received:', {
       decodedText,
       type: typeof decodedText,
@@ -129,13 +136,13 @@ export default function ScannerPage() {
         return [foundAsset, ...filtered].slice(0, 10); // Keep only last 10 scans
       });
 
-      toast.success(`✅ Đã tìm thấy tài sản: ${foundAsset.asset_code} - ${foundAsset.name}`);
+      // Remove duplicate toast - already shown in scanner component
     } else {
       console.log('❌ Asset not found for code:', assetCode);
       console.log('📋 Available asset codes:', assets.map(a => a.asset_code));
-      toast.error(`❌ Không tìm thấy tài sản với mã: ${assetCode}`);
+      toast.error(`Không tìm thấy tài sản với mã: ${assetCode}`);
     }
-  };
+  }, [assets, recentScans]);
 
   const handleQRScanError = (error: string) => {
     // Don't show error for common scanning issues
@@ -265,10 +272,17 @@ export default function ScannerPage() {
               {/* QR Scanner */}
               <Card>
                 <CardContent className="p-4">
-                  <EnhancedScanner
-                    onScanSuccess={handleQRScanSuccess}
-                    onScanError={handleQRScanError}
-                  />
+                  {isMobile ? (
+                    <MobileScanner
+                      onScanSuccess={handleQRScanSuccess}
+                      onScanError={handleQRScanError}
+                    />
+                  ) : (
+                    <EnhancedScanner
+                      onScanSuccess={handleQRScanSuccess}
+                      onScanError={handleQRScanError}
+                    />
+                  )}
                 </CardContent>
               </Card>
 

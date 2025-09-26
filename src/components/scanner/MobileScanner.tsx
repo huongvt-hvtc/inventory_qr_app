@@ -3,34 +3,43 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { Html5QrcodeScanner, Html5QrcodeScanType, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import { Button } from '@/components/ui/button'
-import { Camera, CameraOff, CheckCircle, AlertCircle, Focus, ZoomIn, ZoomOut, Shield } from 'lucide-react'
-import { getCameraConfig, getOptimalScanSettings, setupAutoFocus } from '@/lib/qr-detection'
+import { Camera, CameraOff, AlertCircle, Shield, Smartphone } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-interface EnhancedScannerProps {
+interface MobileScannerProps {
   onScanSuccess: (result: string) => void
   onScanError?: (error: string) => void
 }
 
 type PermissionState = 'prompt' | 'granted' | 'denied' | 'checking' | null
 
-export default function EnhancedScanner({ onScanSuccess, onScanError }: EnhancedScannerProps) {
+export default function MobileScanner({ onScanSuccess, onScanError }: MobileScannerProps) {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isScanning, setIsScanning] = useState(false)
   const [permissionState, setPermissionState] = useState<PermissionState>('checking')
   const [isRequestingPermission, setIsRequestingPermission] = useState(false)
-  const [lastScannedCode, setLastScannedCode] = useState<string | null>(null)
-  const [zoomLevel, setZoomLevel] = useState(1)
-  const lastScanTimeRef = useRef<number>(0)
-  const SCAN_COOLDOWN = 2000
+  const lastScanRef = useRef<{ code: string; time: number } | null>(null)
+  const toastShownRef = useRef<boolean>(false)
+
+  // Detect platform
+  const getPlatformInfo = useCallback(() => {
+    const userAgent = navigator.userAgent
+    const isIOS = /iPhone|iPad|iPod/i.test(userAgent)
+    const isAndroid = /Android/i.test(userAgent)
+    const isMobile = isIOS || isAndroid
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                  (window.navigator as any).standalone === true
+    
+    return { isIOS, isAndroid, isMobile, isPWA }
+  }, [])
 
   // Check camera permission state
   const checkPermission = useCallback(async () => {
     setPermissionState('checking')
     
     try {
-      // Try to check permission using Permissions API
+      // Try to check permission using Permissions API (not available on iOS)
       if ('permissions' in navigator && 'query' in navigator.permissions) {
         try {
           const result = await navigator.permissions.query({ name: 'camera' as PermissionName })
@@ -49,11 +58,10 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
       
       // Fallback: Try to get user media to check permission
       try {
-        const config = getCameraConfig()
-        const stream = await navigator.mediaDevices.getUserMedia(config)
-        
-        // Setup auto-focus for desktop cameras
-        await setupAutoFocus(stream)
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' },
+          audio: false 
+        })
         
         // Success means permission is granted
         stream.getTracks().forEach(track => track.stop())
@@ -76,111 +84,110 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
     }
   }, [])
 
-  // Handle successful scan
-  const handleScanSuccess = useCallback((decodedText: string) => {
-    const now = Date.now()
-    
-    if (lastScannedCode === decodedText && (now - lastScanTimeRef.current) < SCAN_COOLDOWN) {
-      return
-    }
-    
-    console.log('✅ QR Code detected:', decodedText)
-    
-    setLastScannedCode(decodedText)
-    lastScanTimeRef.current = now
-    
-    // Haptic feedback
-    if ('vibrate' in navigator) {
-      navigator.vibrate(200)
-    }
-    
-    // Visual feedback
-    const scanRegion = document.querySelector('#enhanced-qr-reader__scan_region')
-    if (scanRegion) {
-      scanRegion.classList.add('scan-success')
-      setTimeout(() => scanRegion.classList.remove('scan-success'), 500)
-    }
-    
-    onScanSuccess(decodedText)
-    toast.success('Quét thành công!', { duration: 1500 })
-  }, [onScanSuccess, lastScannedCode])
-
-  // Initialize scanner with optimal settings
+  // Initialize scanner
   const initScanner = useCallback(async () => {
-    if (!containerRef.current || scannerRef.current) return
+    // Clean up any existing scanner
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.clear()
+        scannerRef.current = null
+      } catch (e) {
+        console.warn('Error clearing scanner:', e)
+      }
+    }
+
+    if (!containerRef.current) return
 
     try {
-      const scanSettings = getOptimalScanSettings()
-      const isDesktop = !(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
-      const isMacOS = /Mac OS X/.test(navigator.userAgent)
+      const { isIOS, isMobile } = getPlatformInfo()
       
       const config = {
-        ...scanSettings,
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.QR_CODE,
-          Html5QrcodeSupportedFormats.DATA_MATRIX,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.EAN_13
-        ],
-        verbose: false,
-        // Enhanced qrbox configuration
+        fps: 10,
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
           const minEdge = Math.min(viewfinderWidth, viewfinderHeight)
-          const size = Math.min(
-            isMacOS ? 350 : 300, // Larger scan area for MacOS
-            Math.floor(minEdge * 0.85)
-          )
-          return { width: size, height: size }
+          const qrboxSize = Math.floor(minEdge * 0.7)
+          return { 
+            width: Math.min(250, qrboxSize), 
+            height: Math.min(250, qrboxSize) 
+          }
         },
-        // Additional settings for better detection
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+        aspectRatio: isMobile ? 1.0 : 1.777,
+        showTorchButtonIfSupported: true,
         experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true,
-          // Additional experimental features if available
-          ...((window as any).BarcodeDetector ? { nativeBarCodeDetector: true } : {})
-        }
+          useBarCodeDetectorIfSupported: !isIOS
+        },
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        verbose: false
       }
 
       const scanner = new Html5QrcodeScanner(
-        'enhanced-qr-reader',
-        config as any,
+        'mobile-qr-reader',
+        config,
         false
       )
 
-      scanner.render(
-        handleScanSuccess,
-        (error) => {
-          if (!error.includes('NotFoundException') && 
-              !error.includes('No MultiFormat Readers')) {
-            console.warn('Scan error:', error)
-            
-            // Check if it's a permission error
-            if (error.includes('NotAllowedError') || 
-                error.includes('Permission denied') ||
-                error.includes('Permission dismissed')) {
-              setPermissionState('denied')
-              setIsScanning(false)
-              toast.error('Camera bị từ chối. Vui lòng cấp quyền trong cài đặt.')
-            }
+      // Handle scan success
+      const handleScanSuccess = (decodedText: string) => {
+        const now = Date.now()
+        
+        // Prevent duplicate scans
+        if (lastScanRef.current && 
+            lastScanRef.current.code === decodedText && 
+            (now - lastScanRef.current.time) < 3000) {
+          return
+        }
+        
+        console.log('✅ QR scanned:', decodedText)
+        lastScanRef.current = { code: decodedText, time: now }
+        
+        // Haptic feedback
+        if ('vibrate' in navigator) {
+          navigator.vibrate(200)
+        }
+        
+        // Show single toast
+        if (!toastShownRef.current) {
+          toastShownRef.current = true
+          toast.success('Quét thành công!', { 
+            duration: 2000,
+            id: 'scan-success'
+          })
+          
+          setTimeout(() => {
+            toastShownRef.current = false
+          }, 2000)
+        }
+        
+        onScanSuccess(decodedText)
+      }
+
+      // Handle scan error
+      const handleScanError = (error: string) => {
+        if (!error.includes('NotFoundException') && 
+            !error.includes('No MultiFormat Readers') &&
+            !error.includes('Failed to decode')) {
+          console.warn('Scan error:', error)
+          
+          // Check if it's a permission error
+          if (error.includes('NotAllowedError') || 
+              error.includes('Permission denied') ||
+              error.includes('Permission dismissed')) {
+            setPermissionState('denied')
+            setIsScanning(false)
+            toast.error('Camera bị từ chối. Vui lòng cấp quyền trong cài đặt.')
           }
         }
-      )
+      }
 
+      scanner.render(handleScanSuccess, handleScanError)
       scannerRef.current = scanner
       setIsScanning(true)
       
-      // Show tips for MacOS desktop users only (not iOS)
-      if (isMacOS && isDesktop) {
-        setTimeout(() => {
-          toast('💡 Mẹo: Giữ QR code cách camera 20-30cm và đảm bảo đủ ánh sáng', {
-            duration: 4000,
-            id: 'macbook-tip' // Use ID to prevent duplicate toasts
-          })
-        }, 1000)
-      }
-      
+      console.log('📸 Scanner started successfully')
     } catch (error: any) {
-      console.error('Scanner init error:', error)
+      console.error('Failed to start scanner:', error)
       
       // Check if it's a permission error
       if (error.message?.includes('NotAllowedError') || 
@@ -193,17 +200,21 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
       
       setIsScanning(false)
     }
-  }, [handleScanSuccess])
+  }, [onScanSuccess, getPlatformInfo])
 
   // Stop scanner
-  const stopScanner = useCallback(() => {
+  const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
-      scannerRef.current.clear().catch(console.error)
-      scannerRef.current = null
+      try {
+        await scannerRef.current.clear()
+        scannerRef.current = null
+      } catch (error) {
+        console.error('Error stopping scanner:', error)
+      }
     }
     setIsScanning(false)
-    setZoomLevel(1)
-    setLastScannedCode(null)
+    lastScanRef.current = null
+    toastShownRef.current = false
   }, [])
 
   // Request permission and start scanner
@@ -211,11 +222,11 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
     setIsRequestingPermission(true)
     
     try {
-      const config = getCameraConfig()
-      const stream = await navigator.mediaDevices.getUserMedia(config)
-      
-      // Setup auto-focus for desktop cameras
-      await setupAutoFocus(stream)
+      // Request permission
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' },
+        audio: false
+      })
       
       // Permission granted, stop the test stream
       stream.getTracks().forEach(track => track.stop())
@@ -230,9 +241,21 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
       
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         setPermissionState('denied')
-        toast.error('Vui lòng cấp quyền camera trong cài đặt trình duyệt', {
-          duration: 4000
-        })
+        const { isPWA, isIOS } = getPlatformInfo()
+        
+        if (isPWA && isIOS) {
+          toast.error('Vui lòng mở Safari, cấp quyền camera, sau đó thêm lại vào màn hình chính', {
+            duration: 6000
+          })
+        } else if (isIOS) {
+          toast.error('Vui lòng cấp quyền camera trong Cài đặt > Safari > Camera', {
+            duration: 5000
+          })
+        } else {
+          toast.error('Vui lòng cấp quyền camera trong cài đặt trình duyệt', {
+            duration: 4000
+          })
+        }
       } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
         toast.error('Không tìm thấy camera trên thiết bị này')
       } else {
@@ -241,12 +264,12 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
     } finally {
       setIsRequestingPermission(false)
     }
-  }, [initScanner])
+  }, [initScanner, getPlatformInfo])
 
   // Toggle scanner
   const toggleScanner = useCallback(async () => {
     if (isScanning) {
-      stopScanner()
+      await stopScanner()
     } else {
       // Check permission first
       const permission = await checkPermission()
@@ -256,43 +279,38 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
       } else if (permission === 'prompt') {
         await requestPermissionAndStart()
       } else if (permission === 'denied') {
-        toast.error('Camera bị từ chối. Vui lòng cấp quyền trong cài đặt trình duyệt.', {
-          duration: 4000
-        })
+        const { isPWA, isIOS } = getPlatformInfo()
+        
+        if (isPWA && isIOS) {
+          toast.error('Vui lòng mở Safari, cấp quyền camera, sau đó thêm lại vào màn hình chính', {
+            duration: 6000
+          })
+        } else {
+          toast.error('Camera bị từ chối. Vui lòng cấp quyền trong cài đặt.', {
+            duration: 4000
+          })
+        }
       }
     }
-  }, [isScanning, stopScanner, initScanner, checkPermission, requestPermissionAndStart])
-
-  // Adjust zoom (for desktop cameras)
-  const adjustZoom = useCallback((delta: number) => {
-    const newZoom = Math.max(1, Math.min(3, zoomLevel + delta))
-    setZoomLevel(newZoom)
-    
-    // Apply zoom to video element
-    const video = document.querySelector('#enhanced-qr-reader video') as HTMLVideoElement
-    if (video) {
-      video.style.transform = `scale(${newZoom})`
-    }
-  }, [zoomLevel])
+  }, [isScanning, stopScanner, initScanner, checkPermission, requestPermissionAndStart, getPlatformInfo])
 
   // Check permission on mount
   useEffect(() => {
     checkPermission()
   }, [checkPermission])
 
-  // Cleanup
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopScanner()
     }
   }, [stopScanner])
 
-  const isMacOS = /Mac OS X/.test(navigator.userAgent)
-  const isDesktop = !(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
+  const { isPWA, isIOS } = getPlatformInfo()
 
   return (
     <div className="space-y-4">
-      {/* Controls */}
+      {/* Scanner Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {!isScanning ? (
@@ -322,58 +340,29 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
           )}
 
           {isScanning && (
-            <div className="flex items-center gap-1 text-green-600 animate-pulse">
+            <div className="flex items-center gap-1 text-green-600">
               <div className="h-2 w-2 bg-green-600 rounded-full animate-ping" />
               <span className="text-xs font-medium">Đang quét...</span>
             </div>
           )}
-
-          {/* Zoom controls for desktop */}
-          {isScanning && isDesktop && (
-            <div className="flex items-center gap-1 ml-4">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => adjustZoom(-0.2)}
-                disabled={zoomLevel <= 1}
-                className="h-8 w-8 p-0"
-              >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <span className="text-xs text-gray-600 mx-2">
-                {Math.round(zoomLevel * 100)}%
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => adjustZoom(0.2)}
-                disabled={zoomLevel >= 3}
-                className="h-8 w-8 p-0"
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
         </div>
-
-        {lastScannedCode && (
-          <div className="text-xs text-gray-600">
-            Vừa quét: <span className="font-mono font-semibold">{lastScannedCode}</span>
-          </div>
-        )}
       </div>
 
-      {/* Scanner Area */}
-      <div className="relative bg-gray-100 rounded-lg overflow-hidden shadow-inner" 
-           style={{ 
-             minHeight: isDesktop ? '450px' : '350px',
-             maxHeight: isDesktop ? '550px' : '400px'
-           }}>
-        <div id="enhanced-qr-reader" ref={containerRef} className="w-full" />
+      {/* Scanner Container */}
+      <div 
+        className="relative bg-gray-100 rounded-lg overflow-hidden shadow-inner"
+        style={{ minHeight: '350px' }}
+      >
+        <div 
+          id="mobile-qr-reader" 
+          ref={containerRef} 
+          className="w-full"
+          style={{ minHeight: '350px' }}
+        />
 
         {!isScanning && (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
-            <div className="text-center p-6 max-w-md">
+            <div className="text-center p-6 max-w-sm">
               {permissionState === 'checking' ? (
                 <>
                   <div className="h-16 w-16 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
@@ -391,17 +380,50 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
                     Ứng dụng cần quyền camera để quét mã QR
                   </p>
                   
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg text-left">
-                    <p className="text-xs text-blue-800 font-medium mb-2">
-                      🔧 Cách bật camera trên trình duyệt:
-                    </p>
-                    <ol className="text-xs text-blue-700 space-y-1">
-                      <li>1. Nhấn vào biểu tượng <b>ℹ️</b> hoặc <b>🔒</b> trên thanh địa chỉ</li>
-                      <li>2. Tìm mục <b>Camera</b> trong quyền trang web</li>
-                      <li>3. Chọn <b>Cho phép</b> hoặc <b>Allow</b></li>
-                      <li>4. Tải lại trang (F5) và thử lại</li>
-                    </ol>
-                  </div>
+                  {/* iOS PWA Instructions */}
+                  {isPWA && isIOS && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg text-left">
+                      <p className="text-xs text-blue-800 font-medium mb-2">
+                        📱 Hướng dẫn cho iPhone/iPad:
+                      </p>
+                      <ol className="text-xs text-blue-700 space-y-1">
+                        <li>1. Mở Safari và truy cập trang web này</li>
+                        <li>2. Nhấn "Cho phép" khi được hỏi về camera</li>
+                        <li>3. Nhấn nút chia sẻ và chọn "Thêm vào màn hình chính"</li>
+                        <li>4. Mở lại app từ màn hình chính</li>
+                      </ol>
+                    </div>
+                  )}
+                  
+                  {/* iOS Safari Instructions */}
+                  {!isPWA && isIOS && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg text-left">
+                      <p className="text-xs text-blue-800 font-medium mb-2">
+                        🔧 Cách bật camera trên Safari:
+                      </p>
+                      <ol className="text-xs text-blue-700 space-y-1">
+                        <li>1. Vào <b>Cài đặt</b> &gt; <b>Safari</b></li>
+                        <li>2. Chọn <b>Camera</b></li>
+                        <li>3. Chọn <b>Cho phép</b></li>
+                        <li>4. Tải lại trang và thử lại</li>
+                      </ol>
+                    </div>
+                  )}
+                  
+                  {/* Android Instructions */}
+                  {!isIOS && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg text-left">
+                      <p className="text-xs text-blue-800 font-medium mb-2">
+                        🔧 Cách bật camera:
+                      </p>
+                      <ol className="text-xs text-blue-700 space-y-1">
+                        <li>1. Nhấn vào biểu tượng <b>ℹ️</b> hoặc <b>🔒</b> trên thanh địa chỉ</li>
+                        <li>2. Chọn <b>Quyền trang web</b> hoặc <b>Site settings</b></li>
+                        <li>3. Bật quyền <b>Camera</b></li>
+                        <li>4. Tải lại trang và thử lại</li>
+                      </ol>
+                    </div>
+                  )}
                 </>
               ) : permissionState === 'prompt' ? (
                 <>
@@ -420,29 +442,16 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
                 </>
               ) : (
                 <>
-                  <Camera className="h-16 w-16 text-gray-400 mx-auto mb-3 animate-pulse" />
+                  <Camera className="h-16 w-16 text-gray-400 mx-auto mb-3" />
                   <p className="text-gray-600 font-medium">
                     Sẵn sàng quét mã QR
                   </p>
                   <p className="text-gray-500 text-sm mt-2">
                     Nhấn "Bắt đầu quét" để kích hoạt camera
                   </p>
-                  {isMacOS && (
-                    <p className="text-xs text-gray-500 mt-3">
-                      💡 MacBook camera: Giữ QR code cách 20-30cm
-                    </p>
-                  )}
                 </>
               )}
             </div>
-          </div>
-        )}
-
-        {/* Focus indicator for desktop */}
-        {isScanning && isDesktop && (
-          <div className="absolute top-4 right-4 bg-white/90 rounded-lg px-3 py-2 flex items-center gap-2">
-            <Focus className="h-4 w-4 text-green-600 animate-pulse" />
-            <span className="text-xs text-gray-700">Auto-focus active</span>
           </div>
         )}
       </div>
@@ -485,50 +494,31 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
       </div>
 
       <style jsx global>{`
-        #enhanced-qr-reader {
-          border: none !important;
-        }
-
-        #enhanced-qr-reader__scan_region {
+        #mobile-qr-reader {
           position: relative;
-          border: 3px solid #10b981 !important;
-          border-radius: 16px !important;
-          overflow: hidden;
-          box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.1);
-        }
-
-        #enhanced-qr-reader__scan_region::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
           width: 100%;
-          height: 3px;
-          background: linear-gradient(90deg, transparent, #10b981, transparent);
-          animation: scan-line 2s linear infinite;
+          min-height: 350px;
         }
 
-        @keyframes scan-line {
-          0% { left: -100%; }
-          100% { left: 100%; }
+        #mobile-qr-reader > * {
+          width: 100% !important;
         }
 
-        .scan-success {
-          animation: pulse-success 0.6s ease-out;
+        #mobile-qr-reader__scan_region {
+          border: 2px solid #10b981 !important;
+          border-radius: 8px !important;
+          background: transparent !important;
         }
 
-        @keyframes pulse-success {
-          0%, 100% { 
-            border-color: #10b981;
-            box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.1);
-          }
-          50% { 
-            border-color: #34d399;
-            box-shadow: 0 0 0 15px rgba(16, 185, 129, 0.3);
-          }
+        #mobile-qr-reader__scan_region video {
+          width: 100% !important;
+          height: auto !important;
+          border-radius: 8px !important;
+          object-fit: cover !important;
         }
 
-        #enhanced-qr-reader__dashboard_section_csr {
+        /* Button styling */
+        #mobile-qr-reader__dashboard_section_csr {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
@@ -538,7 +528,7 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
           background: white !important;
         }
 
-        #enhanced-qr-reader__dashboard_section_csr button {
+        #mobile-qr-reader__dashboard_section_csr button {
           background-color: #10b981 !important;
           color: white !important;
           border: none !important;
@@ -548,11 +538,12 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
           font-size: 14px !important;
         }
 
-        #enhanced-qr-reader__dashboard_section_csr button:active {
+        #mobile-qr-reader__dashboard_section_csr button:active {
           background-color: #059669 !important;
         }
 
-        #enhanced-qr-reader__dashboard_section_csr select {
+        /* Camera selection for devices with multiple cameras */
+        #mobile-qr-reader__dashboard_section_csr select {
           padding: 8px 12px !important;
           border: 1px solid #d1d5db !important;
           border-radius: 6px !important;
@@ -560,33 +551,39 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
           background: white !important;
         }
 
-        #enhanced-qr-reader video {
-          border-radius: 12px !important;
-          width: 100% !important;
-          height: auto !important;
-          object-fit: cover !important;
-          transition: transform 0.3s ease;
+        /* Hide unnecessary elements */
+        #mobile-qr-reader__dashboard_section_fsr,
+        #mobile-qr-reader__dashboard_section_swaplink,
+        #mobile-qr-reader__header_message,
+        #mobile-qr-reader__status_span {
+          display: none !important;
         }
 
-        /* Hide all unnecessary UI elements */
-        #enhanced-qr-reader__camera_selection,
-        #enhanced-qr-reader__fileio_input,
-        #enhanced-qr-reader__status_span,
-        #enhanced-qr-reader__header_message,
-        #html5-qrcode-anchor-scan-type-change,
-        #enhanced-qr-reader__dashboard_section_swaplink,
-        #enhanced-qr-reader__dashboard_section_fsr {
-          display: none !important;
+        /* Scan animation */
+        @keyframes scan-animation {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(100%); }
+        }
+
+        #mobile-qr-reader__scan_region::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #10b981, transparent);
+          animation: scan-animation 2s linear infinite;
         }
         
         /* Torch button styling if available */
-        #enhanced-qr-reader button[title*="torch"],
-        #enhanced-qr-reader button[title*="flash"] {
+        #mobile-qr-reader button[title*="torch"],
+        #mobile-qr-reader button[title*="flash"] {
           background-color: #f59e0b !important;
         }
         
-        #enhanced-qr-reader button[title*="torch"]:active,
-        #enhanced-qr-reader button[title*="flash"]:active {
+        #mobile-qr-reader button[title*="torch"]:active,
+        #mobile-qr-reader button[title*="flash"]:active {
           background-color: #d97706 !important;
         }
       `}</style>

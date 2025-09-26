@@ -5,8 +5,12 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
-  "orientation": "portrait-primary",
+  "theme_color": "#10b981",
+  "orientation": "portrait",
+  "scope": "/",
+  "permissions": [
+    "camera"
+  ],
   "icons": [
     {
       "src": "/icon-72.png",
