@@ -220,51 +220,38 @@ export default function MobileScanner({ onScanSuccess, onScanError }: MobileScan
   // Request permission and start scanner
   const requestPermissionAndStart = useCallback(async () => {
     setIsRequestingPermission(true)
-    
+
     try {
       // Request permission
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' },
         audio: false
       })
-      
+
       // Permission granted, stop the test stream
       stream.getTracks().forEach(track => track.stop())
-      
+
       setPermissionState('granted')
-      toast.success('Đã cấp quyền camera!')
-      
+
       // Start scanner
       await initScanner()
     } catch (error: any) {
       console.error('Permission error:', error)
-      
+
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         setPermissionState('denied')
-        const { isPWA, isIOS } = getPlatformInfo()
-        
-        if (isPWA && isIOS) {
-          toast.error('Vui lòng mở Safari, cấp quyền camera, sau đó thêm lại vào màn hình chính', {
-            duration: 6000
-          })
-        } else if (isIOS) {
-          toast.error('Vui lòng cấp quyền camera trong Cài đặt > Safari > Camera', {
-            duration: 5000
-          })
-        } else {
-          toast.error('Vui lòng cấp quyền camera trong cài đặt trình duyệt', {
-            duration: 4000
-          })
-        }
+        toast.error('Camera bị từ chối. Vui lòng cấp quyền trong cài đặt trình duyệt.')
       } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
         toast.error('Không tìm thấy camera trên thiết bị này')
+        setPermissionState('denied')
       } else {
-        toast.error('Không thể truy cập camera. Vui lòng thử lại.')
+        toast.error('Không thể kết nối camera. Vui lòng thử lại.')
+        setPermissionState('prompt')
       }
     } finally {
       setIsRequestingPermission(false)
     }
-  }, [initScanner, getPlatformInfo])
+  }, [initScanner])
 
   // Toggle scanner
   const toggleScanner = useCallback(async () => {
@@ -362,12 +349,12 @@ export default function MobileScanner({ onScanSuccess, onScanError }: MobileScan
 
         {!isScanning && (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
-            <div className="text-center p-6 max-w-sm">
+            <div className="text-center p-6">
               {permissionState === 'checking' ? (
                 <>
                   <div className="h-16 w-16 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
                   <p className="text-gray-600 font-medium">
-                    Đang kiểm tra quyền camera...
+                    Đang kiểm tra camera...
                   </p>
                 </>
               ) : permissionState === 'denied' ? (
@@ -376,120 +363,30 @@ export default function MobileScanner({ onScanSuccess, onScanError }: MobileScan
                   <p className="text-red-700 font-medium mb-2">
                     Camera bị chặn
                   </p>
-                  <p className="text-red-600 text-sm mb-4">
-                    Ứng dụng cần quyền camera để quét mã QR
+                  <p className="text-red-600 text-sm">
+                    Vui lòng cấp quyền camera trong cài đặt trình duyệt
                   </p>
-                  
-                  {/* iOS PWA Instructions */}
-                  {isPWA && isIOS && (
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg text-left">
-                      <p className="text-xs text-blue-800 font-medium mb-2">
-                        📱 Hướng dẫn cho iPhone/iPad:
-                      </p>
-                      <ol className="text-xs text-blue-700 space-y-1">
-                        <li>1. Mở Safari và truy cập trang web này</li>
-                        <li>2. Nhấn "Cho phép" khi được hỏi về camera</li>
-                        <li>3. Nhấn nút chia sẻ và chọn "Thêm vào màn hình chính"</li>
-                        <li>4. Mở lại app từ màn hình chính</li>
-                      </ol>
-                    </div>
-                  )}
-                  
-                  {/* iOS Safari Instructions */}
-                  {!isPWA && isIOS && (
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg text-left">
-                      <p className="text-xs text-blue-800 font-medium mb-2">
-                        🔧 Cách bật camera trên Safari:
-                      </p>
-                      <ol className="text-xs text-blue-700 space-y-1">
-                        <li>1. Vào <b>Cài đặt</b> &gt; <b>Safari</b></li>
-                        <li>2. Chọn <b>Camera</b></li>
-                        <li>3. Chọn <b>Cho phép</b></li>
-                        <li>4. Tải lại trang và thử lại</li>
-                      </ol>
-                    </div>
-                  )}
-                  
-                  {/* Android Instructions */}
-                  {!isIOS && (
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg text-left">
-                      <p className="text-xs text-blue-800 font-medium mb-2">
-                        🔧 Cách bật camera:
-                      </p>
-                      <ol className="text-xs text-blue-700 space-y-1">
-                        <li>1. Nhấn vào biểu tượng <b>ℹ️</b> hoặc <b>🔒</b> trên thanh địa chỉ</li>
-                        <li>2. Chọn <b>Quyền trang web</b> hoặc <b>Site settings</b></li>
-                        <li>3. Bật quyền <b>Camera</b></li>
-                        <li>4. Tải lại trang và thử lại</li>
-                      </ol>
-                    </div>
-                  )}
                 </>
               ) : permissionState === 'prompt' ? (
                 <>
                   <AlertCircle className="h-16 w-16 text-blue-500 mx-auto mb-3" />
                   <p className="text-blue-700 font-medium mb-2">
-                    Cần quyền truy cập camera
+                    Cần quyền camera
                   </p>
-                  <p className="text-blue-600 text-sm mb-4">
-                    Nhấn "Bắt đầu quét" và cho phép camera khi được hỏi
+                  <p className="text-blue-600 text-sm">
+                    Nhấn "Bắt đầu quét" và cho phép khi được hỏi
                   </p>
-                  <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                    <p className="text-xs text-green-700">
-                      💡 Khi thông báo hiện ra, chọn <b>"Cho phép"</b> hoặc <b>"Allow"</b>
-                    </p>
-                  </div>
                 </>
               ) : (
                 <>
                   <Camera className="h-16 w-16 text-gray-400 mx-auto mb-3" />
                   <p className="text-gray-600 font-medium">
-                    Sẵn sàng quét mã QR
-                  </p>
-                  <p className="text-gray-500 text-sm mt-2">
                     Nhấn "Bắt đầu quét" để kích hoạt camera
                   </p>
                 </>
               )}
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Manual Input - Always visible as fallback */}
-      <div className="border-t pt-4">
-        <p className="text-xs text-gray-600 mb-2 font-medium">
-          📝 Nhập mã thủ công nếu không thể quét:
-        </p>
-        <form 
-          onSubmit={(e) => {
-            e.preventDefault()
-            const input = e.currentTarget.querySelector('input') as HTMLInputElement
-            if (input?.value.trim()) {
-              onScanSuccess(input.value.trim())
-              input.value = ''
-              toast.success('Đã nhập mã thành công!')
-            }
-          }}
-          className="flex gap-2"
-        >
-          <input
-            type="text"
-            placeholder="Nhập mã tài sản (VD: IT001, LAP002...)"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            autoComplete="off"
-            autoCapitalize="characters"
-          />
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
-            Xác nhận
-          </Button>
-        </form>
-        
-        {/* Help text for manual input */}
-        {permissionState === 'denied' && (
-          <p className="text-xs text-orange-600 mt-2">
-            ⚠️ Camera không khả dụng - Vui lòng nhập mã thủ công
-          </p>
         )}
       </div>
 

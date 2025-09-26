@@ -209,34 +209,33 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
   // Request permission and start scanner
   const requestPermissionAndStart = useCallback(async () => {
     setIsRequestingPermission(true)
-    
+
     try {
       const config = getCameraConfig()
       const stream = await navigator.mediaDevices.getUserMedia(config)
-      
+
       // Setup auto-focus for desktop cameras
       await setupAutoFocus(stream)
-      
+
       // Permission granted, stop the test stream
       stream.getTracks().forEach(track => track.stop())
-      
+
       setPermissionState('granted')
-      toast.success('Đã cấp quyền camera!')
-      
+
       // Start scanner
       await initScanner()
     } catch (error: any) {
       console.error('Permission error:', error)
-      
+
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         setPermissionState('denied')
-        toast.error('Vui lòng cấp quyền camera trong cài đặt trình duyệt', {
-          duration: 4000
-        })
+        toast.error('Camera bị từ chối. Vui lòng cấp quyền trong cài đặt trình duyệt.')
       } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
         toast.error('Không tìm thấy camera trên thiết bị này')
+        setPermissionState('denied')
       } else {
-        toast.error('Không thể truy cập camera. Vui lòng thử lại.')
+        toast.error('Không thể kết nối camera. Vui lòng thử lại.')
+        setPermissionState('prompt')
       }
     } finally {
       setIsRequestingPermission(false)
@@ -387,36 +386,19 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
                   <p className="text-red-700 font-medium mb-2">
                     Camera bị chặn
                   </p>
-                  <p className="text-red-600 text-sm mb-4">
-                    Ứng dụng cần quyền camera để quét mã QR
+                  <p className="text-red-600 text-sm">
+                    Vui lòng cấp quyền camera trong cài đặt trình duyệt
                   </p>
-                  
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg text-left">
-                    <p className="text-xs text-blue-800 font-medium mb-2">
-                      🔧 Cách bật camera trên trình duyệt:
-                    </p>
-                    <ol className="text-xs text-blue-700 space-y-1">
-                      <li>1. Nhấn vào biểu tượng <b>ℹ️</b> hoặc <b>🔒</b> trên thanh địa chỉ</li>
-                      <li>2. Tìm mục <b>Camera</b> trong quyền trang web</li>
-                      <li>3. Chọn <b>Cho phép</b> hoặc <b>Allow</b></li>
-                      <li>4. Tải lại trang (F5) và thử lại</li>
-                    </ol>
-                  </div>
                 </>
               ) : permissionState === 'prompt' ? (
                 <>
                   <AlertCircle className="h-16 w-16 text-blue-500 mx-auto mb-3" />
                   <p className="text-blue-700 font-medium mb-2">
-                    Cần quyền truy cập camera
+                    Cần quyền camera
                   </p>
-                  <p className="text-blue-600 text-sm mb-4">
-                    Nhấn "Bắt đầu quét" và cho phép camera khi được hỏi
+                  <p className="text-blue-600 text-sm">
+                    Nhấn "Bắt đầu quét" và cho phép khi được hỏi
                   </p>
-                  <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                    <p className="text-xs text-green-700">
-                      💡 Khi thông báo hiện ra, chọn <b>"Cho phép"</b> hoặc <b>"Allow"</b>
-                    </p>
-                  </div>
                 </>
               ) : (
                 <>
@@ -444,43 +426,6 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
             <Focus className="h-4 w-4 text-green-600 animate-pulse" />
             <span className="text-xs text-gray-700">Auto-focus active</span>
           </div>
-        )}
-      </div>
-
-      {/* Manual Input - Always visible as fallback */}
-      <div className="border-t pt-4">
-        <p className="text-xs text-gray-600 mb-2 font-medium">
-          📝 Nhập mã thủ công nếu không thể quét:
-        </p>
-        <form 
-          onSubmit={(e) => {
-            e.preventDefault()
-            const input = e.currentTarget.querySelector('input') as HTMLInputElement
-            if (input?.value.trim()) {
-              onScanSuccess(input.value.trim())
-              input.value = ''
-              toast.success('Đã nhập mã thành công!')
-            }
-          }}
-          className="flex gap-2"
-        >
-          <input
-            type="text"
-            placeholder="Nhập mã tài sản (VD: IT001, LAP002...)"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            autoComplete="off"
-            autoCapitalize="characters"
-          />
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
-            Xác nhận
-          </Button>
-        </form>
-        
-        {/* Help text for manual input */}
-        {permissionState === 'denied' && (
-          <p className="text-xs text-orange-600 mt-2">
-            ⚠️ Camera không khả dụng - Vui lòng nhập mã thủ công
-          </p>
         )}
       </div>
 
