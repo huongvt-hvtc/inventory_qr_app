@@ -18,7 +18,8 @@ import {
   Loader2,
   Filter,
   FilterX,
-  FolderOpen
+  FolderOpen,
+  AlertCircle
 } from 'lucide-react';
 import { useAssets } from '@/hooks/useAssets';
 import { debounce } from '@/lib/utils';
@@ -69,6 +70,13 @@ export default function AssetsPage() {
     assets: []
   });
   const [importModal, setImportModal] = useState(false);
+  const [recheckConfirm, setRecheckConfirm] = useState<{
+    isOpen: boolean;
+    assets: AssetWithInventoryStatus[];
+  }>({
+    isOpen: false,
+    assets: []
+  });
 
   // Handle search and filter changes
   useEffect(() => {
@@ -115,12 +123,43 @@ export default function AssetsPage() {
     if (selectedAssets.size === 0 || !user) return;
 
     try {
+      // Check if any selected assets are already checked
+      const selectedAssetList = Array.from(selectedAssets).map(id => 
+        assets.find(asset => asset.id === id)
+      ).filter(Boolean) as AssetWithInventoryStatus[];
+      
+      const alreadyCheckedAssets = selectedAssetList.filter(asset => asset.is_checked);
+      
+      if (alreadyCheckedAssets.length > 0) {
+        // Show confirmation dialog for re-checking
+        setRecheckConfirm({
+          isOpen: true,
+          assets: alreadyCheckedAssets
+        });
+        return;
+      }
+
       // Use real Gmail user name from AuthContext
       const userName = user.name || user.email || 'Unknown User';
       await checkAssets(Array.from(selectedAssets), userName);
       setSelectedAssets(new Set());
     } catch (error) {
       console.error('Error checking assets:', error);
+    }
+  };
+
+  const handleConfirmRecheck = async () => {
+    if (!user) return;
+
+    try {
+      const userName = user.name || user.email || 'Unknown User';
+      await checkAssets(Array.from(selectedAssets), userName);
+      setSelectedAssets(new Set());
+      setRecheckConfirm({ isOpen: false, assets: [] });
+      toast.success('Đã cập nhật lại kiểm kê cho các tài sản đã chọn');
+    } catch (error) {
+      console.error('Error rechecking assets:', error);
+      toast.error('Có lỗi xảy ra khi kiểm kê lại');
     }
   };
 
@@ -473,7 +512,7 @@ export default function AssetsPage() {
                 <button
                   onClick={selectAllAssets}
                   disabled={loading}
-                  className="h-8 px-3 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-md transition-colors flex items-center gap-1 disabled:opacity-50"
+                  className="h-9 px-4 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
                   {selectedAssets.size === filteredAssets.length && filteredAssets.length > 0 ? (
                     <>
@@ -499,40 +538,40 @@ export default function AssetsPage() {
             {/* Selection Actions */}
             {selectedAssets.size > 0 && (
               <>
-                <div className="grid grid-cols-4 gap-1">
+                <div className="grid grid-cols-4 gap-2">
                   <button
                     disabled={loading}
                     onClick={handleCheckAssets}
-                    className="h-8 px-2 bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                    className="h-9 px-3 bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
-                    <Check className="h-3 w-3" />
+                    <Check className="h-4 w-4" />
                     Check
                   </button>
 
                   <button
                     disabled={loading}
                     onClick={handleUncheckAssets}
-                    className="h-8 px-2 bg-orange-50 border border-orange-200 hover:bg-orange-100 text-orange-700 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                    className="h-9 px-3 bg-orange-50 border border-orange-200 hover:bg-orange-100 text-orange-700 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
                     Uncheck
                   </button>
 
                   <button
                     disabled={loading}
                     onClick={handlePrintQR}
-                    className="h-8 px-2 bg-purple-50 border border-purple-200 hover:bg-purple-100 text-purple-700 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                    className="h-9 px-3 bg-purple-50 border border-purple-200 hover:bg-purple-100 text-purple-700 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
-                    <QrCode className="h-3 w-3" />
-                    QR
+                    <QrCode className="h-4 w-4" />
+                    In QR
                   </button>
 
                   <button
                     disabled={loading}
                     onClick={handleDeleteAssets}
-                    className="h-8 px-2 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                    className="h-9 px-3 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-4 w-4" />
                     Xóa
                   </button>
                 </div>
@@ -627,16 +666,16 @@ export default function AssetsPage() {
                   {hasActiveFilters && (
                     <button
                       onClick={clearAllFilters}
-                      className="h-7 px-2 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-xs font-medium rounded-md transition-colors flex items-center gap-1"
+                      className="h-9 px-4 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-sm font-semibold rounded-lg transition-colors flex items-center gap-2"
                     >
-                      <FilterX className="h-3 w-3" />
+                      <FilterX className="h-4 w-4" />
                       Bỏ lọc
                     </button>
                   )}
 
                   <button
                     onClick={() => setShowFilters(false)}
-                    className="h-7 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors"
+                    className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
                   >
                     Xác nhận
                   </button>
@@ -719,8 +758,10 @@ export default function AssetsPage() {
                         toggleSelectAsset(asset.id);
                       }
                     }}
-                    className={`cursor-pointer hover:bg-gray-50 transition-colors ${
-                      selectedAssets.has(asset.id) ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                    className={`cursor-pointer transition-colors ${
+                      selectedAssets.has(asset.id) 
+                        ? 'bg-blue-100 border-l-4 border-blue-600 shadow-sm hover:bg-blue-200' 
+                        : 'hover:bg-gray-50'
                     }`}
                   >
                     {/* Desktop Row - View Button */}
@@ -841,6 +882,57 @@ export default function AssetsPage() {
         onImport={handleImportAssets}
         existingAssets={assets}
       />
+
+      {/* Recheck Confirmation Dialog */}
+      {recheckConfirm.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                <AlertCircle className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Xác nhận kiểm kê lại
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {recheckConfirm.assets.length} tài sản đã được kiểm kê
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-2 mb-6 max-h-32 overflow-y-auto">
+              {recheckConfirm.assets.map(asset => (
+                <div key={asset.id} className="text-sm bg-gray-50 p-2 rounded">
+                  <span className="font-medium">{asset.asset_code}</span> - {asset.name}
+                  <div className="text-xs text-gray-500">
+                    Đã kiểm: {asset.checked_by} • {asset.checked_at ? new Date(asset.checked_at).toLocaleString('vi-VN') : 'N/A'}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <p className="text-sm text-gray-700 mb-6">
+              Bạn có muốn kiểm kê lại các tài sản này không? Thời gian và người kiểm kê sẽ được cập nhật.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setRecheckConfirm({ isOpen: false, assets: [] })}
+                className="h-9 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleConfirmRecheck}
+                className="h-9 px-4 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg transition-colors"
+              >
+                Kiểm kê lại
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
