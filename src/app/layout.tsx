@@ -68,7 +68,7 @@ export default function RootLayout({
               <Navigation />
 
               {/* Main Content Area */}
-              <main className="md:ml-64 pb-16 md:pb-0 pt-4 md:pt-6">
+              <main className="md:ml-64 pb-24 md:pb-0 pt-4 md:pt-6">
                 {children}
               </main>
 

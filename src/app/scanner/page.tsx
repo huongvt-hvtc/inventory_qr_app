@@ -264,12 +264,12 @@ export default function ScannerPage() {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <div className="px-6 pt-4 pb-24 md:pb-4">
+        <div className="px-6 pt-4 pb-32 md:pb-4">
           {/* Desktop: 2 columns layout, Mobile: stack */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            
+
             {/* Left Column: Scanner + Manual Input */}
-            <div className="space-y-4">
+            <div className="space-y-1">
               {/* QR Scanner */}
               <Card className="relative">
                 <CardContent className="p-4">
@@ -284,7 +284,7 @@ export default function ScannerPage() {
                       onScanError={handleQRScanError}
                     />
                   )}
-                  
+
                   {/* Show pause overlay when modal is open */}
                   {assetDetailModal.isOpen && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg z-10">
@@ -301,16 +301,16 @@ export default function ScannerPage() {
                 </CardContent>
               </Card>
 
-              {/* Manual Input */}
+              {/* Manual Input - Moved closer to scanner */}
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2">
+                <CardHeader className="pb-1">
+                  <CardTitle className="flex items-center gap-2 text-base">
                     <Keyboard className="h-5 w-5 text-blue-600" />
                     Nhập mã thủ công
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <form onSubmit={handleManualSubmit} className="space-y-3">
+                <CardContent className="pt-1">
+                  <form onSubmit={handleManualSubmit} className="space-y-2">
                     <Input
                       type="text"
                       value={manualCode}
@@ -333,14 +333,14 @@ export default function ScannerPage() {
 
             {/* Right Column: Recent Scans */}
             <div className="space-y-4">
-              <Card className="h-full">
+              <Card className="h-[950px] lg:h-[1050px]">
                 <CardHeader className="pb-3">
                   <CardTitle>
                     Kiểm kê gần đây
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                  <div className="space-y-2 max-h-[900px] lg:max-h-[1000px] overflow-y-auto">
                     {recentScans.map((scan) => (
                       <div
                         key={scan.id}
@@ -359,7 +359,7 @@ export default function ScannerPage() {
                                 {scan.is_checked ? 'Đã kiểm' : 'Chưa kiểm'}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-600 truncate">{scan.name}</p>
+                            <p className="text-sm text-gray-600 break-words">{scan.name}</p>
                             <div className="mt-2 text-xs text-gray-500">
                               <p>Bộ phận: {scan.department}</p>
                               {scan.is_checked && scan.checked_by && (

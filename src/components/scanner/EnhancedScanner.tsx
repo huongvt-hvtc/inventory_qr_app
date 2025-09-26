@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import { Button } from '@/components/ui/button'
-import { Camera, CameraOff, AlertCircle, Focus, ZoomIn, ZoomOut, Shield } from 'lucide-react'
+import { Camera, CameraOff, AlertCircle, Focus, ZoomIn, ZoomOut, Shield, RotateCcw } from 'lucide-react'
 import { getCameraConfig, getOptimalScanSettings, setupAutoFocus } from '@/lib/qr-detection'
 import toast from 'react-hot-toast'
 
@@ -22,42 +22,72 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
   const [isRequestingPermission, setIsRequestingPermission] = useState(false)
   const [lastScannedCode, setLastScannedCode] = useState<string | null>(null)
   const [zoomLevel, setZoomLevel] = useState(1)
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([])
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('')
   const lastScanTimeRef = useRef<number>(0)
   const SCAN_COOLDOWN = 2000
 
-  // Check camera permission state
+  // Get available cameras
+  const getAvailableCameras = useCallback(async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter(device => device.kind === 'videoinput')
+      setCameras(videoDevices)
+
+      // Set default camera (prefer back camera on mobile)
+      if (videoDevices.length > 0 && !selectedCameraId) {
+        const backCamera = videoDevices.find(camera =>
+          camera.label.toLowerCase().includes('back') ||
+          camera.label.toLowerCase().includes('rear')
+        ) || videoDevices[0]
+        setSelectedCameraId(backCamera.deviceId)
+      }
+
+      return videoDevices
+    } catch (error) {
+      console.error('Error getting cameras:', error)
+      return []
+    }
+  }, [selectedCameraId])
+
+  // Check camera permission state and get cameras
   const checkPermission = useCallback(async () => {
     setPermissionState('checking')
-    
+
     try {
       // Try to check permission using Permissions API
       if ('permissions' in navigator && 'query' in navigator.permissions) {
         try {
           const result = await navigator.permissions.query({ name: 'camera' as PermissionName })
           setPermissionState(result.state as PermissionState)
-          
+
           // Listen for permission changes
           result.addEventListener('change', () => {
             setPermissionState(result.state as PermissionState)
           })
-          
+
+          if (result.state === 'granted') {
+            await getAvailableCameras()
+          }
+
           return result.state
         } catch {
           // Permissions API not supported for camera
         }
       }
-      
+
       // Fallback: Try to get user media to check permission
       try {
         const config = getCameraConfig()
         const stream = await navigator.mediaDevices.getUserMedia(config)
-        
+
         // Setup auto-focus for desktop cameras
         await setupAutoFocus(stream)
-        
+
         // Success means permission is granted
         stream.getTracks().forEach(track => track.stop())
         setPermissionState('granted')
+        await getAvailableCameras()
         return 'granted'
       } catch (error: any) {
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
@@ -74,7 +104,7 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
       setPermissionState('prompt')
       return 'prompt'
     }
-  }, [])
+  }, [getAvailableCameras])
 
   // Handle successful scan
   const handleScanSuccess = useCallback((decodedText: string) => {
@@ -105,15 +135,15 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
     toast.success('Quét thành công!', { duration: 1500 })
   }, [onScanSuccess, lastScannedCode])
 
-  // Initialize scanner with optimal settings
-  const initScanner = useCallback(async () => {
+  // Initialize scanner with optimal settings and specified camera
+  const initScanner = useCallback(async (cameraId?: string) => {
     if (!containerRef.current || scannerRef.current) return
 
     try {
       const scanSettings = getOptimalScanSettings()
       const isDesktop = !(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
       const isMacOS = /Mac OS X/.test(navigator.userAgent)
-      
+
       const config = {
         ...scanSettings,
         formatsToSupport: [
@@ -133,6 +163,8 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
           )
           return { width: size, height: size }
         },
+        // Specify camera if provided
+        ...(cameraId ? { cameraIdOrConfig: cameraId } : {}),
         // Additional settings for better detection
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true,
@@ -150,12 +182,12 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
       scanner.render(
         handleScanSuccess,
         (error) => {
-          if (!error.includes('NotFoundException') && 
+          if (!error.includes('NotFoundException') &&
               !error.includes('No MultiFormat Readers')) {
             console.warn('Scan error:', error)
-            
+
             // Check if it's a permission error
-            if (error.includes('NotAllowedError') || 
+            if (error.includes('NotAllowedError') ||
                 error.includes('Permission denied') ||
                 error.includes('Permission dismissed')) {
               setPermissionState('denied')
@@ -168,7 +200,7 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
 
       scannerRef.current = scanner
       setIsScanning(true)
-      
+
       // Show tips for MacOS desktop users only (not iOS)
       if (isMacOS && isDesktop) {
         setTimeout(() => {
@@ -178,19 +210,19 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
           })
         }, 1000)
       }
-      
+
     } catch (error: any) {
       console.error('Scanner init error:', error)
-      
+
       // Check if it's a permission error
-      if (error.message?.includes('NotAllowedError') || 
+      if (error.message?.includes('NotAllowedError') ||
           error.message?.includes('Permission denied')) {
         setPermissionState('denied')
         toast.error('Camera bị từ chối. Vui lòng cấp quyền trong cài đặt.')
       } else {
         toast.error('Không thể khởi động camera. Vui lòng thử lại.')
       }
-      
+
       setIsScanning(false)
     }
   }, [handleScanSuccess])
@@ -206,7 +238,7 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
     setLastScannedCode(null)
   }, [])
 
-  // Request permission and start scanner
+  // Request permission and start scanner with auto camera selection
   const requestPermissionAndStart = useCallback(async () => {
     setIsRequestingPermission(true)
 
@@ -222,8 +254,11 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
 
       setPermissionState('granted')
 
-      // Start scanner
-      await initScanner()
+      // Get available cameras and start with default/selected camera
+      await getAvailableCameras()
+
+      // Auto-start scanner with selected camera
+      await initScanner(selectedCameraId || undefined)
     } catch (error: any) {
       console.error('Permission error:', error)
 
@@ -240,18 +275,19 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
     } finally {
       setIsRequestingPermission(false)
     }
-  }, [initScanner])
+  }, [initScanner, getAvailableCameras, selectedCameraId])
 
-  // Toggle scanner
+  // Toggle scanner - auto start with camera selection
   const toggleScanner = useCallback(async () => {
     if (isScanning) {
       stopScanner()
     } else {
       // Check permission first
       const permission = await checkPermission()
-      
+
       if (permission === 'granted') {
-        await initScanner()
+        // Auto-start with selected camera
+        await initScanner(selectedCameraId || undefined)
       } else if (permission === 'prompt') {
         await requestPermissionAndStart()
       } else if (permission === 'denied') {
@@ -260,7 +296,26 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
         })
       }
     }
-  }, [isScanning, stopScanner, initScanner, checkPermission, requestPermissionAndStart])
+  }, [isScanning, stopScanner, initScanner, checkPermission, requestPermissionAndStart, selectedCameraId])
+
+  // Switch camera function
+  const switchCamera = useCallback(async () => {
+    if (cameras.length <= 1) return
+
+    const currentIndex = cameras.findIndex(camera => camera.deviceId === selectedCameraId)
+    const nextIndex = (currentIndex + 1) % cameras.length
+    const nextCamera = cameras[nextIndex]
+
+    setSelectedCameraId(nextCamera.deviceId)
+
+    // If scanning, restart with new camera
+    if (isScanning) {
+      stopScanner()
+      setTimeout(() => {
+        initScanner(nextCamera.deviceId)
+      }, 500) // Small delay to ensure cleanup
+    }
+  }, [cameras, selectedCameraId, isScanning, stopScanner, initScanner])
 
   // Adjust zoom (for desktop cameras)
   const adjustZoom = useCallback((delta: number) => {
@@ -279,6 +334,28 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
     checkPermission()
   }, [checkPermission])
 
+  // Remove all library UI elements - we only want the video stream
+  useEffect(() => {
+    const hideLibraryElements = () => {
+      const container = document.getElementById('enhanced-qr-reader')
+      if (container) {
+        // Hide all UI elements except video
+        const elementsToHide = container.querySelectorAll('button, select, div:not([id="enhanced-qr-reader__scan_region"]), span')
+        elementsToHide.forEach(element => {
+          const videoElement = element.querySelector('video')
+          if (!videoElement) {
+            element.style.display = 'none'
+          }
+        })
+      }
+    }
+
+    hideLibraryElements()
+    const interval = setInterval(hideLibraryElements, 100)
+
+    return () => clearInterval(interval)
+  }, [isScanning])
+
   // Cleanup
   useEffect(() => {
     return () => {
@@ -290,7 +367,7 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
   const isDesktop = !(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-1">
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -299,33 +376,42 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
               onClick={toggleScanner}
               disabled={isRequestingPermission || permissionState === 'checking'}
               className={
-                permissionState === 'denied' 
+                permissionState === 'denied'
                   ? 'bg-orange-600 hover:bg-orange-700 text-white'
                   : 'bg-green-600 hover:bg-green-700 text-white'
               }
             >
               <Camera className="h-4 w-4 mr-2" />
-              {isRequestingPermission ? 'Đang xin quyền...' : 
+              {isRequestingPermission ? 'Đang xin quyền...' :
                permissionState === 'checking' ? 'Đang kiểm tra...' :
-               permissionState === 'denied' ? 'Cài đặt camera' : 
+               permissionState === 'denied' ? 'Cài đặt camera' :
                'Bắt đầu quét'}
             </Button>
           ) : (
-            <Button
-              onClick={stopScanner}
-              variant="destructive"
-            >
-              <CameraOff className="h-4 w-4 mr-2" />
-              Dừng quét
-            </Button>
-          )}
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={stopScanner}
+                variant="destructive"
+              >
+                <CameraOff className="h-4 w-4 mr-2" />
+                Dừng quét
+              </Button>
 
-          {isScanning && (
-            <div className="flex items-center gap-1 text-green-600 animate-pulse">
-              <div className="h-2 w-2 bg-green-600 rounded-full animate-ping" />
-              <span className="text-xs font-medium">Đang quét...</span>
+              {/* Simple camera switch icon button */}
+              {cameras.length > 1 && (
+                <Button
+                  onClick={switchCamera}
+                  variant="outline"
+                  size="sm"
+                  className="h-10 w-10 p-0"
+                  title="Đổi camera"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           )}
+
 
           {/* Zoom controls for desktop */}
           {isScanning && isDesktop && (
@@ -363,15 +449,15 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
       </div>
 
       {/* Scanner Area */}
-      <div className="relative bg-gray-100 rounded-lg overflow-hidden shadow-inner" 
-           style={{ 
+      <div className="relative bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200"
+           style={{
              minHeight: isDesktop ? '450px' : '350px',
              maxHeight: isDesktop ? '550px' : '400px'
            }}>
         <div id="enhanced-qr-reader" ref={containerRef} className="w-full" />
 
         {!isScanning && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
+          <div className="absolute inset-0 flex items-center justify-center bg-white">
             <div className="text-center p-6 max-w-md">
               {permissionState === 'checking' ? (
                 <>
@@ -478,9 +564,12 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
           align-items: center !important;
           justify-content: center !important;
           flex-wrap: wrap !important;
-          gap: 8px !important;
-          padding: 10px !important;
-          background: white !important;
+          gap: 12px !important;
+          padding: 12px !important;
+          background: transparent !important;
+          border-radius: 0 !important;
+          border: none !important;
+          box-shadow: none !important;
         }
 
         #enhanced-qr-reader__dashboard_section_csr button {
@@ -513,14 +602,21 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
           transition: transform 0.3s ease;
         }
 
-        /* Hide all unnecessary UI elements */
+        /* Hide ALL library UI elements - we only want the video stream */
         #enhanced-qr-reader__camera_selection,
         #enhanced-qr-reader__fileio_input,
         #enhanced-qr-reader__status_span,
         #enhanced-qr-reader__header_message,
         #html5-qrcode-anchor-scan-type-change,
         #enhanced-qr-reader__dashboard_section_swaplink,
-        #enhanced-qr-reader__dashboard_section_fsr {
+        #enhanced-qr-reader__dashboard_section_fsr,
+        #enhanced-qr-reader__dashboard_section_csr,
+        #enhanced-qr-reader [id*="stop"],
+        #enhanced-qr-reader [id*="button-camera-stop"],
+        #enhanced-qr-reader [id*="start"],
+        #enhanced-qr-reader [id*="button-camera-start"],
+        #enhanced-qr-reader button,
+        #enhanced-qr-reader select {
           display: none !important;
         }
         

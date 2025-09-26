@@ -331,7 +331,7 @@ export default function AssetDetailModal({
                   required
                 />
               ) : (
-                <div className="font-semibold text-sm text-gray-900 leading-tight">{asset?.name}</div>
+                <div className="font-semibold text-sm text-gray-900 leading-tight break-words">{asset?.name}</div>
               )}
             </div>
           </div>
@@ -362,7 +362,7 @@ export default function AssetDetailModal({
                       className="h-12 text-sm"
                     />
                   ) : (
-                    <div className="text-sm text-gray-700">{asset?.model || '-'}</div>
+                    <div className="text-sm text-gray-700 break-words">{asset?.model || '-'}</div>
                   )}
                 </div>
 
@@ -379,7 +379,7 @@ export default function AssetDetailModal({
                       className="h-12 text-sm"
                     />
                   ) : (
-                    <div className="text-sm text-gray-700 font-mono">{asset?.serial || '-'}</div>
+                    <div className="text-sm text-gray-700 font-mono break-words">{asset?.serial || '-'}</div>
                   )}
                 </div>
               </div>
@@ -398,7 +398,7 @@ export default function AssetDetailModal({
                     className="h-12 text-sm"
                   />
                 ) : (
-                  <div className="text-sm text-gray-700 font-mono">{asset?.tech_code || '-'}</div>
+                  <div className="text-sm text-gray-700 font-mono break-words">{asset?.tech_code || '-'}</div>
                 )}
               </div>
             </div>
@@ -462,7 +462,7 @@ export default function AssetDetailModal({
                       </SelectContent>
                     </Select>
                   ) : (
-                    <div className="text-sm text-gray-700">{asset?.department || '-'}</div>
+                    <div className="text-sm text-gray-700 break-words">{asset?.department || '-'}</div>
                   )}
                 </div>
               </div>
@@ -488,7 +488,7 @@ export default function AssetDetailModal({
                     className="h-12 text-sm"
                   />
                 ) : (
-                  <div className="text-sm text-gray-700">{asset?.location || '-'}</div>
+                  <div className="text-sm text-gray-700 break-words">{asset?.location || '-'}</div>
                 )}
               </div>
 
@@ -507,7 +507,7 @@ export default function AssetDetailModal({
                     className="resize-none text-sm"
                   />
                 ) : (
-                  <div className="text-sm text-gray-700 bg-white p-2 rounded border border-green-200 min-h-[40px]">
+                  <div className="text-sm text-gray-700 bg-white p-2 rounded border border-green-200 min-h-[40px] break-words">
                     {asset?.notes || 'Không có ghi chú'}
                   </div>
                 )}
@@ -693,33 +693,33 @@ export default function AssetDetailModal({
 
                 {/* Asset Info */}
                 <div className="flex-1 space-y-2">
-                  <h3 className="font-bold text-xl mb-4 pb-2 border-b-2 border-gray-300">
+                  <h3 className="font-bold text-xl mb-4 pb-2 border-b-2 border-gray-300 break-words leading-tight">
                     {asset.name}
                   </h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <span className="font-semibold text-gray-600">Model:</span>
-                      <p className="text-gray-900">{asset.model || 'N/A'}</p>
+                      <p className="text-gray-900 break-words">{asset.model || 'N/A'}</p>
                     </div>
                     <div>
                       <span className="font-semibold text-gray-600">Serial:</span>
-                      <p className="text-gray-900 font-mono">{asset.serial || 'N/A'}</p>
+                      <p className="text-gray-900 font-mono break-words">{asset.serial || 'N/A'}</p>
                     </div>
                     <div>
                       <span className="font-semibold text-gray-600">Tech Code:</span>
-                      <p className="text-gray-900 font-mono">{asset.tech_code || 'N/A'}</p>
+                      <p className="text-gray-900 font-mono break-words">{asset.tech_code || 'N/A'}</p>
                     </div>
                     <div>
                       <span className="font-semibold text-gray-600">Bộ phận:</span>
-                      <p className="text-gray-900">{asset.department || 'N/A'}</p>
+                      <p className="text-gray-900 break-words">{asset.department || 'N/A'}</p>
                     </div>
                     <div>
                       <span className="font-semibold text-gray-600">Tình trạng:</span>
-                      <p className="text-gray-900">{asset.status || 'N/A'}</p>
+                      <p className="text-gray-900 break-words">{asset.status || 'N/A'}</p>
                     </div>
                     <div>
                       <span className="font-semibold text-gray-600">Vị trí:</span>
-                      <p className="text-gray-900">{asset.location || 'N/A'}</p>
+                      <p className="text-gray-900 break-words">{asset.location || 'N/A'}</p>
                     </div>
                   </div>
                 </div>

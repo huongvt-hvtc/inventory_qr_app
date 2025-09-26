@@ -203,6 +203,16 @@
   display: none !important;
 }
 
+/* Hide Stop Scanning button from html5-qrcode library */
+button[id*="html5-qrcode-button-camera-stop"],
+button[id*="stop"],
+#enhanced-qr-reader button:contains("Stop Scanning"),
+#enhanced-qr-reader button:contains("Stop"),
+[id*="html5-qrcode"] button:contains("Stop"),
+button:contains("Stop Scanning") {
+  display: none !important;
+}
+
 /* Fix QR box to be square */
 #qr-reader-viewport__scan_region video {
   border-radius: 0 !important;

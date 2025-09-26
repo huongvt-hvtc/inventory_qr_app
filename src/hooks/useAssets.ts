@@ -583,23 +583,35 @@ export function useAssets() {
       realtimeSubscription.current.unsubscribe();
     }
 
-    // Subscribe to assets table changes
+    // Subscribe to assets table changes with debouncing to prevent excessive reloads
+    let debounceTimer: NodeJS.Timeout | null = null;
+
+    const debouncedRefresh = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      debounceTimer = setTimeout(() => {
+        loadAssets(true);
+      }, 1000); // 1 second debounce
+    };
+
     realtimeSubscription.current = supabase
       .channel('assets-changes')
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'assets' },
         (payload) => {
           console.log('Real-time asset change detected:', payload);
-          // Refresh assets when any asset is changed from another device
-          setTimeout(() => loadAssets(true), 500); // Small delay to ensure DB consistency
+          // Only refresh if change is from a different session/device
+          if (payload.eventType !== 'DELETE' || payload.old) {
+            debouncedRefresh();
+          }
         }
       )
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'inventory_records' },
         (payload) => {
           console.log('Real-time inventory change detected:', payload);
-          // Refresh assets when inventory status changes from another device
-          setTimeout(() => loadAssets(true), 500);
+          debouncedRefresh();
         }
       )
       .subscribe();
