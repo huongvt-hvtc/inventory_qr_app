@@ -43,7 +43,8 @@
       "Bash(sudo npm install:*)",
       "Bash(pnpm:*)",
       "Bash(claude doctor)",
-      "Bash(claude --version)"
+      "Bash(claude --version)",
+      "Bash(openssl:*)"
     ],
     "deny": [],
     "ask": []

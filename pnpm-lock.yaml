@@ -93,6 +93,9 @@ importers:
       eslint-config-next:
         specifier: 14.2.32
         version: 14.2.32(eslint@8.57.1)(typescript@5.9.2)
+      https:
+        specifier: ^1.0.0
+        version: 1.0.0
       postcss:
         specifier: ^8
         version: 8.5.6
@@ -2398,6 +2401,9 @@ packages:
 
   html5-qrcode@2.3.8:
     resolution: {integrity: sha512-jsr4vafJhwoLVEDW3n1KvPnCCXWaQfRng0/EEYk1vNcQGcG/htAdhJX0be8YyqMoSz7+hZvOZSTAepsabiuhiQ==}
+
+  https@1.0.0:
+    resolution: {integrity: sha512-4EC57ddXrkaF0x83Oj8sM6SLQHAWXw90Skqu2M4AEWENZ3F02dFJE/GARA8igO79tcgYqGrD7ae4f5L3um2lgg==}
 
   idb@7.1.1:
     resolution: {integrity: sha512-gchesWBzyvGHRO9W8tzUWFDycow5gwjvFKfyV9FF32Y7F50yZMp7mP+T2mJIWFx49zicqyC4uefHM17o6xKIVQ==}
@@ -6430,6 +6436,8 @@ snapshots:
       text-segmentation: 1.0.3
 
   html5-qrcode@2.3.8: {}
+
+  https@1.0.0: {}
 
   idb@7.1.1: {}
 

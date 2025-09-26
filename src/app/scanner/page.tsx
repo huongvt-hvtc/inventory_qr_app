@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import { useAssets } from '@/hooks/useAssets';
 import EnhancedScanner from '@/components/scanner/EnhancedScanner';
-import MobileScanner from '@/components/scanner/MobileScanner';
+
+import SimpleMobileScanner from '@/components/scanner/SimpleMobileScanner';
 import AssetDetailModal from '@/components/assets/AssetDetailModal';
 import { AssetWithInventoryStatus } from '@/types';
 import toast from 'react-hot-toast';
@@ -273,9 +274,8 @@ export default function ScannerPage() {
               <Card>
                 <CardContent className="p-4">
                   {isMobile ? (
-                    <MobileScanner
+                    <SimpleMobileScanner
                       onScanSuccess={handleQRScanSuccess}
-                      onScanError={handleQRScanError}
                     />
                   ) : (
                     <EnhancedScanner

@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { Html5QrcodeScanner, Html5QrcodeScanType, Html5QrcodeSupportedFormats } from 'html5-qrcode'
+import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import { Button } from '@/components/ui/button'
-import { Camera, CameraOff, CheckCircle, AlertCircle, Focus, ZoomIn, ZoomOut, Shield } from 'lucide-react'
+import { Camera, CameraOff, AlertCircle, Focus, ZoomIn, ZoomOut, Shield } from 'lucide-react'
 import { getCameraConfig, getOptimalScanSettings, setupAutoFocus } from '@/lib/qr-detection'
 import toast from 'react-hot-toast'
 
@@ -14,7 +14,7 @@ interface EnhancedScannerProps {
 
 type PermissionState = 'prompt' | 'granted' | 'denied' | 'checking' | null
 
-export default function EnhancedScanner({ onScanSuccess, onScanError }: EnhancedScannerProps) {
+export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps) {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isScanning, setIsScanning] = useState(false)
@@ -42,7 +42,7 @@ export default function EnhancedScanner({ onScanSuccess, onScanError }: Enhanced
           })
           
           return result.state
-        } catch (e) {
+        } catch {
           // Permissions API not supported for camera
         }
       }

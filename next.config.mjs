@@ -22,7 +22,7 @@ const nextConfig = {
   },
 
   // Allow cross-origin requests from local network IPs
-  allowedDevOrigins: ['192.168.1.2', '192.168.2.1'],
+  allowedDevOrigins: ['192.168.1.2', '192.168.2.1', '192.168.31.22'],
 
   // Silence lockfile warning
   outputFileTracingRoot: process.cwd(),
