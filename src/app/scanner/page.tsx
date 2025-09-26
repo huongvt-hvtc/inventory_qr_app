@@ -179,7 +179,7 @@ export default function ScannerPage() {
   const handleAssetCheck = async (assetId: string, checkedBy: string) => {
     try {
       await checkAssets([assetId], checkedBy);
-      toast.success('Đã đánh dấu kiểm kê');
+      // Toast is already handled in useAssets hook - no need to duplicate
 
       // Update recent scans to reflect the change
       setRecentScans(prev =>
@@ -190,14 +190,14 @@ export default function ScannerPage() {
         )
       );
     } catch (error) {
-      toast.error('Có lỗi xảy ra khi kiểm kê');
+      // Error toast is already handled in useAssets hook
     }
   };
 
   const handleAssetUncheck = async (assetId: string) => {
     try {
       await uncheckAssets([assetId]);
-      toast.success('Đã bỏ đánh dấu kiểm kê');
+      // Toast is already handled in useAssets hook - no need to duplicate
 
       // Update recent scans to reflect the change
       setRecentScans(prev =>
@@ -208,7 +208,7 @@ export default function ScannerPage() {
         )
       );
     } catch (error) {
-      toast.error('Có lỗi xảy ra khi bỏ kiểm kê');
+      // Error toast is already handled in useAssets hook
     }
   };
 

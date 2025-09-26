@@ -476,7 +476,9 @@ export function useAssets() {
         toast.dismiss(toastId);
       }
 
-      toast.success(assetIds.length === 1 ? '✅ Đã đánh dấu kiểm kê' : `✅ Đã check ${assetIds.length} tài sản thành công`);
+      toast.success(assetIds.length === 1 ? '✅ Đã đánh dấu kiểm kê' : `✅ Đã check ${assetIds.length} tài sản thành công`, {
+        id: `check-success-${assetIds.join('-')}`
+      });
     } catch (err) {
       // Dismiss progress toast on error
       if (toastId) toast.dismiss(toastId);
@@ -549,7 +551,9 @@ export function useAssets() {
         toast.dismiss(toastId);
       }
 
-      toast.success(assetIds.length === 1 ? '✅ Đã bỏ đánh dấu kiểm kê' : `✅ Đã uncheck ${assetIds.length} tài sản thành công`);
+      toast.success(assetIds.length === 1 ? '✅ Đã bỏ đánh dấu kiểm kê' : `✅ Đã uncheck ${assetIds.length} tài sản thành công`, {
+        id: `uncheck-success-${assetIds.join('-')}`
+      });
     } catch (err) {
       // Dismiss progress toast on error
       if (toastId) toast.dismiss(toastId);

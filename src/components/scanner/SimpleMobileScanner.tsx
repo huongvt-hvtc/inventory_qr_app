@@ -48,7 +48,7 @@ export default function SimpleMobileScanner({ onScanSuccess, shouldPauseScanning
       if (code) {
         console.log('QR Code found:', code.data)
         onScanSuccess(code.data)
-        toast.success('QR Code detected!', { duration: 1500 })
+        // Toast will be shown by parent component when asset is found/not found
       }
     } catch (error) {
       console.error('QR detection error:', error)
