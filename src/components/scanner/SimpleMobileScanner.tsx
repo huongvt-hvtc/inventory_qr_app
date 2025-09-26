@@ -117,9 +117,14 @@ export default function SimpleMobileScanner({ onScanSuccess }: SimpleMobileScann
 
         videoRef.current.onerror = (e) => {
           console.error('Video error:', e)
-          const video = e.target as HTMLVideoElement
-          setError(`Video error: ${video.error?.code} - ${video.error?.message}`)
-          setDebugInfo(`Video error: code ${video.error?.code}, message: ${video.error?.message}`)
+          const video = videoRef.current
+          if (video && video.error) {
+            setError(`Video error: ${video.error.code} - ${video.error.message}`)
+            setDebugInfo(`Video error: code ${video.error.code}, message: ${video.error.message}`)
+          } else {
+            setError('Video playback error')
+            setDebugInfo('Video playback failed')
+          }
         }
       }
 
