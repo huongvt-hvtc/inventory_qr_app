@@ -196,10 +196,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
+
+      // Determine redirect URL based on current path
+      const currentPath = window.location.pathname;
+      const redirectTo = currentPath.startsWith('/admin')
+        ? `${window.location.origin}/admin`
+        : `${window.location.origin}/assets`;
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/assets`,
+          redirectTo,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
