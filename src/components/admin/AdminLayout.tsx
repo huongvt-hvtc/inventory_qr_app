@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
 import LoginPage from '@/components/auth/LoginPage';
@@ -8,19 +8,28 @@ import {
   Shield,
   LogOut,
   User,
-  Building,
   Key,
-  Users
+  BookOpen,
+  Menu,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface AdminLayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+export default function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutProps) {
   const { user, signOut, loading } = useAuth();
   const { isAdmin } = useAdminAccess();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const tabs = [
+    { id: 'licenses', name: 'License Keys', icon: Key },
+    { id: 'guide', name: 'Hướng dẫn Admin', icon: BookOpen },
+  ];
 
   // Show loading spinner while checking authentication
   if (loading) {
@@ -141,31 +150,79 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </header>
 
-      {/* Navigation Tabs */}
+      {/* Navigation */}
       <nav className="bg-white border-b border-gray-200">
         <div className="px-4">
-          <div className="flex space-x-8">
-            <a
-              href="#licenses"
-              className="py-4 px-1 border-b-2 border-blue-500 text-blue-600 font-medium text-sm"
-            >
-              <Key className="h-4 w-4 inline mr-2" />
-              License Keys
-            </a>
-            <a
-              href="#companies"
-              className="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm"
-            >
-              <Building className="h-4 w-4 inline mr-2" />
-              Công ty
-            </a>
-            <a
-              href="#users"
-              className="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm"
-            >
-              <Users className="h-4 w-4 inline mr-2" />
-              Người dùng
-            </a>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex space-x-8">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id)}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    isActive
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Icon className="h-4 w-4 inline mr-2" />
+                  {tab.name}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Mobile Navigation */}
+          <div className="md:hidden">
+            <div className="flex items-center justify-between py-4">
+              <div className="flex items-center gap-2">
+                {tabs.find(tab => tab.id === activeTab) && (
+                  <>
+                    {React.createElement(tabs.find(tab => tab.id === activeTab)!.icon, { className: "h-4 w-4" })}
+                    <span className="font-medium text-gray-900">
+                      {tabs.find(tab => tab.id === activeTab)!.name}
+                    </span>
+                  </>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              </Button>
+            </div>
+
+            {/* Mobile Menu */}
+            {mobileMenuOpen && (
+              <div className="border-t border-gray-200 py-2">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        onTabChange(tab.id);
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {tab.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </nav>

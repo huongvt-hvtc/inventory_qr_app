@@ -22,6 +22,10 @@ export interface LicenseKey {
   valid_until: string;
   status: 'active' | 'expired' | 'suspended';
 
+  // Pricing
+  price?: number;
+  notes?: string;
+
   // Features
   features: Record<string, any>;
 
@@ -110,18 +114,18 @@ export interface PlanLimits {
 
 export const SUBSCRIPTION_PLANS: Record<string, PlanLimits> = {
   basic: {
-    max_companies: 1,
-    max_users: 10,
-    max_assets: 1000,
-    features: ['Basic support', 'Standard features'],
+    max_companies: 3,
+    max_users: 50,
+    max_assets: 5000,
+    features: ['Basic support', 'Standard features', 'QR code generation', 'Asset tracking'],
     price_vnd: 5000000,
     price_display: '5,000,000 VNĐ/năm'
   },
   pro: {
-    max_companies: 3,
-    max_users: 50,
-    max_assets: 5000,
-    features: ['Priority support', 'Excel export', 'API access', 'Advanced reporting'],
+    max_companies: 10,
+    max_users: 200,
+    max_assets: 20000,
+    features: ['Priority support', 'Excel export', 'API access', 'Advanced reporting', 'Custom fields', 'Bulk operations'],
     price_vnd: 12000000,
     price_display: '12,000,000 VNĐ/năm'
   },
@@ -129,7 +133,7 @@ export const SUBSCRIPTION_PLANS: Record<string, PlanLimits> = {
     max_companies: 999,
     max_users: 999,
     max_assets: 99999,
-    features: ['24/7 support', 'Custom features', 'White-label', 'Dedicated manager'],
+    features: ['24/7 support', 'Custom features', 'White-label', 'Dedicated manager', 'Custom integrations', 'Advanced analytics'],
     price_vnd: 25000000,
     price_display: '25,000,000 VNĐ/năm'
   }
