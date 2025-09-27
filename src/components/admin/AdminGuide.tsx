@@ -11,6 +11,7 @@ import {
   Shield,
   AlertCircle,
   CheckCircle,
+  XCircle,
   Download,
   Copy,
   Search,
