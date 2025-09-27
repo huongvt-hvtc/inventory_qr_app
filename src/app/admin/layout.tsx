@@ -1,11 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard - Quản lý Subscription',
   description: 'Quản lý license keys, công ty và người dùng',
   manifest: '/admin-manifest.json',
-  themeColor: '#2563eb',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
   icons: {
     icon: '/admin-icon-192.png',
     apple: '/admin-icon-192.png',
@@ -15,6 +13,14 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Admin Dashboard',
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#2563eb',
 };
 
 export default function AdminLayout({

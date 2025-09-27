@@ -34,6 +34,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             Đang kiểm tra quyền truy cập...
           </h2>
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-xs text-gray-500 mt-4">
+            Nếu màn hình này hiện quá lâu, vui lòng kiểm tra console hoặc tải lại trang
+          </p>
         </div>
       </div>
     );

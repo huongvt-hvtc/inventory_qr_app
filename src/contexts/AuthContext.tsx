@@ -30,8 +30,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       displayMode: window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
     });
 
+    // Safety timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      console.warn('⚠️ Auth loading timeout - forcing loading to false');
+      setLoading(false);
+    }, 10000); // 10 second timeout
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(loadingTimeout);
       console.log('🔍 PWA Debug - Initial session check:', {
         hasSession: !!session,
         userEmail: session?.user?.email,
@@ -44,6 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setLoading(false);
       }
+    }).catch((error) => {
+      clearTimeout(loadingTimeout);
+      console.error('❌ Error getting initial session:', error);
+      setLoading(false);
     });
 
     // Listen for auth changes
