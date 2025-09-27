@@ -29,8 +29,8 @@ export default function AdminLayout({ children, activeTab, onTabChange }: AdminL
   const loading = authLoading || adminLoading;
 
   const tabs = [
-    { id: 'licenses', name: 'License Keys', icon: Key },
-    { id: 'guide', name: 'Hướng dẫn Admin', icon: BookOpen },
+    { id: 'licenses', name: 'Licenses', icon: Key },
+    { id: 'guide', name: 'Hướng dẫn', icon: BookOpen },
   ];
 
   // Show loading spinner while checking authentication
@@ -60,21 +60,32 @@ export default function AdminLayout({ children, activeTab, onTabChange }: AdminL
   // Force login if not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <div className="flex items-center justify-center min-h-screen p-4">
           <div className="w-full max-w-md">
+            {/* App Branding */}
             <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <div className="bg-blue-600 p-3 rounded-2xl">
-                  <Shield className="h-8 w-8 text-white" />
+              <div className="flex justify-center mb-6">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-3xl shadow-lg">
+                  <Shield className="h-10 w-10 text-white" />
                 </div>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Admin Dashboard
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Inventory QR
               </h1>
-              <p className="text-gray-600">
-                Đăng nhập để truy cập trang quản trị
-              </p>
+              <div className="bg-white rounded-2xl shadow-sm border p-6 mb-4">
+                <div className="flex items-center justify-center mb-3">
+                  <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                    <Shield className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    Admin Dashboard
+                  </h2>
+                </div>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Đăng nhập để truy cập trang quản trị
+                </p>
+              </div>
             </div>
             <LoginPage />
           </div>
@@ -111,40 +122,48 @@ export default function AdminLayout({ children, activeTab, onTabChange }: AdminL
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       {/* Admin Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="px-4 py-4">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-blue-600 p-2 rounded-lg">
+            {/* App Branding & Admin Title */}
+            <div className="flex items-center gap-4">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 rounded-2xl shadow-lg">
                 <Shield className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
-                  Admin Dashboard
+                  Inventory QR
                 </h1>
                 <p className="text-sm text-gray-600">
-                  Quản lý subscription & người dùng
+                  Admin Dashboard
                 </p>
               </div>
             </div>
 
             {/* User Info & Logout */}
-            <div className="flex items-center gap-3">
-              <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-white rounded-xl border shadow-sm">
                 {user.picture ? (
                   <img
                     src={user.picture}
                     alt={user.name}
-                    className="h-6 w-6 rounded-full"
+                    className="h-8 w-8 rounded-full border-2 border-blue-100"
                   />
                 ) : (
-                  <User className="h-5 w-5 text-gray-600" />
+                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <User className="h-4 w-4 text-blue-600" />
+                  </div>
                 )}
-                <span className="text-sm font-medium text-gray-700">
-                  {user.name}
-                </span>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {user.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {user.email}
+                  </p>
+                </div>
               </div>
               <Button
                 onClick={signOut}
@@ -160,85 +179,33 @@ export default function AdminLayout({ children, activeTab, onTabChange }: AdminL
         </div>
       </header>
 
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="px-4">
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-8">
+      {/* Navigation Tabs */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center gap-1 overflow-x-auto py-3">
             {tabs.map((tab) => {
               const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    isActive
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                 >
-                  <Icon className="h-4 w-4 inline mr-2" />
+                  <Icon className="h-4 w-4" />
                   {tab.name}
                 </button>
               );
             })}
           </div>
-
-          {/* Mobile Navigation */}
-          <div className="md:hidden">
-            <div className="flex items-center justify-between py-4">
-              <div className="flex items-center gap-2">
-                {tabs.find(tab => tab.id === activeTab) && (
-                  <>
-                    {React.createElement(tabs.find(tab => tab.id === activeTab)!.icon, { className: "h-4 w-4" })}
-                    <span className="font-medium text-gray-900">
-                      {tabs.find(tab => tab.id === activeTab)!.name}
-                    </span>
-                  </>
-                )}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-              </Button>
-            </div>
-
-            {/* Mobile Menu */}
-            {mobileMenuOpen && (
-              <div className="border-t border-gray-200 py-2">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => {
-                        onTabChange(tab.id);
-                        setMobileMenuOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {tab.name}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
         </div>
-      </nav>
+      </div>
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main className="max-w-7xl mx-auto p-6">
         {children}
       </main>
     </div>
