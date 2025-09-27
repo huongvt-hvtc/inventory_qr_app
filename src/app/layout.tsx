@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
-import { Navigation } from "@/components/layout/Navigation";
+import ConditionalLayout from "@/components/layout/ConditionalLayout";
 import PWAInstallPrompt from "@/components/layout/PWAInstallPrompt";
 import { OfflineStatusIndicator } from "@/components/offline/OfflineStatusIndicator";
 import { Toaster } from "react-hot-toast";
@@ -73,12 +73,9 @@ export default function RootLayout({
             <SupabasePingProvider />
 
             <div className="min-h-screen">
-              <Navigation />
-
-              {/* Main Content Area */}
-              <main className="md:ml-64 pb-24 md:pb-0 pt-4 md:pt-6">
+              <ConditionalLayout>
                 {children}
-              </main>
+              </ConditionalLayout>
 
               {/* Offline Status Indicator */}
               <OfflineStatusIndicator />
