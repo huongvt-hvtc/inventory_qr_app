@@ -89,19 +89,11 @@ export default function LicenseManagement() {
             address,
             created_at
           ),
-          license_users:users(
-            id,
-            name,
-            email,
-            role,
-            created_at,
-            last_login
-          ),
           license_activity_logs:license_activity_logs(
             action,
             performed_at,
             details,
-            user_id
+            performed_by
           )
         `)
         .order('created_at', { ascending: false });
@@ -150,6 +142,7 @@ export default function LicenseManagement() {
           max_companies: planLimits.max_companies,
           max_users: planLimits.max_users,
           max_assets: planLimits.max_assets,
+          max_emails: planLimits.max_emails,
           valid_from: validFrom.toISOString().split('T')[0],
           valid_until: validUntil.toISOString().split('T')[0],
           features: { plan_features: planLimits.features },
@@ -201,7 +194,7 @@ export default function LicenseManagement() {
   // Export licenses to CSV
   const exportLicenses = () => {
     const csvContent = [
-      ['Key Code', 'Company', 'Email', 'Plan', 'Status', 'Valid From', 'Valid Until', 'Price', 'Companies', 'Users', 'Assets', 'Notes'],
+      ['Key Code', 'Company', 'Email', 'Plan', 'Status', 'Valid From', 'Valid Until', 'Price', 'Companies', 'Users', 'Assets', 'Emails', 'Notes'],
       ...filteredLicenses.map(license => [
         license.key_code,
         license.company_name,
@@ -214,6 +207,7 @@ export default function LicenseManagement() {
         license.current_companies,
         license.current_users,
         license.current_assets,
+        license.current_emails || 0,
         license.notes || ''
       ])
     ].map(row => row.join(',')).join('\n');
@@ -395,9 +389,9 @@ export default function LicenseManagement() {
                     onChange={(e) => setFormData({ ...formData, plan_type: e.target.value as any })}
                     className="w-full h-10 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   >
-                    <option value="basic">Basic - 5,000,000 VNĐ/năm</option>
-                    <option value="pro">Pro - 12,000,000 VNĐ/năm</option>
-                    <option value="enterprise">Enterprise - 25,000,000 VNĐ/năm</option>
+                    <option value="basic">Basic - 1 email - 5,000,000 VNĐ/năm</option>
+                    <option value="pro">Pro - 5 emails - 12,000,000 VNĐ/năm</option>
+                    <option value="enterprise">Enterprise - 10 emails - 25,000,000 VNĐ/năm</option>
                   </select>
                 </div>
 
@@ -526,7 +520,7 @@ export default function LicenseManagement() {
                 </div>
 
                 {/* Usage Stats */}
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="text-center p-2 bg-purple-50 rounded">
                     <Building className="h-3 w-3 mx-auto mb-1 text-purple-600" />
                     <div className="font-medium">{license.current_companies}/{license.max_companies}</div>
@@ -541,6 +535,11 @@ export default function LicenseManagement() {
                     <Package className="h-3 w-3 mx-auto mb-1 text-blue-600" />
                     <div className="font-medium">{license.current_assets}/{license.max_assets}</div>
                     <div className="text-gray-600">Assets</div>
+                  </div>
+                  <div className="text-center p-2 bg-orange-50 rounded">
+                    <Key className="h-3 w-3 mx-auto mb-1 text-orange-600" />
+                    <div className="font-medium">{license.current_emails || 0}/{license.max_emails || 0}</div>
+                    <div className="text-gray-600">Emails</div>
                   </div>
                 </div>
 

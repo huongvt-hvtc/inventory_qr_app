@@ -70,23 +70,26 @@ export default function AdminLayout({ children, activeTab, onTabChange }: AdminL
                   <Shield className="h-10 w-10 text-white" />
                 </div>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 mb-8">
                 Inventory QR
               </h1>
-              <div className="bg-white rounded-2xl shadow-sm border p-6 mb-4">
-                <div className="flex items-center justify-center mb-3">
-                  <div className="bg-blue-100 p-2 rounded-lg mr-3">
-                    <Shield className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    Admin Dashboard
-                  </h2>
-                </div>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Đăng nhập để truy cập trang quản trị
-                </p>
-              </div>
             </div>
+
+            {/* Admin Login Section */}
+            <div className="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+              <div className="flex items-center justify-center mb-3">
+                <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                  <Shield className="h-5 w-5 text-blue-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Admin Dashboard
+                </h2>
+              </div>
+              <p className="text-gray-600 text-sm leading-relaxed text-center">
+                Đăng nhập để truy cập trang quản trị
+              </p>
+            </div>
+
             <LoginPage />
           </div>
         </div>
