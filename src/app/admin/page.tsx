@@ -5,14 +5,10 @@ import {
   Key,
   Plus,
   Search,
-  Eye,
-  Edit,
-  Trash2,
   Building,
   Users,
   Package,
   Calendar,
-  Shield,
   Download,
   RefreshCw
 } from 'lucide-react';
@@ -20,8 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAdminAccess } from '@/hooks/useAdminAccess';
 import type { LicenseKey } from '@/types/license';
 import { SUBSCRIPTION_PLANS } from '@/types/license';
 import toast from 'react-hot-toast';
@@ -35,7 +31,6 @@ interface KeyGenerationForm {
 
 export default function AdminPage() {
   const { user } = useAuth();
-  const { isAdmin } = useAdminAccess();
   const [licenses, setLicenses] = useState<LicenseKey[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,27 +44,10 @@ export default function AdminPage() {
     valid_months: 12
   });
 
-  // Check if user is admin
+  // Load licenses on component mount
   useEffect(() => {
-    const checkAdminAccess = async () => {
-      if (!user?.email) {
-        toast.error('Bạn cần đăng nhập để truy cập trang này');
-        window.location.href = '/';
-        return;
-      }
-
-      if (!isAdmin) {
-        toast.error('Bạn không có quyền truy cập trang này');
-        window.location.href = '/';
-        return;
-      }
-
-      // If admin, proceed to load licenses
-      loadLicenses();
-    };
-
-    checkAdminAccess();
-  }, [user, isAdmin]);
+    loadLicenses();
+  }, []);
 
   // Load all license keys
   const loadLicenses = async () => {
@@ -215,50 +193,37 @@ export default function AdminPage() {
 
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0">
-        <div className="px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Shield className="h-6 w-6 text-purple-600" />
-              Admin - Quản lý License
-            </h1>
+    <AdminLayout>
+      <div className="p-4 md:p-6">
+        {/* Action Bar */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={loadLicenses}
+              disabled={loading}
+              variant="outline"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Làm mới
+            </Button>
 
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={loadLicenses}
-                disabled={loading}
-                variant="outline"
-                className="h-10"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Làm mới
-              </Button>
-
-              <Button
-                onClick={exportLicenses}
-                variant="outline"
-                className="h-10"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Xuất CSV
-              </Button>
-
-              <Button
-                onClick={() => setShowGenerateForm(!showGenerateForm)}
-                className="h-10 bg-purple-600 hover:bg-purple-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Tạo License
-              </Button>
-            </div>
+            <Button
+              onClick={exportLicenses}
+              variant="outline"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Xuất CSV
+            </Button>
           </div>
-        </div>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto p-4 md:p-6">
+          <Button
+            onClick={() => setShowGenerateForm(!showGenerateForm)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Tạo License
+          </Button>
+        </div>
         <div className="max-w-7xl mx-auto space-y-6">
 
           {/* Generate Form */}
@@ -432,6 +397,6 @@ export default function AdminPage() {
           )}
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
