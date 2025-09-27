@@ -91,9 +91,7 @@ export default function LicenseManagement() {
           ),
           license_activity_logs:license_activity_logs(
             action,
-            performed_at,
-            details,
-            performed_by
+            performed_at
           )
         `)
         .order('created_at', { ascending: false });
