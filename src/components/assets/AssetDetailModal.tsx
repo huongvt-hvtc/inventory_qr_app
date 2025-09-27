@@ -233,7 +233,29 @@ export default function AssetDetailModal({
 
   return (
     <>
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        // Reset edit mode and form data when closing dialog
+        if (mode !== 'create') {
+          setEditMode(false);
+          // Reset form data to original asset values
+          if (asset) {
+            setFormData({
+              asset_code: asset.asset_code || '',
+              name: asset.name || '',
+              model: asset.model || '',
+              serial: asset.serial || '',
+              tech_code: asset.tech_code || '',
+              status: asset.status || 'Đang sử dụng',
+              location: asset.location || '',
+              notes: asset.notes || '',
+              department: asset.department || ''
+            });
+          }
+        }
+        onClose();
+      }
+    }}>
       <DialogContent className="w-[95vw] max-w-md md:max-w-2xl max-h-[80vh] md:max-h-[85vh] flex flex-col p-0">
         {/* Compact Header */}
         <DialogHeader className="px-4 py-3 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -627,7 +649,6 @@ export default function AssetDetailModal({
                     size="lg"
                     className="flex-1 h-12 font-semibold bg-red-600 hover:bg-red-700"
                   >
-                    <X className="h-4 w-4 mr-2" />
                     Bỏ kiểm kê
                   </Button>
                 ) : (

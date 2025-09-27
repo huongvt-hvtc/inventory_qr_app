@@ -707,7 +707,6 @@ export default function AssetsPage() {
               >
                 {selectedAssets.size === filteredAssets.length && filteredAssets.length > 0 ? (
                   <>
-                    <X className="h-4 w-4" />
                     Bỏ chọn
                   </>
                 ) : (
@@ -902,7 +901,7 @@ export default function AssetsPage() {
 
         {/* Table Container */}
         <div className="h-full overflow-hidden bg-white">
-          <div className="h-full overflow-auto pb-32 md:pb-4 table-scroll-container" data-scroll="true">
+          <div className="h-full overflow-auto pb-24 md:pb-4 table-scroll-container" data-scroll="true">
             <table className="w-full table-fixed table-optimized">
               {/* Table Header - Sticky */}
               <thead className="bg-gray-50 border-b-2 border-gray-200 sticky top-0 z-20" style={{ position: 'sticky', top: 0 }}>

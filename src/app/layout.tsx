@@ -11,6 +11,7 @@ import { RefreshProvider } from "@/contexts/RefreshContext";
 import AuthGuard from "@/components/auth/AuthGuard";
 import VisibilityHandler from "@/components/layout/VisibilityHandler";
 import MobilePWAFix from "@/components/layout/MobilePWAFix";
+import SupabasePingProvider from "@/components/SupabasePingProvider";
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
@@ -68,6 +69,9 @@ export default function RootLayout({
             {/* Mobile PWA fixes */}
             <MobilePWAFix />
 
+            {/* Supabase auto-ping to prevent project pause */}
+            <SupabasePingProvider />
+
             <div className="min-h-screen">
               <Navigation />
 
@@ -85,12 +89,13 @@ export default function RootLayout({
             </RefreshProvider>
           </RecentScansProvider>
           <Toaster
-            position="top-right"
+            position="top-center"
             toastOptions={{
               duration: 3000,
               style: {
                 background: '#363636',
                 color: '#fff',
+                marginTop: '60px', // Avoid header overlap on mobile
               },
             }}
           />

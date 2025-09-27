@@ -21,7 +21,6 @@ import {
   CheckCircle,
   AlertCircle,
   Trash2,
-  Download,
   RefreshCw
 } from 'lucide-react';
 import { useRecentScans } from '@/contexts/RecentScansContext';
@@ -32,7 +31,6 @@ import { AssetWithInventoryStatus } from '@/types';
 import { WiFiIndicator } from '@/components/WiFiIndicator';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { exportToExcel } from '@/lib/excel';
 
 export default function RecentInventoryPage() {
   const { user } = useAuth();
@@ -154,21 +152,6 @@ export default function RecentInventoryPage() {
     }
   };
 
-  const handleExport = () => {
-    try {
-      const exportData = filteredScans.map(scan => ({
-        ...scan,
-        checked_status: scan.is_checked ? 'Đã kiểm' : 'Chưa kiểm',
-        checked_time: formatDate(scan.checked_at)
-      }));
-
-      exportToExcel(exportData, 'recent_inventory_export');
-      toast.success(`Đã xuất ${exportData.length} bản ghi kiểm kê`);
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Có lỗi xảy ra khi xuất dữ liệu');
-    }
-  };
 
   const handleClearRecentScans = () => {
     if (window.confirm('Bạn có chắc muốn xóa toàn bộ lịch sử kiểm kê gần đây không?')) {
@@ -231,24 +214,27 @@ export default function RecentInventoryPage() {
               </div>
             </div>
 
-            {/* Dashboard Stats */}
+            {/* Dashboard Stats - Matching Assets and QR Scanner Tabs */}
             <div className="flex items-center gap-6 text-sm md:text-base border-b border-gray-100 pb-2">
+              {/* Total Scans - Purple */}
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-semibold">Tổng số lần:</span>
+                <span className="text-gray-700 font-semibold text-sm md:text-base">Tổng:</span>
                 <span className="font-bold text-purple-600 text-lg md:text-xl">{stats.total}</span>
               </div>
 
               <div className="w-px h-5 bg-gray-300"></div>
 
+              {/* Checked Assets - Green */}
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-semibold">Đã kiểm:</span>
+                <span className="text-gray-700 font-semibold text-sm md:text-base">Đã kiểm:</span>
                 <span className="font-bold text-green-600 text-lg md:text-xl">{stats.checked}</span>
               </div>
 
               <div className="w-px h-5 bg-gray-300"></div>
 
+              {/* Unchecked Assets - Blue */}
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-semibold">Chưa kiểm:</span>
+                <span className="text-gray-700 font-semibold text-sm md:text-base">Chưa kiểm:</span>
                 <span className="font-bold text-blue-600 text-lg md:text-xl">{stats.unchecked}</span>
               </div>
             </div>
@@ -267,25 +253,16 @@ export default function RecentInventoryPage() {
                 {selectedScans.size === filteredScans.length && filteredScans.length > 0 ? (
                   <>
                     <X className="h-4 w-4" />
-                    Bỏ chọn tất cả
+                    Bỏ chọn hết
                   </>
                 ) : (
                   <>
                     <Check className="h-4 w-4" />
-                    Chọn tất cả
+                    Chọn hết
                   </>
                 )}
               </Button>
 
-
-              <Button
-                onClick={handleExport}
-                disabled={filteredScans.length === 0}
-                className="h-11 px-5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2.5 shadow-md hover:shadow-lg"
-              >
-                <Download className="h-4 w-4" />
-                Xuất Excel
-              </Button>
 
               <Button
                 onClick={handleClearRecentScans}
@@ -414,7 +391,7 @@ export default function RecentInventoryPage() {
 
       {/* Content Area */}
       <div className="flex-1 overflow-hidden">
-        <div className="h-full overflow-auto pb-32 md:pb-4">
+        <div className="h-full overflow-auto pb-24 md:pb-4">
           <div className="px-4 md:px-6 py-4">
             {filteredScans.length === 0 ? (
               <div className="text-center py-16">

@@ -48,8 +48,8 @@ export default function GuidePage() {
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      // Calculate offset to account for sticky header
-      const headerOffset = 120; // Header + TOC button height
+      // Calculate offset to account for sticky header and TOC
+      const headerOffset = 140; // Header + TOC button height + padding
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
@@ -63,7 +63,7 @@ export default function GuidePage() {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 relative z-30">
         <div className="px-6 py-3">
@@ -98,20 +98,20 @@ export default function GuidePage() {
                 />
 
                 {/* Dropdown Content */}
-                <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-20 max-h-96 overflow-y-auto">
-                  <div className="p-2">
+                <div className="absolute top-full left-0 mt-2 w-96 bg-gray-50 rounded-lg shadow-xl border-2 border-gray-300 z-20 max-h-96 overflow-y-auto">
+                  <div className="p-3">
                     {sections.map((section, index) => (
                       <button
                         key={section.id}
                         onClick={() => scrollToSection(section.id)}
-                        className="w-full text-left px-3 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors flex items-center gap-3 group"
+                        className="w-full text-left px-4 py-4 text-sm text-gray-800 hover:bg-white hover:text-blue-700 rounded-lg transition-all duration-200 flex items-center gap-3 group shadow-sm hover:shadow-md border border-transparent hover:border-blue-200"
                       >
-                        <div className="w-8 h-8 bg-gray-100 group-hover:bg-blue-100 rounded-full flex items-center justify-center transition-colors">
-                          <section.icon className="h-4 w-4 text-gray-600 group-hover:text-blue-600" />
+                        <div className="w-8 h-8 bg-white group-hover:bg-blue-100 rounded-full flex items-center justify-center transition-colors shadow-sm">
+                          <section.icon className="h-4 w-4 text-gray-700 group-hover:text-blue-700" />
                         </div>
                         <div className="flex-1">
                           <div className="font-medium">{section.title}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">
+                          <div className="text-xs text-gray-600 mt-0.5">
                             {index === 0 && "Cài đặt ứng dụng như app native"}
                             {index === 1 && "Hướng dẫn sử dụng cơ bản"}
                             {index === 2 && "Hướng dẫn làm việc offline/online"}
@@ -121,7 +121,7 @@ export default function GuidePage() {
                             {index === 6 && "Thông tin về ứng dụng"}
                           </div>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                        <ChevronRight className="h-4 w-4 text-gray-500 group-hover:text-blue-600" />
                       </button>
                     ))}
                   </div>
@@ -133,8 +133,8 @@ export default function GuidePage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto px-6 py-6 space-y-8">
+      <div className="flex-1">
+        <div className="max-w-4xl mx-auto px-6 py-6 pb-24 md:pb-6 space-y-8">
 
           {/* PWA Installation */}
           <Card id="pwa-installation">

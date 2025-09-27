@@ -26,7 +26,7 @@ import { NetworkStatus } from '@/components/NetworkStatus';
 const navigation = [
   { name: 'Tài sản', href: '/assets', icon: FolderOpen },
   { name: 'QR Scanner', href: '/scanner', icon: QrCode },
-  { name: 'Kiểm kê gần đây', href: '/recent-inventory', icon: History },
+  { name: 'Lịch sử', href: '/recent-inventory', icon: History },
   { name: 'Hướng dẫn', href: '/guide', icon: BookOpen },
   { name: 'Thiết lập', href: '/settings', icon: Settings },
 ];
@@ -147,8 +147,8 @@ export function Navigation() {
 
         {/* Mobile bottom navigation - Pro Grab-style Design */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 md:hidden shadow-2xl">
-          {/* Minimal padding - just enough to avoid home indicator */}
-          <div className="pb-1">
+          {/* Better padding for home indicator and visual balance */}
+          <div className="pb-2 pt-1">
             <nav className="flex px-2 pt-2 pb-2">
               {navigation.map((item, index) => {
                 const isActive = pathname === item.href;
