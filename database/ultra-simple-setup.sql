@@ -19,7 +19,11 @@ CREATE TABLE public.users (
     email TEXT UNIQUE NOT NULL,
     name TEXT,
     picture TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    google_id TEXT,
+    role TEXT DEFAULT 'user',
+    last_login TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Bảng admin_users
@@ -31,15 +35,30 @@ CREATE TABLE public.admin_users (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Bảng license_keys (đơn giản)
+-- Bảng license_keys (đầy đủ)
 CREATE TABLE public.license_keys (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     key_code TEXT UNIQUE NOT NULL,
     company_name TEXT NOT NULL,
+    customer_email TEXT,
     plan_type TEXT DEFAULT 'pro',
+    max_companies INTEGER DEFAULT 10,
+    max_users INTEGER DEFAULT 200,
+    max_assets INTEGER DEFAULT 20000,
+    current_companies INTEGER DEFAULT 0,
+    current_users INTEGER DEFAULT 0,
+    current_assets INTEGER DEFAULT 0,
+    valid_from DATE DEFAULT CURRENT_DATE,
     valid_until DATE NOT NULL,
     status TEXT DEFAULT 'active',
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    price BIGINT,
+    notes TEXT,
+    features JSONB DEFAULT '{}',
+    last_used_at TIMESTAMPTZ,
+    total_api_calls BIGINT DEFAULT 0,
+    created_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Bảng companies
@@ -47,8 +66,12 @@ CREATE TABLE public.companies (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL,
     owner_id UUID REFERENCES public.users(id),
+    contact_email TEXT,
+    phone TEXT,
+    address TEXT,
     license_key_id UUID REFERENCES public.license_keys(id),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Bảng company_members
@@ -66,8 +89,19 @@ CREATE TABLE public.assets (
     company_id UUID REFERENCES public.companies(id),
     code TEXT NOT NULL,
     name TEXT NOT NULL,
+    description TEXT,
+    category TEXT,
+    location TEXT,
+    purchase_date DATE,
+    purchase_price DECIMAL(15,2),
+    current_value DECIMAL(15,2),
     status TEXT DEFAULT 'active',
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    qr_code TEXT,
+    image_url TEXT,
+    created_by UUID REFERENCES public.users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(company_id, code)
 );
 
 -- Bảng logs
@@ -122,8 +156,17 @@ GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 INSERT INTO public.admin_users (email, name, role)
 VALUES ('mr.ngoctmn@gmail.com', 'Ngoc Admin', 'super_admin');
 
-INSERT INTO public.license_keys (key_code, company_name, valid_until)
-VALUES ('DEMO-2025-001', 'Demo Company', CURRENT_DATE + INTERVAL '12 months');
+INSERT INTO public.license_keys (
+    key_code, company_name, customer_email, plan_type,
+    max_companies, max_users, max_assets,
+    valid_from, valid_until, status, notes, features
+) VALUES (
+    'DEMO-2025-001', 'Demo Company', 'demo@example.com', 'pro',
+    10, 200, 20000,
+    CURRENT_DATE, CURRENT_DATE + INTERVAL '12 months', 'active',
+    'Demo license for testing admin functionality',
+    '{"plan_features": ["Priority support", "Excel export", "API access", "Advanced reporting"]}'
+);
 
 -- Hoàn thành!
 DO $$
