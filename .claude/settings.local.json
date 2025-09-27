@@ -52,7 +52,8 @@
       "Bash(chatgpt --help)",
       "Bash(claude update)",
       "Bash(claude migrate-installer:*)",
-      "Bash(open /Users/ngoctmn/Documents/development/inventory-qr-app/create-pwa-icons.html)"
+      "Bash(open /Users/ngoctmn/Documents/development/inventory-qr-app/create-pwa-icons.html)",
+      "Bash(sips:*)"
     ],
     "deny": [],
     "ask": []

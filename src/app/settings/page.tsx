@@ -54,12 +54,6 @@ export default function SettingsPage() {
       <div className="flex-1 overflow-auto p-4 md:p-6 pb-32 md:pb-6" data-scroll="true">
         <div className="max-w-2xl mx-auto space-y-6">
 
-          {/* License Management Section */}
-          <div className="space-y-6">
-            <LicenseUsageDisplay />
-            <LicenseActivation />
-          </div>
-
           {/* Account Information */}
           {user && (
             <Card>
@@ -107,6 +101,12 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* License Management Section */}
+          <div className="space-y-6">
+            <LicenseUsageDisplay />
+            <LicenseActivation />
+          </div>
 
           {/* Supabase Management */}
           <Card>

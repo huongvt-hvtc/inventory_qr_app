@@ -15,10 +15,10 @@ export class SupabasePing {
     try {
       console.log('🏓 Pinging Supabase to keep project active...');
 
-      // Simple query to generate activity - just count records
+      // Simple query to generate activity - just get one record
       const { data, error } = await supabase
         .from('assets')
-        .select('count(*)', { count: 'exact', head: true })
+        .select('id')
         .limit(1);
 
       if (error) {
