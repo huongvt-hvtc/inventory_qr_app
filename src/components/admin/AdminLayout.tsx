@@ -29,6 +29,7 @@ export default function AdminLayout({ children, activeTab, onTabChange }: AdminL
   const loading = authLoading || adminLoading;
 
   const tabs = [
+    { id: 'dashboard', name: 'Dashboard', icon: Shield },
     { id: 'licenses', name: 'Licenses', icon: Key },
     { id: 'guide', name: 'Hướng dẫn', icon: BookOpen },
   ];

@@ -2,20 +2,23 @@
 
 import React, { useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import AdminDashboard from '@/components/admin/AdminDashboard';
 import LicenseManagement from '@/components/admin/LicenseManagement';
 import AdminGuide from '@/components/admin/AdminGuide';
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState('licenses');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'dashboard':
+        return <AdminDashboard />;
       case 'licenses':
         return <LicenseManagement />;
       case 'guide':
         return <AdminGuide />;
       default:
-        return <LicenseManagement />;
+        return <AdminDashboard />;
     }
   };
 

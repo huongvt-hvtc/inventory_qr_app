@@ -262,61 +262,10 @@ export default function LicenseManagement() {
 
   return (
     <div className="p-4 md:p-6">
-      {/* Header Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Tổng Licenses</p>
-                <p className="text-2xl font-bold text-gray-900">{licenses.length}</p>
-              </div>
-              <Key className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Đang hoạt động</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {licenses.filter(l => l.status === 'active').length}
-                </p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Đã hết hạn</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {licenses.filter(l => l.status === 'expired').length}
-                </p>
-              </div>
-              <XCircle className="h-8 w-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Tổng doanh thu</p>
-                <p className="text-lg font-bold text-purple-600">
-                  {formatPrice(licenses.reduce((sum, l) => sum + (l.price || 0), 0))}
-                </p>
-              </div>
-              <DollarSign className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Quản lý Licenses</h1>
+        <p className="text-gray-600">Tạo, chỉnh sửa và theo dõi các license keys</p>
       </div>
 
       {/* Action Bar */}
