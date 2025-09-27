@@ -1,0 +1,23 @@
+#!/bin/zsh
+# Claude Code custom command aliases
+
+# Function to start Claude session
+claude() {
+    if [[ $# -eq 0 ]]; then
+        # Default: start Claude Code session
+        command claude-code
+    elif [[ "$1" == "glm" ]]; then
+        # Start GLM session
+        shift  # Remove 'glm' from arguments
+        command claude-code --model glm "$@"
+    elif [[ "$1" == "gpt" ]]; then
+        # Open ChatGPT Plus in browser
+        echo "Opening ChatGPT Plus in browser..."
+        open "https://chat.openai.com/"
+    else
+        # Pass through other claude commands
+        command claude-code "$@"
+    fi
+}
+
+# Function is now available in the shell

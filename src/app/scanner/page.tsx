@@ -8,17 +8,25 @@ import {
   QrCode,
   Keyboard,
   XCircle,
-  Search
+  Search,
+  History,
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
 import { useAssets } from '@/hooks/useAssets';
+import { useRecentScans } from '@/contexts/RecentScansContext';
+import { useRefresh } from '@/contexts/RefreshContext';
 import EnhancedScanner from '@/components/scanner/EnhancedScanner';
 
+import Link from 'next/link';
 import SimpleMobileScanner from '@/components/scanner/SimpleMobileScanner';
 import AssetDetailModal from '@/components/assets/AssetDetailModal';
 import { AssetWithInventoryStatus } from '@/types';
+import { WiFiIndicator } from '@/components/WiFiIndicator';
 import toast from 'react-hot-toast';
 
 export default function ScannerPage() {
+  const { setRefreshFunction } = useRefresh();
   // Detect if mobile
   const [isMobile, setIsMobile] = useState(false);
   
@@ -30,8 +38,11 @@ export default function ScannerPage() {
     loading,
     searchAssets,
     checkAssets,
-    uncheckAssets
+    uncheckAssets,
+    loadAssets
   } = useAssets();
+
+  const { recentScans, addToRecentScans, updateRecentScan } = useRecentScans();
 
   const [manualCode, setManualCode] = useState('');
   const [scannedAsset, setScannedAsset] = useState<AssetWithInventoryStatus | null>(null);
@@ -40,21 +51,28 @@ export default function ScannerPage() {
     asset: null,
     mode: 'view'
   });
-  const [recentScans, setRecentScans] = useState<AssetWithInventoryStatus[]>([]);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
   // Sync recent scans with latest asset data
   useEffect(() => {
     if (recentScans.length > 0 && assets.length > 0) {
-      setRecentScans(prevScans =>
-        prevScans.map(scan => {
-          const updatedAsset = assets.find(asset => asset.id === scan.id);
-          return updatedAsset || scan;
-        })
-      );
+      recentScans.forEach(scan => {
+        const updatedAsset = assets.find(asset => asset.id === scan.id);
+        if (updatedAsset && (
+          updatedAsset.is_checked !== scan.is_checked ||
+          updatedAsset.checked_by !== scan.checked_by ||
+          updatedAsset.checked_at !== scan.checked_at
+        )) {
+          updateRecentScan(scan.id, {
+            is_checked: updatedAsset.is_checked,
+            checked_by: updatedAsset.checked_by,
+            checked_at: updatedAsset.checked_at
+          });
+        }
+      });
     }
-  }, [assets, recentScans.length]);
+  }, [assets, recentScans, updateRecentScan]);
 
   // Sync with navigation scroll behavior
   useEffect(() => {
@@ -144,10 +162,7 @@ export default function ScannerPage() {
       setAssetDetailModal({ isOpen: true, asset: foundAsset, mode: 'view' });
 
       // Add to recent scans
-      setRecentScans(prev => {
-        const filtered = prev.filter(scan => scan.id !== foundAsset.id);
-        return [foundAsset, ...filtered].slice(0, 10); // Keep only last 10 scans
-      });
+      addToRecentScans(foundAsset);
 
       // Remove duplicate toast - already shown in scanner component
     } else {
@@ -155,7 +170,7 @@ export default function ScannerPage() {
       console.log('📋 Available asset codes:', assets.map(a => a.asset_code));
       toast.error(`Không tìm thấy tài sản với mã: ${assetCode}`);
     }
-  }, [assets, recentScans]);
+  }, [assets, recentScans, addToRecentScans, updateRecentScan]);
 
   const handleQRScanError = (error: string) => {
     // Don't show error for common scanning issues
@@ -174,10 +189,7 @@ export default function ScannerPage() {
         setAssetDetailModal({ isOpen: true, asset: foundAsset, mode: 'view' });
 
         // Add to recent scans
-        setRecentScans(prev => {
-          const filtered = prev.filter(scan => scan.id !== foundAsset.id);
-          return [foundAsset, ...filtered].slice(0, 10);
-        });
+        addToRecentScans(foundAsset);
 
         toast.success(`Đã tìm thấy tài sản: ${foundAsset.asset_code}`);
       } else {
@@ -194,13 +206,11 @@ export default function ScannerPage() {
       // Toast is already handled in useAssets hook - no need to duplicate
 
       // Update recent scans to reflect the change
-      setRecentScans(prev =>
-        prev.map(scan =>
-          scan.id === assetId
-            ? { ...scan, is_checked: true, checked_by: checkedBy, checked_at: new Date().toISOString() }
-            : scan
-        )
-      );
+      updateRecentScan(assetId, {
+        is_checked: true,
+        checked_by: checkedBy,
+        checked_at: new Date().toISOString()
+      });
     } catch (error) {
       // Error toast is already handled in useAssets hook
     }
@@ -212,17 +222,31 @@ export default function ScannerPage() {
       // Toast is already handled in useAssets hook - no need to duplicate
 
       // Update recent scans to reflect the change
-      setRecentScans(prev =>
-        prev.map(scan =>
-          scan.id === assetId
-            ? { ...scan, is_checked: false, checked_by: undefined, checked_at: undefined }
-            : scan
-        )
-      );
+      updateRecentScan(assetId, {
+        is_checked: false,
+        checked_by: undefined,
+        checked_at: undefined
+      });
     } catch (error) {
       // Error toast is already handled in useAssets hook
     }
   };
+
+  const handleRefresh = async () => {
+    try {
+      await loadAssets(true); // Force refresh bypassing cache
+      toast.success('Đã cập nhật dữ liệu mới nhất');
+    } catch (error) {
+      console.error('Error refreshing assets:', error);
+      toast.error('Có lỗi xảy ra khi cập nhật dữ liệu');
+    }
+  };
+
+  // Register refresh function for network status component
+  useEffect(() => {
+    setRefreshFunction(() => handleRefresh);
+    return () => setRefreshFunction(null);
+  }, [setRefreshFunction]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('vi-VN', {
@@ -240,12 +264,28 @@ export default function ScannerPage() {
       <div className="sticky top-0 bg-white border-b border-gray-200 shadow-sm z-20">
         <div className="px-6 py-3">
           <div className="flex flex-col gap-2">
-            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <QrCode className="h-6 w-6 text-blue-600" />
-              QR Scanner
-            </h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <QrCode className="h-6 w-6 text-blue-600" />
+                QR Scanner
+              </h1>
 
-            {/* Dashboard Stats - Matching Assets Page Colors */}
+              {/* WiFi & Refresh Button in Header */}
+              <div className="flex items-center gap-3">
+                <WiFiIndicator />
+                <button
+                  disabled={loading}
+                  onClick={handleRefresh}
+                  className="h-10 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg"
+                  title="Làm mới dữ liệu từ server"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  <span>Làm mới</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Dashboard Stats */}
             <div className="flex items-center gap-6 text-sm md:text-base border-b border-gray-100 pb-2">
               {/* Total Assets - Purple like Assets Page */}
               <div className="flex items-center gap-2">
@@ -343,64 +383,120 @@ export default function ScannerPage() {
               </Card>
             </div>
 
-            {/* Right Column: Recent Scans */}
+            {/* Right Column: Recent Scans Link & Quick Stats */}
             <div className="space-y-4">
-              <Card className="h-[950px] lg:h-[1050px]">
-                <CardHeader className="pb-3">
-                  <CardTitle>
-                    Kiểm kê gần đây
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-2 max-h-[900px] lg:max-h-[1000px] overflow-y-auto">
-                    {recentScans.map((scan) => (
-                      <div
-                        key={scan.id}
-                        className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => setAssetDetailModal({ isOpen: true, asset: scan, mode: 'view' })}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-gray-900">{scan.asset_code}</span>
-                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                                scan.is_checked
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {scan.is_checked ? 'Đã kiểm' : 'Chưa kiểm'}
-                              </span>
+              {/* Recent Scans Link Card */}
+              <Link href="/recent-inventory">
+                <Card className="h-[400px] lg:h-[450px] cursor-pointer hover:shadow-lg transition-all duration-200 border-2 border-dashed border-gray-300 hover:border-green-500 bg-gradient-to-br from-green-50 to-blue-50 hover:from-green-100 hover:to-blue-100">
+                  <CardHeader className="text-center pb-3">
+                    <CardTitle className="flex items-center justify-center gap-2 text-green-700">
+                      <History className="h-6 w-6" />
+                      Kiểm kê gần đây
+                      <ExternalLink className="h-4 w-4" />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 flex flex-col items-center justify-center h-full">
+                    <div className="text-center space-y-4">
+                      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                        <History className="h-10 w-10 text-green-600" />
+                      </div>
+
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          {recentScans.length} lần kiểm kê
+                        </h3>
+                        <p className="text-sm text-gray-600 max-w-xs">
+                          Xem chi tiết lịch sử kiểm kê, tìm kiếm và quản lý các lần kiểm kê gần đây
+                        </p>
+                      </div>
+
+                      {recentScans.length > 0 && (
+                        <div className="grid grid-cols-2 gap-4 mt-6">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">
+                              {recentScans.filter(s => s.is_checked).length}
                             </div>
-                            <p className="text-sm text-gray-600 break-words">{scan.name}</p>
-                            <div className="mt-2 text-xs text-gray-500">
-                              <p>Bộ phận: {scan.department}</p>
-                              {scan.is_checked && scan.checked_by && (
-                                <>
-                                  <p>Người kiểm: {scan.checked_by}</p>
-                                  <p>Thời gian: {scan.checked_at ? formatDate(scan.checked_at) : 'N/A'}</p>
-                                </>
-                              )}
-                              {!scan.is_checked && (
-                                <p className="text-orange-600 font-medium">Chưa được kiểm kê</p>
-                              )}
+                            <div className="text-xs text-gray-500">Đã kiểm</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-orange-600">
+                              {recentScans.filter(s => !s.is_checked).length}
                             </div>
+                            <div className="text-xs text-gray-500">Chưa kiểm</div>
                           </div>
                         </div>
+                      )}
+
+                      <div className="mt-6">
+                        <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors">
+                          Xem chi tiết
+                        </Button>
                       </div>
-                    ))}
+                    </div>
 
                     {recentScans.length === 0 && (
-                      <div className="text-center py-16">
+                      <div className="text-center py-8">
                         <XCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-500 text-sm font-medium">Chưa có lần quét nào</p>
+                        <p className="text-gray-500 text-sm font-medium">Chưa có lần kiểm kê nào</p>
                         <p className="text-xs text-gray-400 mt-1">
                           Quét QR code hoặc nhập mã tài sản để bắt đầu
                         </p>
                       </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              {/* Quick Recent Items Preview */}
+              {recentScans.length > 0 && (
+                <Card className="h-[500px] lg:h-[550px]">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-gray-600">
+                      Xem trước gần đây
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-2 max-h-[450px] lg:max-h-[500px] overflow-y-auto">
+                      {recentScans.slice(0, 5).map((scan) => (
+                        <div
+                          key={scan.id}
+                          className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => setAssetDetailModal({ isOpen: true, asset: scan, mode: 'view' })}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-gray-900 text-sm">{scan.asset_code}</span>
+                                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                  scan.is_checked
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {scan.is_checked ? 'Đã kiểm' : 'Chưa kiểm'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600 break-words line-clamp-1">{scan.name}</p>
+                              <div className="mt-1 text-xs text-gray-500">
+                                <p>Bộ phận: {scan.department}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {recentScans.length > 5 && (
+                        <Link href="/recent-inventory">
+                          <div className="p-3 border border-dashed border-gray-300 rounded-lg hover:bg-green-50 cursor-pointer transition-colors text-center">
+                            <p className="text-sm text-green-600 font-medium">
+                              Xem thêm {recentScans.length - 5} mục khác...
+                            </p>
+                          </div>
+                        </Link>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </div>

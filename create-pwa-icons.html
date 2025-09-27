@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo PWA Icons cho Kiểm kê tài sản</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .icon-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .icon-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .icon-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+        }
+
+        .icon-preview {
+            width: 128px;
+            height: 128px;
+            margin: 0 auto 15px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .icon-preview canvas {
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .icon-info {
+            margin-bottom: 15px;
+        }
+
+        .icon-size {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .icon-purpose {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .instructions {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            max-width: 800px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .instructions h2 {
+            color: #333;
+            margin-top: 0;
+        }
+
+        .instructions ol {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Tạo PWA Icons cho App Kiểm kê tài sản</h1>
+
+    <div class="instructions">
+        <h2>📱 Hướng dẫn sử dụng</h2>
+        <ol>
+            <li>Click <strong>"Tải xuống"</strong> để download từng icon về máy</li>
+            <li>Copy các file icon vào thư mục <code>/public/</code> của project</li>
+            <li>Thay thế các file icon cũ (icon-72.png, icon-96.png, ...)</li>
+            <li>App sẽ hiển thị icons mới khi install PWA trên mobile</li>
+            <li>Test bằng cách mở app trên mobile → "Add to Home Screen"</li>
+        </ol>
+
+        <h3>🔧 Đặc tính icons:</h3>
+        <ul>
+            <li><strong>Gradient đẹp mắt:</strong> Xanh dương → Tím (matching app theme)</li>
+            <li><strong>Icon QR code:</strong> Thể hiện chức năng chính của app</li>
+            <li><strong>Chữ "Asset":</strong> Tên ngắn gọn cho app</li>
+            <li><strong>Border radius:</strong> Bo góc đẹp cho iOS/Android</li>
+            <li><strong>High resolution:</strong> Sharp trên màn hình Retina</li>
+        </ul>
+    </div>
+
+    <div class="icon-container" id="iconContainer">
+        <!-- Icons sẽ được generate bởi JavaScript -->
+    </div>
+
+    <script>
+        const iconSizes = [
+            { size: 72, purpose: 'Android standard' },
+            { size: 96, purpose: 'Android standard' },
+            { size: 128, purpose: 'Android/iOS standard' },
+            { size: 144, purpose: 'Android high-DPI' },
+            { size: 152, purpose: 'iOS (iPad)' },
+            { size: 192, purpose: 'Android/Chrome (maskable)' },
+            { size: 384, purpose: 'Android high resolution' },
+            { size: 512, purpose: 'Splash screen/maskable' }
+        ];
+
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size
+            canvas.width = size;
+            canvas.height = size;
+
+            // Create gradient background (matching app theme)
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#667eea');  // Blue
+            gradient.addColorStop(1, '#764ba2');  // Purple
+
+            // Draw rounded rectangle background
+            const radius = size * 0.15; // 15% border radius
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, radius);
+            ctx.fill();
+
+            // Draw QR code icon
+            const qrSize = size * 0.4;
+            const qrX = (size - qrSize) / 2;
+            const qrY = size * 0.25;
+
+            // QR code background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(qrX, qrY, qrSize, qrSize);
+
+            // QR code pattern (simplified)
+            ctx.fillStyle = '#333';
+            const blockSize = qrSize / 8;
+
+            // Create QR-like pattern
+            const pattern = [
+                [1,1,1,0,0,1,1,1],
+                [1,0,1,0,0,1,0,1],
+                [1,1,1,0,0,1,1,1],
+                [0,0,0,1,1,0,0,0],
+                [0,1,0,1,1,0,1,0],
+                [1,1,1,0,0,1,1,1],
+                [1,0,1,0,0,1,0,1],
+                [1,1,1,0,0,1,1,1]
+            ];
+
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (pattern[row][col]) {
+                        ctx.fillRect(
+                            qrX + col * blockSize,
+                            qrY + row * blockSize,
+                            blockSize,
+                            blockSize
+                        );
+                    }
+                }
+            }
+
+            // Draw "Asset" text
+            const fontSize = size * 0.12;
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const textY = qrY + qrSize + (size - (qrY + qrSize)) / 2;
+            ctx.fillText('Asset', size / 2, textY);
+
+            return canvas;
+        }
+
+        function downloadIcon(canvas, size) {
+            const link = document.createElement('a');
+            link.download = `icon-${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function createIconCard(iconData) {
+            const card = document.createElement('div');
+            card.className = 'icon-card';
+
+            const canvas = createIcon(iconData.size);
+
+            // Scale canvas for preview
+            const previewCanvas = document.createElement('canvas');
+            const previewCtx = previewCanvas.getContext('2d');
+            previewCanvas.width = 128;
+            previewCanvas.height = 128;
+            previewCtx.drawImage(canvas, 0, 0, 128, 128);
+
+            card.innerHTML = `
+                <div class="icon-preview"></div>
+                <div class="icon-info">
+                    <div class="icon-size">${iconData.size}x${iconData.size}</div>
+                    <div class="icon-purpose">${iconData.purpose}</div>
+                </div>
+                <button class="download-btn" onclick="downloadIcon(this.canvas, ${iconData.size})">
+                    Tải xuống
+                </button>
+            `;
+
+            // Add canvas to preview
+            card.querySelector('.icon-preview').appendChild(previewCanvas);
+
+            // Store original canvas for download
+            card.querySelector('.download-btn').canvas = canvas;
+
+            return card;
+        }
+
+        // Generate all icons
+        const container = document.getElementById('iconContainer');
+        iconSizes.forEach(iconData => {
+            container.appendChild(createIconCard(iconData));
+        });
+
+        // Add polyfill for older browsers
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+                this.beginPath();
+                this.moveTo(x + radius, y);
+                this.lineTo(x + width - radius, y);
+                this.quadraticCurveTo(x + width, y, x + width, y + radius);
+                this.lineTo(x + width, y + height - radius);
+                this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                this.lineTo(x + radius, y + height);
+                this.quadraticCurveTo(x, y + height, x, y + height - radius);
+                this.lineTo(x, y + radius);
+                this.quadraticCurveTo(x, y, x + radius, y);
+                this.closePath();
+            };
+        }
+    </script>
+</body>
+</html>

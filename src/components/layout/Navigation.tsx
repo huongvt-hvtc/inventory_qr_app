@@ -14,16 +14,21 @@ import {
   Smartphone,
   Monitor,
   FolderOpen,
-  Settings
+  Settings,
+  History,
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { NetworkStatus } from '@/components/NetworkStatus';
 
 const navigation = [
   { name: 'Tài sản', href: '/assets', icon: FolderOpen },
   { name: 'QR Scanner', href: '/scanner', icon: QrCode },
-  { name: 'Cài đặt', href: '/settings', icon: Settings },
+  { name: 'Kiểm kê gần đây', href: '/recent-inventory', icon: History },
+  { name: 'Hướng dẫn', href: '/guide', icon: BookOpen },
+  { name: 'Thiết lập', href: '/settings', icon: Settings },
 ];
 
 export function Navigation() {
@@ -172,6 +177,22 @@ export function Navigation() {
                     text: 'text-green-600',
                     shadow: 'shadow-green-200',
                     glow: 'shadow-green-500/20'
+                  },
+                  {
+                    primary: 'from-purple-500 to-violet-600',
+                    primarySolid: 'bg-purple-500',
+                    bg: 'bg-gradient-to-br from-purple-50 to-violet-50',
+                    text: 'text-purple-600',
+                    shadow: 'shadow-purple-200',
+                    glow: 'shadow-purple-500/20'
+                  },
+                  {
+                    primary: 'from-orange-500 to-red-600',
+                    primarySolid: 'bg-orange-500',
+                    bg: 'bg-gradient-to-br from-orange-50 to-red-50',
+                    text: 'text-orange-600',
+                    shadow: 'shadow-orange-200',
+                    glow: 'shadow-orange-500/20'
                   }
                 ];
                 const color = colors[index] || colors[0];

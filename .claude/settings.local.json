@@ -45,7 +45,14 @@
       "Bash(claude doctor)",
       "Bash(claude --version)",
       "Bash(openssl:*)",
-      "Bash(open /Users/ngoctmn/Documents/development/inventory-qr-app/create-rainbow-icons.html)"
+      "Bash(open /Users/ngoctmn/Documents/development/inventory-qr-app/create-rainbow-icons.html)",
+      "Bash(claude glm)",
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(chatgpt --help)",
+      "Bash(claude update)",
+      "Bash(claude migrate-installer:*)",
+      "Bash(open /Users/ngoctmn/Documents/development/inventory-qr-app/create-pwa-icons.html)"
     ],
     "deny": [],
     "ask": []

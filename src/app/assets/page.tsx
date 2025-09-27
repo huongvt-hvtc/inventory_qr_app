@@ -19,13 +19,17 @@ import {
   Filter,
   FilterX,
   FolderOpen,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useAssets } from '@/hooks/useAssets';
+import { useRecentScans } from '@/contexts/RecentScansContext';
+import { useRefresh } from '@/contexts/RefreshContext';
 import { debounce } from '@/lib/utils';
 import AssetDetailModal from '@/components/assets/AssetDetailModal';
 import QRPrintModal from '@/components/assets/QRPrintModal';
 import ImportModal from '@/components/assets/ImportModal';
+import { WiFiIndicator } from '@/components/WiFiIndicator';
 import { exportToExcel } from '@/lib/excel';
 import { Asset, AssetWithInventoryStatus } from '@/types';
 import toast from 'react-hot-toast';
@@ -33,6 +37,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function AssetsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { setRefreshFunction } = useRefresh();
 
   // PWA Debug: Check authentication and redirect if needed
   useEffect(() => {
@@ -58,6 +63,8 @@ export default function AssetsPage() {
     bulkCreateAssets,
     importAssetsWithOverwrite
   } = useAssets();
+
+  const { addToRecentScans } = useRecentScans();
 
   // Keep track of total assets for dashboard stats (unfiltered)
   const [allAssets, setAllAssets] = useState<AssetWithInventoryStatus[]>([]);
@@ -264,6 +271,22 @@ export default function AssetsPage() {
     });
   };
 
+  const handleRefresh = async () => {
+    try {
+      await loadAssets(true); // Force refresh bypassing cache
+      toast.success('Đã cập nhật dữ liệu mới nhất');
+    } catch (error) {
+      console.error('Error refreshing assets:', error);
+      toast.error('Có lỗi xảy ra khi cập nhật dữ liệu');
+    }
+  };
+
+  // Register refresh function for network status component
+  useEffect(() => {
+    setRefreshFunction(() => handleRefresh);
+    return () => setRefreshFunction(null);
+  }, [setRefreshFunction]);
+
   // Actual execution functions
   const executeCheckAssets = async (checkOnlyUnchecked: boolean = false) => {
     if (!user) return;
@@ -281,6 +304,17 @@ export default function AssetsPage() {
 
       const userName = user.name || user.email || 'Unknown User';
       await checkAssets(assetsToCheck.map(a => a.id), userName);
+
+      // Add checked assets to recent scans
+      assetsToCheck.forEach(asset => {
+        addToRecentScans({
+          ...asset,
+          is_checked: true,
+          checked_by: userName,
+          checked_at: new Date().toISOString()
+        });
+      });
+
       setSelectedAssets(new Set());
       setCheckConfirm({ isOpen: false, assets: [], alreadyChecked: [] });
     } catch (error) {
@@ -490,10 +524,26 @@ export default function AssetsPage() {
         {/* Header Section - Matching QR Scanner Layout */}
         <div className="px-6 py-3">
           <div className="flex flex-col gap-2">
-            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <FolderOpen className="h-6 w-6 text-purple-600" />
-              Quản lý tài sản
-            </h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <FolderOpen className="h-6 w-6 text-purple-600" />
+                Quản lý tài sản
+              </h1>
+
+              {/* WiFi & Refresh Button in Header */}
+              <div className="flex items-center gap-3">
+                <WiFiIndicator />
+                <button
+                  disabled={loading}
+                  onClick={handleRefresh}
+                  className="h-10 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg"
+                  title="Làm mới dữ liệu từ server"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  <span>Làm mới</span>
+                </button>
+              </div>
+            </div>
 
             {/* Dashboard Stats - Matching QR Scanner */}
             <div className="flex items-center gap-6 text-sm md:text-base border-b border-gray-100 pb-2">
@@ -554,6 +604,7 @@ export default function AssetsPage() {
                 <Download className="h-4 w-4" />
                 Xuất
               </button>
+
 
               {/* Select All Button - Same row as primary actions */}
               <button
@@ -647,6 +698,7 @@ export default function AssetsPage() {
                 <Download className="h-4 w-4" />
                 Xuất
               </button>
+
 
               <button
                 onClick={selectAllAssets}
@@ -999,7 +1051,19 @@ export default function AssetsPage() {
         onClose={() => setAssetDetailModal({ isOpen: false, asset: null, mode: 'view' })}
         mode={assetDetailModal.mode}
         onSave={handleAssetSave}
-        onCheck={(assetId, checkedBy) => checkAssets([assetId], checkedBy)}
+        onCheck={async (assetId, checkedBy) => {
+          await checkAssets([assetId], checkedBy);
+          // Add to recent scans after checking
+          const asset = assets.find(a => a.id === assetId);
+          if (asset) {
+            addToRecentScans({
+              ...asset,
+              is_checked: true,
+              checked_by: checkedBy,
+              checked_at: new Date().toISOString()
+            });
+          }
+        }}
         onUncheck={(assetId) => uncheckAssets([assetId])}
         existingDepartments={departments}
         existingStatuses={statuses}
