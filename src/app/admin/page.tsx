@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminAccess } from '@/hooks/useAdminAccess';
 import type { LicenseKey } from '@/types/license';
 import { SUBSCRIPTION_PLANS } from '@/types/license';
 import toast from 'react-hot-toast';
@@ -34,6 +35,7 @@ interface KeyGenerationForm {
 
 export default function AdminPage() {
   const { user } = useAuth();
+  const { isAdmin } = useAdminAccess();
   const [licenses, setLicenses] = useState<LicenseKey[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,21 +52,24 @@ export default function AdminPage() {
   // Check if user is admin
   useEffect(() => {
     const checkAdminAccess = async () => {
-      if (!user) return;
+      if (!user?.email) {
+        toast.error('Bạn cần đăng nhập để truy cập trang này');
+        window.location.href = '/';
+        return;
+      }
 
-      const { data } = await supabase
-        .from('license_keys')
-        .select('id')
-        .limit(1);
-
-      if (!data) {
+      if (!isAdmin) {
         toast.error('Bạn không có quyền truy cập trang này');
         window.location.href = '/';
+        return;
       }
+
+      // If admin, proceed to load licenses
+      loadLicenses();
     };
 
     checkAdminAccess();
-  }, [user]);
+  }, [user, isAdmin]);
 
   // Load all license keys
   const loadLicenses = async () => {
@@ -208,9 +213,6 @@ export default function AdminPage() {
     }
   };
 
-  useEffect(() => {
-    loadLicenses();
-  }, []);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
