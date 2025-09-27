@@ -316,7 +316,7 @@ export default function ScannerPage() {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <div className="px-6 pt-4 pb-24 md:pb-4">
+        <div className="px-6 pt-4 pb-32 md:pb-4">
           {/* Desktop: 2 columns layout, Mobile: stack */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 

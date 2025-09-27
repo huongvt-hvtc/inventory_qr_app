@@ -234,6 +234,11 @@ export default function AssetDetailModal({
   return (
     <>
     <Dialog open={isOpen} onOpenChange={(open) => {
+      // Prevent closing dialog with X button when in edit mode
+      if (!open && editMode) {
+        return; // Block closing when in edit mode
+      }
+
       if (!open) {
         // Reset edit mode and form data when closing dialog
         if (mode !== 'create') {

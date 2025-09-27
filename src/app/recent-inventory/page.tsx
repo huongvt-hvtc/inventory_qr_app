@@ -36,7 +36,7 @@ export default function RecentInventoryPage() {
   const { user } = useAuth();
   const { setRefreshFunction } = useRefresh();
   const { recentScans, clearRecentScans } = useRecentScans();
-  const { checkAssets, uncheckAssets, loadAssets, loading } = useAssets();
+  const { assets, checkAssets, uncheckAssets, loadAssets, loading } = useAssets();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'checked' | 'unchecked'>('all');
@@ -82,15 +82,14 @@ export default function RecentInventoryPage() {
   // Get unique departments for filter
   const departments = Array.from(new Set(recentScans.map(s => s.department).filter(dept => dept && dept.trim() !== ''))) as string[];
 
-  // Statistics
+  // Statistics - Using actual assets data like QR Scanner tab
   const stats = useMemo(() => {
-    const total = recentScans.length;
-    const checked = recentScans.filter(s => s.is_checked).length;
-    const unchecked = total - checked;
-    const uniqueAssets = new Set(recentScans.map(s => s.id)).size;
+    const total_assets = assets.length;
+    const checked_assets = assets.filter(a => a.is_checked).length;
+    const unchecked_assets = total_assets - checked_assets;
 
-    return { total, checked, unchecked, uniqueAssets };
-  }, [recentScans]);
+    return { total_assets, checked_assets, unchecked_assets };
+  }, [assets]);
 
   const formatDate = (dateString?: string | null) => {
     if (!dateString) return 'Chưa có';
@@ -216,26 +215,26 @@ export default function RecentInventoryPage() {
 
             {/* Dashboard Stats - Matching Assets and QR Scanner Tabs */}
             <div className="flex items-center gap-6 text-sm md:text-base border-b border-gray-100 pb-2">
-              {/* Total Scans - Purple */}
+              {/* Total Assets - Purple like QR Scanner */}
               <div className="flex items-center gap-2">
                 <span className="text-gray-700 font-semibold text-sm md:text-base">Tổng:</span>
-                <span className="font-bold text-purple-600 text-lg md:text-xl">{stats.total}</span>
+                <span className="font-bold text-purple-600 text-lg md:text-xl">{loading ? '...' : stats.total_assets}</span>
               </div>
 
               <div className="w-px h-5 bg-gray-300"></div>
 
-              {/* Checked Assets - Green */}
+              {/* Checked Assets - Green like QR Scanner */}
               <div className="flex items-center gap-2">
                 <span className="text-gray-700 font-semibold text-sm md:text-base">Đã kiểm:</span>
-                <span className="font-bold text-green-600 text-lg md:text-xl">{stats.checked}</span>
+                <span className="font-bold text-green-600 text-lg md:text-xl">{loading ? '...' : stats.checked_assets}</span>
               </div>
 
               <div className="w-px h-5 bg-gray-300"></div>
 
-              {/* Unchecked Assets - Blue */}
+              {/* Unchecked Assets - Blue like QR Scanner */}
               <div className="flex items-center gap-2">
                 <span className="text-gray-700 font-semibold text-sm md:text-base">Chưa kiểm:</span>
-                <span className="font-bold text-blue-600 text-lg md:text-xl">{stats.unchecked}</span>
+                <span className="font-bold text-blue-600 text-lg md:text-xl">{loading ? '...' : stats.unchecked_assets}</span>
               </div>
             </div>
           </div>
@@ -391,7 +390,7 @@ export default function RecentInventoryPage() {
 
       {/* Content Area */}
       <div className="flex-1 overflow-hidden">
-        <div className="h-full overflow-auto pb-24 md:pb-4">
+        <div className="h-full overflow-auto pb-32 md:pb-4">
           <div className="px-4 md:px-6 py-4">
             {filteredScans.length === 0 ? (
               <div className="text-center py-16">
