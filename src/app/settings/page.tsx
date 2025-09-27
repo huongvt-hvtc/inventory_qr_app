@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabasePing } from '@/lib/supabase-ping';
 import toast from 'react-hot-toast';
+import LicenseActivation from '@/components/license/LicenseActivation';
+import LicenseUsageDisplay from '@/components/license/LicenseUsageDisplay';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -51,6 +53,12 @@ export default function SettingsPage() {
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 md:p-6 pb-24 md:pb-6" data-scroll="true">
         <div className="max-w-2xl mx-auto space-y-6">
+
+          {/* License Management Section */}
+          <div className="space-y-6">
+            <LicenseUsageDisplay />
+            <LicenseActivation />
+          </div>
 
           {/* Account Information */}
           {user && (
