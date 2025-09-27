@@ -2,13 +2,23 @@
 
 ## Tại sao cần setup database?
 
-Admin system cần các tables và policies để hoạt động:
+Ứng dụng cần database schema hoàn chỉnh để hoạt động:
 
-1. **`license_keys`** - Lưu trữ thông tin license keys
-2. **`license_activity_logs`** - Theo dõi hoạt động license
-3. **`admin_users`** - Quản lý admin users
-4. **RLS Policies** - Bảo mật truy cập dữ liệu
-5. **Triggers** - Tự động cập nhật usage stats
+### Core App Tables:
+1. **`users`** - Thông tin người dùng (extends auth.users)
+2. **`companies`** - Thông tin công ty
+3. **`company_members`** - Thành viên trong công ty
+4. **`assets`** - Tài sản của công ty
+
+### Admin System Tables:
+5. **`admin_users`** - Quản lý admin users
+6. **`license_keys`** - License keys và subscription
+7. **`license_activity_logs`** - Theo dõi hoạt động license
+
+### Database Features:
+8. **RLS Policies** - Bảo mật truy cập dữ liệu
+9. **Triggers** - Tự động cập nhật usage stats
+10. **Foreign Keys** - Liên kết dữ liệu between tables
 
 ## Cách setup
 
@@ -25,28 +35,38 @@ Admin system cần các tables và policies để hoạt động:
 ### Bước 3: Kiểm tra kết quả
 Sau khi chạy xong, bạn sẽ thấy:
 
-✅ **Tables được tạo:**
-- `admin_users`
-- `license_keys`
-- `license_activity_logs`
+✅ **Core App Tables:**
+- `users` - User profiles
+- `companies` - Company information
+- `company_members` - Company memberships
+- `assets` - Company assets
 
-✅ **Admin user được thêm:**
-- Email: `mr.ngoctmn@gmail.com`
-- Role: `super_admin`
+✅ **Admin Tables:**
+- `admin_users` - Admin users
+- `license_keys` - License management
+- `license_activity_logs` - Activity tracking
 
-✅ **Demo license được tạo:**
-- Key: `INV-2025-DEMO-TEST001`
-- Company: Demo Company
-- Plan: Pro (12,000,000 VNĐ)
+✅ **Demo Data:**
+- Admin user: `mr.ngoctmn@gmail.com`
+- Demo license: `INV-2025-DEMO-TEST001` (Pro plan, 12M VNĐ)
 
-✅ **RLS Policies hoạt động:**
-- Chỉ admin có thể xem/tạo/sửa license keys
-- Users chỉ thấy license của công ty mình
+✅ **Security Features:**
+- RLS policies cho tất cả tables
+- Admin-only access to license management
+- User-based access to company data
 
 ## Kiểm tra setup thành công
 
 ### 1. Kiểm tra tables
 Trong Supabase Dashboard > Table Editor, bạn sẽ thấy:
+
+**Core Tables:**
+- `users` (trống, sẽ được populate khi users đăng ký)
+- `companies` (trống)
+- `company_members` (trống)
+- `assets` (trống)
+
+**Admin Tables:**
 - `admin_users` (có 1 record: mr.ngoctmn@gmail.com)
 - `license_keys` (có 1 demo license)
 - `license_activity_logs` (trống)
