@@ -22,9 +22,11 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutProps) {
-  const { user, signOut, loading } = useAuth();
-  const { isAdmin } = useAdminAccess();
+  const { user, signOut, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdminAccess();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const loading = authLoading || adminLoading;
 
   const tabs = [
     { id: 'licenses', name: 'License Keys', icon: Key },
@@ -33,6 +35,7 @@ export default function AdminLayout({ children, activeTab, onTabChange }: AdminL
 
   // Show loading spinner while checking authentication
   if (loading) {
+    console.log('🔄 AdminLayout: Loading state - Auth:', authLoading, 'Admin:', adminLoading, 'User:', user?.email);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -44,6 +47,9 @@ export default function AdminLayout({ children, activeTab, onTabChange }: AdminL
           </h2>
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
           <p className="text-xs text-gray-500 mt-4">
+            Auth: {authLoading ? '⏳' : '✅'} | Admin: {adminLoading ? '⏳' : '✅'} | User: {user?.email || 'None'}
+          </p>
+          <p className="text-xs text-gray-500 mt-2">
             Nếu màn hình này hiện quá lâu, vui lòng kiểm tra console hoặc tải lại trang
           </p>
         </div>
@@ -79,6 +85,7 @@ export default function AdminLayout({ children, activeTab, onTabChange }: AdminL
 
   // Check admin access
   if (!isAdmin) {
+    console.log('❌ AdminLayout: User is not admin - Email:', user?.email, 'IsAdmin:', isAdmin);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
@@ -88,8 +95,11 @@ export default function AdminLayout({ children, activeTab, onTabChange }: AdminL
           <h1 className="text-xl font-semibold text-gray-900 mb-2">
             Không có quyền truy cập
           </h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-4">
             Bạn không có quyền truy cập trang quản trị này.
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            Email hiện tại: {user?.email || 'Không có'}
           </p>
           <Button onClick={signOut} variant="outline">
             <LogOut className="h-4 w-4 mr-2" />

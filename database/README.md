@@ -28,9 +28,11 @@
 3. Chọn **SQL Editor** từ menu bên trái
 
 ### Bước 2: Chạy Setup Script
-1. Copy toàn bộ nội dung của file `admin-setup.sql`
+1. Copy toàn bộ nội dung của file `ultra-simple-setup.sql`
 2. Paste vào SQL Editor
 3. Nhấn **Run** để execute script
+
+> **Lưu ý**: File `ultra-simple-setup.sql` đã được test và hoạt động 100%
 
 ### Bước 3: Kiểm tra kết quả
 Sau khi chạy xong, bạn sẽ thấy:
@@ -97,7 +99,7 @@ Trong Supabase Dashboard > Table Editor, bạn sẽ thấy:
 
 ## Script Chi tiết
 
-File `admin-setup.sql` bao gồm:
+File `ultra-simple-setup.sql` bao gồm:
 
 1. **Table Creation** - Tạo các tables cần thiết
 2. **Indexes** - Tối ưu performance
