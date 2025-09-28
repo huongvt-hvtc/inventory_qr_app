@@ -14,8 +14,12 @@ export default function ConditionalLayout({ children }: ConditionalLayoutProps) 
   const isAdminRoute = pathname.startsWith('/admin');
 
   if (isAdminRoute) {
-    // Admin routes: No main navigation, render children directly
-    return <>{children}</>;
+    // Admin routes: No main navigation, render children directly with reduced top spacing
+    return (
+      <main className="min-h-screen">
+        {children}
+      </main>
+    );
   }
 
   // Main app routes: Show navigation with sidebar/bottom nav

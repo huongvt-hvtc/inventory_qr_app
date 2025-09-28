@@ -363,40 +363,48 @@ export default function LicenseManagement() {
   };
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-3 md:p-4 lg:p-6 pt-2 md:pt-3">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Quản lý Licenses</h1>
-        <p className="text-gray-600">Tạo, chỉnh sửa và theo dõi các license keys</p>
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Quản lý Licenses</h1>
+        <p className="text-sm md:text-base text-gray-600">Tạo, chỉnh sửa và theo dõi các license keys</p>
       </div>
 
       {/* Action Bar */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
+      <div className="mb-4 md:mb-6 flex flex-col gap-3 sm:flex-row sm:gap-4 sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <Button
             onClick={loadLicenses}
             disabled={loading}
             variant="outline"
+            size="sm"
+            className="flex-1 sm:flex-none min-w-0"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Làm mới
+            <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Làm mới</span>
+            <span className="sm:hidden">Refresh</span>
           </Button>
 
           <Button
             onClick={exportLicenses}
             variant="outline"
+            size="sm"
+            className="flex-1 sm:flex-none min-w-0"
           >
-            <Download className="h-4 w-4 mr-2" />
-            Xuất CSV
+            <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Xuất CSV</span>
+            <span className="sm:hidden">CSV</span>
           </Button>
         </div>
 
         <Button
           onClick={() => setShowGenerateForm(!showGenerateForm)}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+          size="sm"
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Tạo License Mới
+          <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">Tạo License Mới</span>
+          <span className="sm:hidden">Tạo mới</span>
         </Button>
       </div>
 
@@ -605,126 +613,138 @@ export default function LicenseManagement() {
       )}
 
       {/* Search */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-4 md:mb-6">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
           <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm kiếm theo key code, tên công ty, email, plan..."
-            className="pl-10"
+            placeholder="Tìm kiếm theo key code, công ty, email..."
+            className="pl-8 sm:pl-10 text-sm sm:text-base h-9 sm:h-10"
           />
         </div>
-        <div className="text-sm text-gray-600">
+        <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left whitespace-nowrap">
           {filteredLicenses.length} / {licenses.length} licenses
         </div>
       </div>
 
       {/* Licenses List */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
         {filteredLicenses.map((license) => {
           const StatusIcon = getStatusIcon(license.status);
           return (
-            <Card key={license.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
+            <Card key={license.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+              <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4">
+                <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="font-mono text-xs font-bold text-purple-600 truncate">
+                    <div className="flex items-center gap-1 mb-1">
+                      <div className="font-mono text-xs sm:text-sm font-bold text-purple-600 truncate">
                         {license.key_code}
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => copyToClipboard(license.key_code)}
-                        className="h-6 w-6 p-0 hover:bg-purple-100"
+                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-purple-100 flex-shrink-0"
                       >
-                        <Copy className="h-3 w-3" />
+                        <Copy className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       </Button>
                     </div>
-                    <div className="font-medium text-gray-900 truncate">
+                    <div className="font-medium text-sm sm:text-base text-gray-900 truncate">
                       {license.company_name}
                     </div>
-                    <div className="text-sm text-gray-600 truncate">
+                    <div className="text-xs sm:text-sm text-gray-600 truncate">
                       {license.customer_email}
                     </div>
                   </div>
-                  <div className={`px-2 py-1 rounded text-xs font-medium flex items-center gap-1 ${getStatusColor(license.status)}`}>
-                    <StatusIcon className="h-3 w-3" />
-                    {license.status}
+                  <div className={`px-1.5 sm:px-2 py-1 rounded text-xs font-medium flex items-center gap-1 flex-shrink-0 ${getStatusColor(license.status)}`}>
+                    <StatusIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                    <span className="hidden sm:inline">{license.status}</span>
                   </div>
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2 sm:space-y-3 p-3 sm:p-4 pt-0">
                 {/* Plan & Price */}
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium capitalize">{license.plan_type}</span>
-                  <div className="font-bold text-green-600">
+                <div className="flex items-center justify-between text-xs sm:text-sm">
+                  <span className="font-medium capitalize bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                    {license.plan_type}
+                  </span>
+                  <div className="font-bold text-green-600 text-xs sm:text-sm">
                     {formatPrice(license.price || 0)}
                   </div>
                 </div>
 
                 {/* Validity */}
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Hạn sử dụng</span>
-                  <div className="flex items-center gap-1 text-gray-600">
+                <div className="bg-gray-50 p-2 rounded text-xs">
+                  <div className="flex items-center gap-1 text-gray-600 mb-1">
                     <Calendar className="h-3 w-3" />
-                    {formatDate(license.valid_from)} - {formatDate(license.valid_until)}
+                    <span className="font-medium">Thời hạn</span>
+                  </div>
+                  <div className="text-gray-800 font-mono">
+                    {formatDate(license.valid_from)} → {formatDate(license.valid_until)}
                   </div>
                 </div>
 
+                {/* Created Date & Notes */}
+                <div className="text-xs text-gray-500">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Clock className="h-3 w-3" />
+                    Tạo: {formatDate(license.created_at)}
+                  </div>
+                  {license.notes && (
+                    <div className="italic bg-yellow-50 p-2 rounded border-l-2 border-yellow-300">
+                      "{license.notes}"
+                    </div>
+                  )}
+                </div>
+
                 {/* Usage Stats */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="text-center p-2 bg-purple-50 rounded">
+                <div className="grid grid-cols-4 gap-1 sm:gap-2 text-xs">
+                  <div className="text-center p-1.5 sm:p-2 bg-purple-50 rounded">
                     <Building className="h-3 w-3 mx-auto mb-1 text-purple-600" />
-                    <div className="font-medium">{license.current_companies}/{license.max_companies}</div>
-                    <div className="text-gray-600">Công ty</div>
+                    <div className="font-medium text-xs">{license.current_companies}/{license.max_companies}</div>
+                    <div className="text-gray-600 text-xs">Công ty</div>
                   </div>
-                  <div className="text-center p-2 bg-green-50 rounded">
+                  <div className="text-center p-1.5 sm:p-2 bg-green-50 rounded">
                     <Users className="h-3 w-3 mx-auto mb-1 text-green-600" />
-                    <div className="font-medium">{license.current_users}/{license.max_users}</div>
-                    <div className="text-gray-600">Users</div>
+                    <div className="font-medium text-xs">{license.current_users}/{license.max_users}</div>
+                    <div className="text-gray-600 text-xs">Users</div>
                   </div>
-                  <div className="text-center p-2 bg-blue-50 rounded">
+                  <div className="text-center p-1.5 sm:p-2 bg-blue-50 rounded">
                     <Package className="h-3 w-3 mx-auto mb-1 text-blue-600" />
-                    <div className="font-medium">{license.current_assets}/{license.max_assets}</div>
-                    <div className="text-gray-600">Assets</div>
+                    <div className="font-medium text-xs">{license.current_assets}/{license.max_assets}</div>
+                    <div className="text-gray-600 text-xs">Assets</div>
                   </div>
-                  <div className="text-center p-2 bg-orange-50 rounded">
-                    <Key className="h-3 w-3 mx-auto mb-1 text-orange-600" />
-                    <div className="font-medium">{license.current_emails || 0}/{license.max_emails || 0}</div>
-                    <div className="text-gray-600">Emails</div>
+                  <div className="text-center p-1.5 sm:p-2 bg-orange-50 rounded">
+                    <Mail className="h-3 w-3 mx-auto mb-1 text-orange-600" />
+                    <div className="font-medium text-xs">{license.current_emails || 0}/{license.max_emails || 0}</div>
+                    <div className="text-gray-600 text-xs">Emails</div>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-1.5 sm:gap-2 pt-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => showLicenseDetails(license)}
-                    className="flex-1"
+                    className="flex-1 text-xs sm:text-sm h-7 sm:h-8"
                   >
                     <Eye className="h-3 w-3 mr-1" />
-                    Chi tiết
+                    <span className="hidden sm:inline">Chi tiết</span>
+                    <span className="sm:hidden">Xem</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 text-xs sm:text-sm h-7 sm:h-8"
                   >
                     <Edit className="h-3 w-3 mr-1" />
-                    Sửa
+                    <span className="hidden sm:inline">Chỉnh sửa</span>
+                    <span className="sm:hidden">Sửa</span>
                   </Button>
                 </div>
-
-                {/* Notes */}
-                {license.notes && (
-                  <div className="text-xs text-gray-500 italic border-t pt-2">
-                    {license.notes}
-                  </div>
-                )}
               </CardContent>
             </Card>
           );
@@ -732,14 +752,25 @@ export default function LicenseManagement() {
       </div>
 
       {filteredLicenses.length === 0 && (
-        <div className="text-center py-16">
-          <Key className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {searchTerm ? 'Không tìm thấy license' : 'Chưa có license nào'}
-          </h3>
-          <p className="text-gray-500">
-            {searchTerm ? 'Thử thay đổi từ khóa tìm kiếm' : 'Tạo license đầu tiên để bắt đầu'}
-          </p>
+        <div className="text-center py-12 sm:py-16">
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 mx-auto max-w-md">
+            <Key className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
+              {searchTerm ? 'Không tìm thấy license' : 'Chưa có license nào'}
+            </h3>
+            <p className="text-sm sm:text-base text-gray-500 mb-4">
+              {searchTerm ? 'Thử thay đổi từ khóa tìm kiếm' : 'Tạo license đầu tiên để bắt đầu'}
+            </p>
+            {!searchTerm && (
+              <Button
+                onClick={() => setShowGenerateForm(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Tạo License Đầu Tiên
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
