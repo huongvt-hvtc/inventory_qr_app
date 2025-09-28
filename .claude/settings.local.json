@@ -54,7 +54,9 @@
       "Bash(claude migrate-installer:*)",
       "Bash(open /Users/ngoctmn/Documents/development/inventory-qr-app/create-pwa-icons.html)",
       "Bash(sips:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(HOSTNAME=0.0.0.0 pnpm dev)",
+      "Bash(xargs kill:*)"
     ],
     "deny": [],
     "ask": []

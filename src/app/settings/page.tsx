@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import NewLicenseDisplay from '@/components/license/NewLicenseDisplay';
 import CompanyManagement from '@/components/license/CompanyManagement';
-import MemberPermissionsManagement from '@/components/license/MemberPermissionsManagement';
+import UserGroupManagement from '@/components/license/UserGroupManagement';
+import AssetListManagement from '@/components/license/AssetListManagement';
 import { useEmailLicense } from '@/hooks/useEmailLicense';
 
 export default function SettingsPage() {
@@ -93,10 +94,15 @@ export default function SettingsPage() {
                 licenseInfo={licenseInfo}
                 onCompanyChange={loadLicenseInfo}
               />
-              <MemberPermissionsManagement
+              <UserGroupManagement
+                licenseInfo={licenseInfo}
+                onMemberChange={loadLicenseInfo}
+              />
+              <AssetListManagement
                 licenseInfo={licenseInfo}
                 companies={licenseInfo?.companies || []}
-                onMemberChange={loadLicenseInfo}
+                members={licenseInfo?.members || []}
+                onPermissionChange={loadLicenseInfo}
               />
             </div>
           )}
