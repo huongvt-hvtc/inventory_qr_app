@@ -16,11 +16,14 @@ import {
   FolderOpen,
   Settings,
   History,
-  BookOpen
+  BookOpen,
+  Building2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import CompanySwitcher from '@/components/navigation/CompanySwitcher';
 
 const navigation = [
   { name: 'Tài sản', href: '/assets', icon: FolderOpen },
@@ -37,6 +40,7 @@ export function Navigation() {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const { user, signOut } = useAuth();
+  const { currentCompany, setCurrentCompany } = useCompany();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -68,6 +72,15 @@ export function Navigation() {
               Kiểm kê tài sản
             </span>
           </div>
+
+          {/* Company Switcher */}
+          <div className="pb-4">
+            <CompanySwitcher
+              onCompanyChange={setCurrentCompany}
+              showCreateButton={true}
+            />
+          </div>
+
           <nav className="flex flex-1 flex-col">
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
@@ -141,8 +154,25 @@ export function Navigation() {
         </div>
       </div>
 
-      {/* Mobile Navigation - Hidden top navigation, only bottom navigation */}
+      {/* Mobile Navigation */}
       <div className="md:hidden">
+
+        {/* Mobile Top Company Bar */}
+        {currentCompany && (
+          <div className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100 px-4 py-2">
+            <div className="flex items-center justify-center">
+              <div className="flex items-center gap-2 text-sm">
+                <Building2 className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-gray-900 truncate max-w-48">
+                  {currentCompany.name}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Spacer for mobile top bar */}
+        {currentCompany && <div className="h-12"></div>}
 
         {/* Mobile bottom navigation - Pro Grab-style Design */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 md:hidden shadow-2xl">

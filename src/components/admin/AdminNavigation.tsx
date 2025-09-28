@@ -4,6 +4,7 @@ import React from 'react';
 import {
   Shield,
   Key,
+  Mail,
   BookOpen,
   Settings,
   User
@@ -18,7 +19,8 @@ interface AdminNavigationProps {
 
 const adminNavigation = [
   { id: 'dashboard', name: 'Dashboard', icon: Shield },
-  { id: 'licenses', name: 'Licenses', icon: Key },
+  { id: 'licenses', name: 'Key License', icon: Key },
+  { id: 'email-licenses', name: 'Email License', icon: Mail },
   { id: 'guide', name: 'Hướng dẫn', icon: BookOpen },
   { id: 'settings', name: 'Thiết lập', icon: Settings },
 ];
@@ -53,6 +55,14 @@ export function AdminNavigation({ activeTab, onTabChange }: AdminNavigationProps
                     text: 'text-purple-600',
                     shadow: 'shadow-purple-200',
                     glow: 'shadow-purple-500/20'
+                  },
+                  {
+                    primary: 'from-teal-500 to-cyan-600',
+                    primarySolid: 'bg-teal-500',
+                    bg: 'bg-gradient-to-br from-teal-50 to-cyan-50',
+                    text: 'text-teal-600',
+                    shadow: 'shadow-teal-200',
+                    glow: 'shadow-teal-500/20'
                   },
                   {
                     primary: 'from-green-500 to-emerald-600',

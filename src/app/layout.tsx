@@ -8,6 +8,7 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RecentScansProvider } from "@/contexts/RecentScansContext";
 import { RefreshProvider } from "@/contexts/RefreshContext";
+import { CompanyProvider } from "@/contexts/CompanyContext";
 import AuthGuard from "@/components/auth/AuthGuard";
 import VisibilityHandler from "@/components/layout/VisibilityHandler";
 import MobilePWAFix from "@/components/layout/MobilePWAFix";
@@ -60,9 +61,10 @@ export default function RootLayout({
       </head>
       <body className={`${beVietnamPro.variable} font-sans h-full bg-gray-50`}>
         <AuthProvider>
-          <RecentScansProvider>
-            <RefreshProvider>
-              <AuthGuard>
+          <CompanyProvider>
+            <RecentScansProvider>
+              <RefreshProvider>
+                <AuthGuard>
             {/* Prevent tab switch reloads */}
             <VisibilityHandler />
 
@@ -82,9 +84,10 @@ export default function RootLayout({
             </div>
 
             <PWAInstallPrompt />
-              </AuthGuard>
-            </RefreshProvider>
-          </RecentScansProvider>
+                </AuthGuard>
+              </RefreshProvider>
+            </RecentScansProvider>
+          </CompanyProvider>
           <Toaster
             position="top-center"
             toastOptions={{

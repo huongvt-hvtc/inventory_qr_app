@@ -13,9 +13,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import LicenseActivation from '@/components/license/LicenseActivation';
 import LicenseUsageDisplay from '@/components/license/LicenseUsageDisplay';
 import LicenseTeamManagement from '@/components/license/LicenseTeamManagement';
+import CompanyManagement from '@/components/license/CompanyManagement';
+import MemberPermissionsManagement from '@/components/license/MemberPermissionsManagement';
+import { useLicense } from '@/hooks/useLicense';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
+  const { licenseInfo, loadCompanies } = useLicense();
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
@@ -85,7 +89,15 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <LicenseUsageDisplay />
             <LicenseActivation />
-            <LicenseTeamManagement />
+            <CompanyManagement
+              licenseInfo={licenseInfo}
+              onCompanyChange={loadCompanies}
+            />
+            <MemberPermissionsManagement
+              licenseInfo={licenseInfo}
+              companies={licenseInfo?.companies || []}
+              onMemberChange={loadCompanies}
+            />
           </div>
 
         </div>
