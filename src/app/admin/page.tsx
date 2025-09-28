@@ -5,6 +5,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import LicenseManagement from '@/components/admin/LicenseManagement';
 import AdminGuide from '@/components/admin/AdminGuide';
+import AdminSettings from '@/components/admin/AdminSettings';
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -17,6 +18,8 @@ export default function AdminPage() {
         return <LicenseManagement />;
       case 'guide':
         return <AdminGuide />;
+      case 'settings':
+        return <AdminSettings />;
       default:
         return <AdminDashboard />;
     }

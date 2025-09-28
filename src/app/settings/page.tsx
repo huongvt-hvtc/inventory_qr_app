@@ -5,38 +5,16 @@ import {
   User,
   LogOut,
   Shield,
-  Settings,
-  Database,
-  Wifi,
-  Clock
+  Settings
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabasePing } from '@/lib/supabase-ping';
-import toast from 'react-hot-toast';
 import LicenseActivation from '@/components/license/LicenseActivation';
 import LicenseUsageDisplay from '@/components/license/LicenseUsageDisplay';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
-  const [pinging, setPinging] = useState(false);
-
-  const handleManualPing = async () => {
-    setPinging(true);
-    try {
-      const success = await supabasePing.manualPing();
-      if (success) {
-        toast.success('✅ Supabase ping thành công!');
-      } else {
-        toast.error('❌ Supabase ping thất bại');
-      }
-    } catch (error) {
-      toast.error('❌ Lỗi khi ping Supabase');
-    } finally {
-      setPinging(false);
-    }
-  };
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
@@ -107,75 +85,6 @@ export default function SettingsPage() {
             <LicenseUsageDisplay />
             <LicenseActivation />
           </div>
-
-          {/* Supabase Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Database className="h-5 w-5 text-blue-600" />
-                Quản lý Supabase
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-start gap-3">
-                    <Wifi className="h-5 w-5 text-blue-600 mt-0.5" />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-blue-900 mb-1">Auto-ping hoạt động</h4>
-                      <p className="text-sm text-blue-700">
-                        Hệ thống tự động ping Supabase mỗi 6 ngày để tránh project bị pause do không hoạt động.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-4 w-4 text-gray-600" />
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">Ping lần cuối</div>
-                      <div className="text-xs text-gray-600">
-                        {(() => {
-                          const pingInfo = supabasePing.getLastPingInfo();
-                          if (!pingInfo.lastPing) {
-                            return 'Chưa có ping nào';
-                          }
-                          const date = new Date(pingInfo.lastPing);
-                          return `${date.toLocaleDateString('vi-VN')} - ${pingInfo.daysSinceLastPing} ngày trước`;
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={handleManualPing}
-                    disabled={pinging}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    {pinging ? (
-                      <>
-                        <Wifi className="h-4 w-4 mr-2 animate-pulse" />
-                        Đang ping...
-                      </>
-                    ) : (
-                      <>
-                        <Database className="h-4 w-4 mr-2" />
-                        Ping ngay
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                <div className="text-xs text-gray-500 space-y-1">
-                  <p>💡 <strong>Auto-ping giúp gì?</strong></p>
-                  <p>• Ngăn Supabase pause project sau 7 ngày không hoạt động</p>
-                  <p>• Đảm bảo app luôn sẵn sàng sử dụng</p>
-                  <p>• Không ảnh hưởng đến hiệu suất</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
         </div>
       </div>

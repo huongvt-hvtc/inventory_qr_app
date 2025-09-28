@@ -21,7 +21,6 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { NetworkStatus } from '@/components/NetworkStatus';
 
 const navigation = [
   { name: 'Tài sản', href: '/assets', icon: FolderOpen },

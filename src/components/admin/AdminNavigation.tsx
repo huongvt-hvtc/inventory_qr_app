@@ -5,7 +5,7 @@ import {
   Shield,
   Key,
   BookOpen,
-  LogOut,
+  Settings,
   User
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +20,7 @@ const adminNavigation = [
   { id: 'dashboard', name: 'Dashboard', icon: Shield },
   { id: 'licenses', name: 'Licenses', icon: Key },
   { id: 'guide', name: 'Hướng dẫn', icon: BookOpen },
+  { id: 'settings', name: 'Thiết lập', icon: Settings },
 ];
 
 export function AdminNavigation({ activeTab, onTabChange }: AdminNavigationProps) {
@@ -27,40 +28,108 @@ export function AdminNavigation({ activeTab, onTabChange }: AdminNavigationProps
 
   return (
     <>
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation - Grab-style Design */}
       <div className="md:hidden">
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-          <div className="grid grid-cols-4 h-16">
-            {adminNavigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onTabChange(item.id)}
-                  className={`flex flex-col items-center justify-center px-2 py-1 text-xs font-medium transition-colors ${
-                    isActive
-                      ? 'text-blue-600 bg-blue-50'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <Icon className={`h-5 w-5 mb-1 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                  <span className="truncate">{item.name}</span>
-                </button>
-              );
-            })}
-            {/* Logout Button */}
-            <button
-              onClick={signOut}
-              className="flex flex-col items-center justify-center px-2 py-1 text-xs font-medium text-red-500 hover:text-red-700 transition-colors"
-            >
-              <LogOut className="h-5 w-5 mb-1" />
-              <span className="truncate">Đăng xuất</span>
-            </button>
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-2xl">
+          {/* Better padding for home indicator and visual balance */}
+          <div className="pb-6 pt-2">
+            <nav className="flex px-3 pt-1 pb-1">
+              {adminNavigation.map((item, index) => {
+                const isActive = activeTab === item.id;
+                // Define unique colors for each tab
+                const colors = [
+                  {
+                    primary: 'from-blue-500 to-indigo-600',
+                    primarySolid: 'bg-blue-500',
+                    bg: 'bg-gradient-to-br from-blue-50 to-indigo-50',
+                    text: 'text-blue-600',
+                    shadow: 'shadow-blue-200',
+                    glow: 'shadow-blue-500/20'
+                  },
+                  {
+                    primary: 'from-purple-500 to-pink-600',
+                    primarySolid: 'bg-purple-500',
+                    bg: 'bg-gradient-to-br from-purple-50 to-pink-50',
+                    text: 'text-purple-600',
+                    shadow: 'shadow-purple-200',
+                    glow: 'shadow-purple-500/20'
+                  },
+                  {
+                    primary: 'from-green-500 to-emerald-600',
+                    primarySolid: 'bg-green-500',
+                    bg: 'bg-gradient-to-br from-green-50 to-emerald-50',
+                    text: 'text-green-600',
+                    shadow: 'shadow-green-200',
+                    glow: 'shadow-green-500/20'
+                  },
+                  {
+                    primary: 'from-orange-500 to-red-600',
+                    primarySolid: 'bg-orange-500',
+                    bg: 'bg-gradient-to-br from-orange-50 to-red-50',
+                    text: 'text-orange-600',
+                    shadow: 'shadow-orange-200',
+                    glow: 'shadow-orange-500/20'
+                  }
+                ];
+                const color = colors[index] || colors[0];
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onTabChange(item.id)}
+                    className="flex-1 flex flex-col items-center group relative px-1"
+                  >
+                    {/* Main Container with proper spacing */}
+                    <div className="flex flex-col items-center space-y-1.5 py-2 px-2 rounded-2xl transition-all duration-300 w-full">
+
+                      {/* Icon Container - Grab style */}
+                      <div className={`relative transition-all duration-300 ease-out ${
+                        isActive ? 'transform scale-110' : 'group-hover:scale-105'
+                      }`}>
+
+                        {/* Background Circle */}
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                          isActive
+                            ? `bg-gradient-to-br ${color.primary} shadow-lg ${color.glow}`
+                            : 'bg-gray-100 group-hover:bg-gray-200'
+                        }`}>
+
+                          {/* Icon */}
+                          <item.icon className={`h-5 w-5 transition-all duration-300 ${
+                            isActive
+                              ? 'text-white drop-shadow-sm'
+                              : 'text-gray-600 group-hover:text-gray-700'
+                          }`} />
+                        </div>
+
+                        {/* Active Glow Effect */}
+                        {isActive && (
+                          <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${color.primary} opacity-20 blur-md -z-10`}></div>
+                        )}
+                      </div>
+
+                      {/* Label - Always visible like Grab */}
+                      <span className={`text-xs font-medium transition-all duration-300 text-center leading-tight ${
+                        isActive
+                          ? `${color.text} font-semibold`
+                          : 'text-gray-600 group-hover:text-gray-700'
+                      }`}>
+                        {item.name}
+                      </span>
+                    </div>
+
+                    {/* Touch Ripple Effect */}
+                    <div className="absolute inset-0 rounded-2xl overflow-hidden">
+                      <div className={`absolute inset-0 bg-gradient-to-br ${color.primary} opacity-0 group-active:opacity-10 transition-opacity duration-150 rounded-2xl`}></div>
+                    </div>
+                  </button>
+                );
+              })}
+            </nav>
           </div>
         </div>
         {/* Spacer for fixed bottom nav */}
-        <div className="h-16"></div>
+        <div className="h-20"></div>
       </div>
 
       {/* Desktop Sidebar Navigation */}
@@ -101,9 +170,9 @@ export function AdminNavigation({ activeTab, onTabChange }: AdminNavigationProps
             })}
           </nav>
 
-          {/* User Info & Logout */}
+          {/* User Info - moved to Settings tab */}
           <div className="p-4 border-t border-gray-200">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 mb-3">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
               {user?.picture ? (
                 <img
                   src={user.picture}
@@ -124,14 +193,6 @@ export function AdminNavigation({ activeTab, onTabChange }: AdminNavigationProps
                 </p>
               </div>
             </div>
-            <Button
-              onClick={signOut}
-              variant="outline"
-              className="w-full text-red-600 border-red-200 hover:bg-red-50"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Đăng xuất
-            </Button>
           </div>
         </div>
         {/* Spacer for fixed sidebar */}

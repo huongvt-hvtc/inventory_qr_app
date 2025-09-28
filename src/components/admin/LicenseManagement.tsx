@@ -31,10 +31,11 @@ import { SUBSCRIPTION_PLANS } from '@/types/license';
 import toast from 'react-hot-toast';
 
 interface KeyGenerationForm {
-  company_name: string;
   customer_email: string;
-  plan_type: 'basic' | 'pro' | 'enterprise';
-  valid_months: number;
+  company_name: string;
+  plan_type: 'basic' | 'pro' | 'max' | 'enterprise';
+  valid_from: string;
+  valid_until: string;
   price: number;
   notes: string;
 }
@@ -50,10 +51,11 @@ export default function LicenseManagement() {
   const [showDetails, setShowDetails] = useState(false);
 
   const [formData, setFormData] = useState<KeyGenerationForm>({
-    company_name: '',
     customer_email: '',
+    company_name: '',
     plan_type: 'basic',
-    valid_months: 12,
+    valid_from: new Date().toISOString().split('T')[0],
+    valid_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     price: 5000000,
     notes: ''
   });
@@ -65,12 +67,10 @@ export default function LicenseManagement() {
 
   // Update price when plan changes
   useEffect(() => {
-    const planPrices = {
-      basic: 5000000,
-      pro: 12000000,
-      enterprise: 25000000
-    };
-    setFormData(prev => ({ ...prev, price: planPrices[prev.plan_type] }));
+    const plan = SUBSCRIPTION_PLANS[formData.plan_type];
+    if (plan) {
+      setFormData(prev => ({ ...prev, price: plan.price_vnd }));
+    }
   }, [formData.plan_type]);
 
   // Load all license keys with comprehensive data
@@ -110,8 +110,24 @@ export default function LicenseManagement() {
   const generateLicenseKey = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.company_name.trim() || !formData.customer_email.trim()) {
-      toast.error('Vui lòng điền đầy đủ thông tin');
+    // Validation
+    if (!formData.customer_email.trim()) {
+      toast.error('Email đăng ký là bắt buộc');
+      return;
+    }
+
+    if (!formData.customer_email.includes('@')) {
+      toast.error('Email không hợp lệ');
+      return;
+    }
+
+    if (new Date(formData.valid_until) <= new Date(formData.valid_from)) {
+      toast.error('Thời hạn kết thúc phải sau thời hạn bắt đầu');
+      return;
+    }
+
+    if (formData.price <= 0) {
+      toast.error('Giá phải lớn hơn 0');
       return;
     }
 
@@ -126,15 +142,14 @@ export default function LicenseManagement() {
       const keyCode = `INV-${year}${month}-${planPrefix}-${randomCode}`;
 
       const planLimits = SUBSCRIPTION_PLANS[formData.plan_type];
-      const validFrom = new Date();
-      const validUntil = new Date();
-      validUntil.setMonth(validUntil.getMonth() + formData.valid_months);
+      const validFrom = new Date(formData.valid_from);
+      const validUntil = new Date(formData.valid_until);
 
       const { data, error } = await supabase
         .from('license_keys')
         .insert({
           key_code: keyCode,
-          company_name: formData.company_name,
+          company_name: formData.company_name || 'Chưa cập nhật',
           customer_email: formData.customer_email,
           plan_type: formData.plan_type,
           max_companies: planLimits.max_companies,
@@ -157,10 +172,11 @@ export default function LicenseManagement() {
 
       // Reset form
       setFormData({
-        company_name: '',
         customer_email: '',
+        company_name: '',
         plan_type: 'basic',
-        valid_months: 12,
+        valid_from: new Date().toISOString().split('T')[0],
+        valid_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         price: 5000000,
         notes: ''
       });
@@ -220,14 +236,15 @@ export default function LicenseManagement() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN');
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
+    return new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
   };
 
   const getStatusColor = (status: string) => {
@@ -309,17 +326,7 @@ export default function LicenseManagement() {
             <form onSubmit={generateLicenseKey} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Tên công ty *</label>
-                  <Input
-                    value={formData.company_name}
-                    onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                    placeholder="Tên công ty khách hàng"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Email khách hàng *</label>
+                  <label className="text-sm font-medium text-gray-700">Email đăng ký *</label>
                   <Input
                     type="email"
                     value={formData.customer_email}
@@ -330,41 +337,63 @@ export default function LicenseManagement() {
                 </div>
 
                 <div>
+                  <label className="text-sm font-medium text-gray-700">Tên công ty</label>
+                  <Input
+                    value={formData.company_name}
+                    onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                    placeholder="Tên công ty (không bắt buộc)"
+                  />
+                </div>
+
+                <div>
                   <label className="text-sm font-medium text-gray-700">Gói dịch vụ</label>
                   <select
                     value={formData.plan_type}
                     onChange={(e) => setFormData({ ...formData, plan_type: e.target.value as any })}
                     className="w-full h-10 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   >
-                    <option value="basic">Basic - 1 email - 5,000,000 VNĐ/năm</option>
-                    <option value="pro">Pro - 5 emails - 12,000,000 VNĐ/năm</option>
-                    <option value="enterprise">Enterprise - 10 emails - 25,000,000 VNĐ/năm</option>
+                    <option value="basic">Basic - 1 user - {SUBSCRIPTION_PLANS.basic.price_display}</option>
+                    <option value="pro">Pro - 5 users - {SUBSCRIPTION_PLANS.pro.price_display}</option>
+                    <option value="max">Max - 10 users - {SUBSCRIPTION_PLANS.max.price_display}</option>
+                    <option value="enterprise">Enterprise - Không giới hạn - {SUBSCRIPTION_PLANS.enterprise.price_display}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Thời hạn (tháng)</label>
+                  <label className="text-sm font-medium text-gray-700">Thời hạn bắt đầu</label>
                   <Input
-                    type="number"
-                    min="1"
-                    max="36"
-                    value={formData.valid_months}
-                    onChange={(e) => setFormData({ ...formData, valid_months: parseInt(e.target.value) })}
-                    placeholder="12"
+                    type="date"
+                    value={formData.valid_from}
+                    onChange={(e) => setFormData({ ...formData, valid_from: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Thời hạn kết thúc</label>
+                  <Input
+                    type="date"
+                    value={formData.valid_until}
+                    onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
                   />
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-gray-700">Giá (VNĐ)</label>
                   <Input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
-                    placeholder="5000000"
+                    type="text"
+                    value={formData.price.toLocaleString('vi-VN')}
+                    onChange={(e) => {
+                      const numericValue = e.target.value.replace(/[^0-9]/g, '');
+                      setFormData({ ...formData, price: parseInt(numericValue) || 0 });
+                    }}
+                    placeholder="5 000 000"
                   />
+                  <div className="text-xs text-gray-500 mt-1">
+                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(formData.price)}
+                  </div>
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label className="text-sm font-medium text-gray-700">Ghi chú</label>
                   <Input
                     value={formData.notes}

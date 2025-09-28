@@ -19,7 +19,7 @@ export interface LicenseKey {
   current_emails: number; // New field for current email usage
 
   // Subscription
-  plan_type: 'basic' | 'pro' | 'enterprise';
+  plan_type: 'basic' | 'pro' | 'max' | 'enterprise';
   valid_from: string;
   valid_until: string;
   status: 'active' | 'expired' | 'suspended';
@@ -117,30 +117,39 @@ export interface PlanLimits {
 
 export const SUBSCRIPTION_PLANS: Record<string, PlanLimits> = {
   basic: {
-    max_companies: 3,
-    max_users: 50,
-    max_assets: 5000,
-    max_emails: 1, // Basic: 1 email only
-    features: ['Basic support', 'Standard features', 'QR code generation', 'Asset tracking'],
+    max_companies: 1,
+    max_users: 999,
+    max_assets: 99999,
+    max_emails: 1, // Basic: 1 user có thể truy cập
+    features: ['1 user truy cập', 'Quản lý tài sản không giới hạn', 'QR code generation', 'Basic support'],
     price_vnd: 5000000,
     price_display: '5,000,000 VNĐ/năm'
   },
   pro: {
-    max_companies: 10,
-    max_users: 200,
-    max_assets: 20000,
-    max_emails: 5, // Pro: 5 emails can use
-    features: ['Priority support', 'Excel export', 'API access', 'Advanced reporting', 'Custom fields', 'Bulk operations'],
+    max_companies: 1,
+    max_users: 999,
+    max_assets: 99999,
+    max_emails: 5, // Pro: 5 users có thể truy cập
+    features: ['5 users truy cập', 'Quản lý tài sản không giới hạn', 'Excel export', 'API access', 'Priority support'],
     price_vnd: 12000000,
     price_display: '12,000,000 VNĐ/năm'
   },
-  enterprise: {
-    max_companies: 999,
+  max: {
+    max_companies: 1,
     max_users: 999,
     max_assets: 99999,
-    max_emails: 10, // Enterprise: 10 emails can use
-    features: ['24/7 support', 'Custom features', 'White-label', 'Dedicated manager', 'Custom integrations', 'Advanced analytics'],
+    max_emails: 10, // Max: 10 users có thể truy cập
+    features: ['10 users truy cập', 'Quản lý tài sản không giới hạn', 'Advanced reporting', 'Custom fields', 'Premium support'],
     price_vnd: 25000000,
     price_display: '25,000,000 VNĐ/năm'
+  },
+  enterprise: {
+    max_companies: 1,
+    max_users: 999,
+    max_assets: 99999,
+    max_emails: 999, // Enterprise: Không giới hạn users
+    features: ['Không giới hạn users', 'Quản lý tài sản không giới hạn', '24/7 support', 'Custom features', 'White-label', 'Dedicated manager'],
+    price_vnd: 50000000,
+    price_display: '50,000,000 VNĐ/năm'
   }
 };
