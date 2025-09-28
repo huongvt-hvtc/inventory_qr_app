@@ -10,16 +10,15 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import LicenseActivation from '@/components/license/LicenseActivation';
-import LicenseUsageDisplay from '@/components/license/LicenseUsageDisplay';
+import NewLicenseDisplay from '@/components/license/NewLicenseDisplay';
 import LicenseTeamManagement from '@/components/license/LicenseTeamManagement';
 import CompanyManagement from '@/components/license/CompanyManagement';
 import MemberPermissionsManagement from '@/components/license/MemberPermissionsManagement';
-import { useLicense } from '@/hooks/useLicense';
+import { useEmailLicense } from '@/hooks/useEmailLicense';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
-  const { licenseInfo, loadCompanies } = useLicense();
+  const { licenseInfo, loadLicenseInfo } = useEmailLicense();
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
@@ -85,20 +84,23 @@ export default function SettingsPage() {
             </Card>
           )}
 
-          {/* License Management Section */}
-          <div className="space-y-6">
-            <LicenseUsageDisplay />
-            <LicenseActivation />
-            <CompanyManagement
-              licenseInfo={licenseInfo}
-              onCompanyChange={loadCompanies}
-            />
-            <MemberPermissionsManagement
-              licenseInfo={licenseInfo}
-              companies={licenseInfo?.companies || []}
-              onMemberChange={loadCompanies}
-            />
-          </div>
+          {/* License Information - For all users */}
+          <NewLicenseDisplay />
+
+          {/* License Management - Only for license owners */}
+          {licenseInfo?.license?.owner_email === user?.email && (
+            <div className="space-y-6">
+              <CompanyManagement
+                licenseInfo={licenseInfo}
+                onCompanyChange={loadLicenseInfo}
+              />
+              <MemberPermissionsManagement
+                licenseInfo={licenseInfo}
+                companies={licenseInfo?.companies || []}
+                onMemberChange={loadLicenseInfo}
+              />
+            </div>
+          )}
 
         </div>
       </div>
