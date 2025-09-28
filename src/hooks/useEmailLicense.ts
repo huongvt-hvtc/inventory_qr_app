@@ -80,7 +80,7 @@ export function useEmailLicense() {
         .from('license_members')
         .select('*')
         .eq('license_id', license.id)
-        .order('invited_at', { ascending: true });
+        .order('joined_at', { ascending: true });
 
       if (membersError) throw membersError;
 

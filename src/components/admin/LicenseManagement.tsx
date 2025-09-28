@@ -229,8 +229,6 @@ export default function LicenseManagement() {
           email: formData.customer_email,
           role: 'owner',
           status: 'active',
-          invited_by: user?.id,
-          invited_at: new Date().toISOString(),
           joined_at: new Date().toISOString()
         },
         // Additional members
@@ -239,8 +237,6 @@ export default function LicenseManagement() {
           email: email,
           role: 'member',
           status: 'active',
-          invited_by: user?.id,
-          invited_at: new Date().toISOString(),
           joined_at: new Date().toISOString()
         }))
       ];

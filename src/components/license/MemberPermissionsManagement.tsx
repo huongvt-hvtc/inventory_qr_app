@@ -29,7 +29,7 @@ import type {
   Company,
   CompanyPermission,
   LicenseUsageInfo,
-  MemberInvitationRequest
+  MemberAdditionRequest
 } from '@/types/license';
 import { SUBSCRIPTION_PLANS } from '@/types/license';
 
@@ -72,7 +72,7 @@ export default function MemberPermissionsManagement({
         .from('license_members')
         .select('*')
         .eq('license_id', licenseInfo.license.id)
-        .order('invited_at', { ascending: true });
+        .order('joined_at', { ascending: true });
 
       if (memberError) throw memberError;
 
@@ -178,8 +178,6 @@ export default function MemberPermissionsManagement({
           email: inviteEmail.trim(),
           role: 'member',
           status: 'active',
-          invited_by: user?.id,
-          invited_at: new Date().toISOString(),
           joined_at: new Date().toISOString()
         })
         .select()

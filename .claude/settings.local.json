@@ -56,7 +56,9 @@
       "Bash(sips:*)",
       "Bash(curl:*)",
       "Bash(HOSTNAME=0.0.0.0 pnpm dev)",
-      "Bash(xargs kill:*)"
+      "Bash(xargs kill:*)",
+      "WebSearch",
+      "WebFetch(domain:resend.com)"
     ],
     "deny": [],
     "ask": []

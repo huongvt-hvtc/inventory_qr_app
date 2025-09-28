@@ -153,7 +153,6 @@ export default function EmailLicenseManagement() {
           email: formData.owner_email.trim(),
           role: 'owner',
           status: 'active',
-          invited_at: new Date().toISOString(),
           joined_at: new Date().toISOString()
         });
 

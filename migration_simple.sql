@@ -52,10 +52,8 @@ CREATE TABLE public.license_members (
     license_id UUID NOT NULL REFERENCES public.licenses(id) ON DELETE CASCADE,
     email TEXT NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('owner', 'member')),
-    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'pending', 'inactive')),
-    invited_by UUID,
-    invited_at TIMESTAMPTZ DEFAULT NOW(),
-    joined_at TIMESTAMPTZ,
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+    joined_at TIMESTAMPTZ DEFAULT NOW(),
     last_active_at TIMESTAMPTZ
 );
 

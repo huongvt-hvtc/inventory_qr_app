@@ -93,9 +93,7 @@ export interface LicenseMember {
   license_id: string; // Points to License.id instead of license_key_id
   email: string;
   role: 'owner' | 'member';
-  status: 'active' | 'pending' | 'inactive';
-  invited_by?: string;
-  invited_at: string;
+  status: 'active' | 'inactive';
   joined_at?: string;
   last_active_at?: string;
 
@@ -135,7 +133,6 @@ export interface CompanyMember {
   company_id: string;
   user_id: string;
   role: 'owner' | 'admin' | 'member';
-  invited_by?: string;
   joined_at: string;
 }
 
@@ -179,17 +176,17 @@ export interface CompanyCreationResponse {
   company_id?: string;
 }
 
-// Member Invitation
-export interface MemberInvitationRequest {
+// Member Addition (simplified)
+export interface MemberAdditionRequest {
   license_id: string;
   email: string;
-  company_permissions: {
+  company_permissions?: {
     company_id: string;
     role: 'admin' | 'member' | 'viewer';
   }[];
 }
 
-export interface MemberInvitationResponse {
+export interface MemberAdditionResponse {
   success: boolean;
   error?: string;
   member_id?: string;

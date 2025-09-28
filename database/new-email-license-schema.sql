@@ -57,10 +57,8 @@ CREATE TABLE public.license_members (
     license_id UUID REFERENCES public.licenses(id) ON DELETE CASCADE,
     email TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'member', -- 'owner', 'member'
-    status TEXT NOT NULL DEFAULT 'active', -- 'active', 'pending', 'inactive'
-    invited_by TEXT,
-    invited_at TIMESTAMPTZ DEFAULT NOW(),
-    joined_at TIMESTAMPTZ,
+    status TEXT NOT NULL DEFAULT 'active', -- 'active', 'inactive'
+    joined_at TIMESTAMPTZ DEFAULT NOW(),
     last_active_at TIMESTAMPTZ,
 
     UNIQUE(license_id, email)

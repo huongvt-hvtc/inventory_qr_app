@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLicense } from '@/hooks/useLicense';
+import { useEmailLicense } from '@/hooks/useEmailLicense';
 import toast from 'react-hot-toast';
 import type { Company } from '@/types/license';
 
@@ -24,7 +24,7 @@ interface CompanySwitcherProps {
 
 export default function CompanySwitcher({ onCompanyChange, showCreateButton = true }: CompanySwitcherProps) {
   const { user } = useAuth();
-  const { licenseInfo } = useLicense();
+  const { licenseInfo } = useEmailLicense();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isOpen, setIsOpen] = useState(false);

@@ -3,19 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   Users,
-  Mail,
   Plus,
-  Copy,
   Trash2,
-  Send,
   Crown,
-  Shield,
   AlertCircle,
   Clock,
-  Check,
-  ExternalLink,
-  UserPlus,
-  Link as LinkIcon
+  UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,9 +27,8 @@ export default function UserGroupManagement({ licenseInfo, onMemberChange }: Use
   const { user } = useAuth();
   const [members, setMembers] = useState<LicenseMember[]>([]);
   const [loading, setLoading] = useState(false);
-  const [inviting, setInviting] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
-  const [inviteLink, setInviteLink] = useState('');
 
   // Check if user is license owner
   const isLicenseOwner = licenseInfo?.license?.owner_email === user?.email;
@@ -67,40 +59,9 @@ export default function UserGroupManagement({ licenseInfo, onMemberChange }: Use
     loadMembers();
   }, [licenseInfo?.license?.id]);
 
-  // Generate invite link
-  const generateInviteLink = () => {
-    if (!licenseInfo?.license?.id) return;
 
-    const baseUrl = window.location.origin;
-    const inviteToken = btoa(`${licenseInfo.license.id}:${Date.now()}`);
-    const link = `${baseUrl}/invite/${inviteToken}`;
-    setInviteLink(link);
-  };
-
-  // Copy invite link to clipboard
-  const copyInviteLink = async () => {
-    if (!inviteLink) {
-      generateInviteLink();
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      toast.success('Đã copy link mời vào clipboard');
-    } catch (error) {
-      // Fallback for browsers that don't support clipboard API
-      const textArea = document.createElement('textarea');
-      textArea.value = inviteLink;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      toast.success('Đã copy link mời vào clipboard');
-    }
-  };
-
-  // Invite member by email
-  const inviteMember = async () => {
+  // Add member directly by email
+  const addMember = async () => {
     if (!newMemberEmail.trim()) {
       toast.error('Vui lòng nhập email');
       return;
@@ -119,14 +80,14 @@ export default function UserGroupManagement({ licenseInfo, onMemberChange }: Use
     }
 
     if (!isLicenseOwner) {
-      toast.error('Chỉ chủ sở hữu license mới có thể mời thành viên');
+      toast.error('Chỉ chủ sở hữu license mới có thể thêm thành viên');
       return;
     }
 
     // Check if email already exists
     const existingMember = members.find(m => m.email.toLowerCase() === newMemberEmail.toLowerCase());
     if (existingMember) {
-      toast.error('Email này đã được thêm vào license');
+      toast.error('Email này đã có trong license');
       return;
     }
 
@@ -136,7 +97,7 @@ export default function UserGroupManagement({ licenseInfo, onMemberChange }: Use
       return;
     }
 
-    setInviting(true);
+    setAdding(true);
     try {
       const { data, error } = await supabase
         .from('license_members')
@@ -144,24 +105,23 @@ export default function UserGroupManagement({ licenseInfo, onMemberChange }: Use
           license_id: licenseInfo.license.id,
           email: newMemberEmail.toLowerCase(),
           role: 'member',
-          status: 'pending',
-          invited_by: user?.email,
-          invited_at: new Date().toISOString()
+          status: 'active'
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      toast.success(`Đã gửi lời mời đến ${newMemberEmail}`);
+      toast.success(`Đã thêm ${newMemberEmail} vào license`);
+
       setNewMemberEmail('');
       await loadMembers();
       onMemberChange?.();
     } catch (error: any) {
-      console.error('Error inviting member:', error);
-      toast.error(error.message || 'Không thể gửi lời mời');
+      console.error('Error adding member:', error);
+      toast.error(error.message || 'Không thể thêm thành viên');
     } finally {
-      setInviting(false);
+      setAdding(false);
     }
   };
 
@@ -223,76 +183,38 @@ export default function UserGroupManagement({ licenseInfo, onMemberChange }: Use
       <CardContent>
         <div className="space-y-6">
 
-          {/* Invite Section - Only for license owners */}
+          {/* Add Member Section - Only for license owners */}
           {isLicenseOwner && (
-            <div className="space-y-4">
-              {/* Email Invitation */}
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <UserPlus className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-900">Mời thành viên qua email</span>
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    value={newMemberEmail}
-                    onChange={(e) => setNewMemberEmail(e.target.value)}
-                    placeholder="Nhập email thành viên..."
-                    type="email"
-                    onKeyPress={(e) => e.key === 'Enter' && inviteMember()}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={inviteMember}
-                    disabled={inviting || !newMemberEmail.trim()}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    {inviting ? (
-                      <Clock className="h-4 w-4 mr-1 animate-pulse" />
-                    ) : (
-                      <Send className="h-4 w-4 mr-1" />
-                    )}
-                    Mời
-                  </Button>
-                </div>
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <UserPlus className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-900">Thêm thành viên vào nhóm</span>
               </div>
-
-              {/* Invite Link */}
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <LinkIcon className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">Link mời nhanh</span>
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    value={inviteLink}
-                    placeholder="Nhấn 'Tạo link' để tạo link mời"
-                    readOnly
-                    className="flex-1 bg-white"
-                  />
-                  {!inviteLink ? (
-                    <Button
-                      onClick={generateInviteLink}
-                      variant="outline"
-                      className="border-blue-300 text-blue-700 hover:bg-blue-100"
-                    >
-                      <LinkIcon className="h-4 w-4 mr-1" />
-                      Tạo link
-                    </Button>
+              <div className="flex gap-2">
+                <Input
+                  value={newMemberEmail}
+                  onChange={(e) => setNewMemberEmail(e.target.value)}
+                  placeholder="Nhập email thành viên..."
+                  type="email"
+                  onKeyPress={(e) => e.key === 'Enter' && addMember()}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={addMember}
+                  disabled={adding || !newMemberEmail.trim()}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {adding ? (
+                    <Clock className="h-4 w-4 mr-1 animate-pulse" />
                   ) : (
-                    <Button
-                      onClick={copyInviteLink}
-                      variant="outline"
-                      className="border-blue-300 text-blue-700 hover:bg-blue-100"
-                    >
-                      <Copy className="h-4 w-4 mr-1" />
-                      Copy
-                    </Button>
+                    <Plus className="h-4 w-4 mr-1" />
                   )}
-                </div>
-                <p className="text-xs text-blue-600 mt-2">
-                  Chia sẻ link này để mời người khác tham gia license của bạn
-                </p>
+                  Thêm
+                </Button>
               </div>
+              <p className="text-xs text-green-600 mt-2">
+                Thành viên sẽ được truy cập ngay khi đăng nhập bằng email này
+              </p>
             </div>
           )}
 
@@ -308,7 +230,7 @@ export default function UserGroupManagement({ licenseInfo, onMemberChange }: Use
                 <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
                 <p>Chưa có thành viên nào</p>
                 {isLicenseOwner && (
-                  <p className="text-sm mt-2">Mời thành viên đầu tiên để bắt đầu</p>
+                  <p className="text-sm mt-2">Thêm thành viên đầu tiên để bắt đầu</p>
                 )}
               </div>
             ) : (
@@ -340,26 +262,12 @@ export default function UserGroupManagement({ licenseInfo, onMemberChange }: Use
                         }`}>
                           {member.role === 'owner' ? 'Chủ sở hữu' : 'Thành viên'}
                         </span>
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                          member.status === 'active'
-                            ? 'bg-blue-100 text-blue-700'
-                            : member.status === 'pending'
-                            ? 'bg-orange-100 text-orange-700'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {member.status === 'active' ? 'Hoạt động' :
-                           member.status === 'pending' ? 'Chờ xác nhận' : 'Không hoạt động'}
+                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-700">
+                          Hoạt động
                         </span>
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        {member.joined_at ? (
-                          `Tham gia: ${new Date(member.joined_at).toLocaleDateString('vi-VN')}`
-                        ) : (
-                          `Được mời: ${new Date(member.invited_at).toLocaleDateString('vi-VN')}`
-                        )}
-                        {member.invited_by && (
-                          <span className="ml-2">• Được mời bởi: {member.invited_by}</span>
-                        )}
+                        {member.joined_at && `Tham gia: ${new Date(member.joined_at).toLocaleDateString('vi-VN')}`}
                       </div>
                     </div>
 
@@ -385,12 +293,12 @@ export default function UserGroupManagement({ licenseInfo, onMemberChange }: Use
           {/* Usage Info */}
           <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg space-y-1">
             <p><strong>👥 Thông tin nhóm người dùng:</strong></p>
-            <p>• Chủ sở hữu license có thể mời/xóa thành viên</p>
+            <p>• Chủ sở hữu license có thể thêm/xóa thành viên</p>
             <p>• Thành viên có thể truy cập các công ty được phân quyền</p>
             <p>• Gói {licenseInfo.license.plan_type} cho phép tối đa {
               licenseInfo.license.max_members === 999 ? 'không giới hạn' : licenseInfo.license.max_members
             } thành viên</p>
-            <p>• Sử dụng email hoặc link mời để thêm thành viên mới</p>
+            <p>• Thành viên đăng nhập bằng email được thêm sẽ tự động có quyền truy cập</p>
           </div>
         </div>
       </CardContent>
