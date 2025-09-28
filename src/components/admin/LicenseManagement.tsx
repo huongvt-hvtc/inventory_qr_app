@@ -92,8 +92,8 @@ export default function LicenseManagement() {
     const planLimits = SUBSCRIPTION_PLANS[formData.plan_type];
     const totalEmails = formData.additional_emails.length + 1; // +1 for owner email
 
-    if (totalEmails >= planLimits.max_emails && planLimits.max_emails !== 999) {
-      toast.error(`Gói ${formData.plan_type} chỉ cho phép tối đa ${planLimits.max_emails} email`);
+    if (totalEmails >= planLimits.max_members && planLimits.max_members !== 999) {
+      toast.error(`Gói ${formData.plan_type} chỉ cho phép tối đa ${planLimits.max_members} email`);
       return;
     }
 
@@ -208,7 +208,7 @@ export default function LicenseManagement() {
           max_companies: planLimits.max_companies,
           max_users: planLimits.max_users,
           max_assets: planLimits.max_assets,
-          max_emails: planLimits.max_emails,
+          max_emails: planLimits.max_members,
           valid_from: validFrom.toISOString().split('T')[0],
           valid_until: validUntil.toISOString().split('T')[0],
           features: { plan_features: planLimits.features },
@@ -500,7 +500,7 @@ export default function LicenseManagement() {
                   <UserPlus className="h-5 w-5 text-blue-600" />
                   <h3 className="text-lg font-medium text-gray-900">Thành viên được phép sử dụng</h3>
                   <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                    {formData.additional_emails.length + 1}/{SUBSCRIPTION_PLANS[formData.plan_type].max_emails === 999 ? '∞' : SUBSCRIPTION_PLANS[formData.plan_type].max_emails}
+                    {formData.additional_emails.length + 1}/{SUBSCRIPTION_PLANS[formData.plan_type].max_members === 999 ? '∞' : SUBSCRIPTION_PLANS[formData.plan_type].max_members}
                   </span>
                 </div>
 
@@ -580,7 +580,7 @@ export default function LicenseManagement() {
                 {/* Plan Limits Info */}
                 <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
                   <p><strong>📋 Quy định gói {formData.plan_type}:</strong></p>
-                  <p>• Tối đa {SUBSCRIPTION_PLANS[formData.plan_type].max_emails === 999 ? 'không giới hạn' : SUBSCRIPTION_PLANS[formData.plan_type].max_emails} email có thể sử dụng license</p>
+                  <p>• Tối đa {SUBSCRIPTION_PLANS[formData.plan_type].max_members === 999 ? 'không giới hạn' : SUBSCRIPTION_PLANS[formData.plan_type].max_members} email có thể sử dụng license</p>
                   <p>• Email chủ có quyền quản lý thành viên trong app</p>
                   <p>• Thành viên có thể được mời/xóa bởi email chủ</p>
                 </div>
