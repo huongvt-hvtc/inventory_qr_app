@@ -155,6 +155,9 @@ export interface LicenseCreationRequest {
   plan_type: 'basic' | 'pro' | 'max' | 'enterprise';
   valid_from: string;
   valid_until: string;
+  max_members: number;  // Số email được dùng chung
+  max_companies: number; // Số danh sách tài sản (công ty) được tạo
+  price: number; // Giá tiền
   notes?: string;
 }
 

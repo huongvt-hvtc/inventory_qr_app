@@ -17,11 +17,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
-import type { LicenseKey } from '@/types/license';
+import type { License } from '@/types/license';
 import toast from 'react-hot-toast';
 
 export default function AdminDashboard() {
-  const [licenses, setLicenses] = useState<LicenseKey[]>([]);
+  const [licenses, setLicenses] = useState<License[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Load licenses on component mount
@@ -33,7 +33,7 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('license_keys')
+        .from('licenses')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -206,8 +206,8 @@ export default function AdminDashboard() {
                 {recentLicenses.slice(0, 5).map((license) => (
                   <div key={license.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
-                      <div className="font-medium text-sm">{license.company_name}</div>
-                      <div className="text-xs text-gray-600 font-mono">{license.key_code}</div>
+                      <div className="font-medium text-sm">{license.owner_email}</div>
+                      <div className="text-xs text-gray-600 font-mono">{license.id.slice(0, 8)}...</div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-medium capitalize">{license.plan_type}</div>
@@ -236,8 +236,8 @@ export default function AdminDashboard() {
                 {expiringSoon.slice(0, 5).map((license) => (
                   <div key={license.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
                     <div>
-                      <div className="font-medium text-sm">{license.company_name}</div>
-                      <div className="text-xs text-gray-600 font-mono">{license.key_code}</div>
+                      <div className="font-medium text-sm">{license.owner_email}</div>
+                      <div className="text-xs text-gray-600 font-mono">{license.id.slice(0, 8)}...</div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-medium text-orange-600">Hết hạn</div>

@@ -19,8 +19,7 @@ interface AdminNavigationProps {
 
 const adminNavigation = [
   { id: 'dashboard', name: 'Dashboard', icon: Shield },
-  { id: 'licenses', name: 'Key License', icon: Key },
-  { id: 'email-licenses', name: 'Email License', icon: Mail },
+  { id: 'licenses', name: 'License', icon: Key },
   { id: 'guide', name: 'Hướng dẫn', icon: BookOpen },
   { id: 'settings', name: 'Thiết lập', icon: Settings },
 ];

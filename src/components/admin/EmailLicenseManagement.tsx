@@ -43,6 +43,9 @@ export default function EmailLicenseManagement() {
     plan_type: 'basic',
     valid_from: new Date().toISOString().split('T')[0],
     valid_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    max_members: 5,
+    max_companies: 3,
+    price: 500000,
     notes: ''
   });
 
@@ -124,15 +127,15 @@ export default function EmailLicenseManagement() {
           valid_from: formData.valid_from,
           valid_until: formData.valid_until,
           status: 'active',
-          max_companies: planLimits.max_companies,
+          max_companies: formData.max_companies,
           max_users: planLimits.max_users,
           max_assets: planLimits.max_assets,
-          max_members: planLimits.max_members,
+          max_members: formData.max_members,
           current_companies: 0,
           current_users: 0,
           current_assets: 0,
           current_members: 1, // Owner counts as 1 member
-          price: planLimits.price_vnd,
+          price: formData.price,
           notes: formData.notes,
           features: { plan_features: planLimits.features },
           total_api_calls: 0
@@ -163,6 +166,9 @@ export default function EmailLicenseManagement() {
         plan_type: 'basic',
         valid_from: new Date().toISOString().split('T')[0],
         valid_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        max_members: 5,
+        max_companies: 3,
+        price: 500000,
         notes: ''
       });
       await loadLicenses();
@@ -305,7 +311,7 @@ export default function EmailLicenseManagement() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Email chủ sở hữu</label>
                 <Input
@@ -348,7 +354,40 @@ export default function EmailLicenseManagement() {
                 />
               </div>
 
-              <div className="md:col-span-2">
+              <div>
+                <label className="block text-sm font-medium mb-2">Số email được dùng chung</label>
+                <Input
+                  type="number"
+                  value={formData.max_members}
+                  onChange={(e) => setFormData(prev => ({ ...prev, max_members: parseInt(e.target.value) || 1 }))}
+                  placeholder="5"
+                  min="1"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Số công ty được tạo</label>
+                <Input
+                  type="number"
+                  value={formData.max_companies}
+                  onChange={(e) => setFormData(prev => ({ ...prev, max_companies: parseInt(e.target.value) || 1 }))}
+                  placeholder="3"
+                  min="1"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Giá tiền (VNĐ)</label>
+                <Input
+                  type="number"
+                  value={formData.price}
+                  onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
+                  placeholder="500000"
+                  min="0"
+                />
+              </div>
+
+              <div className="md:col-span-3">
                 <label className="block text-sm font-medium mb-2">Ghi chú</label>
                 <Input
                   value={formData.notes}

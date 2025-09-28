@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminDashboard from '@/components/admin/AdminDashboard';
-import LicenseManagement from '@/components/admin/LicenseManagement';
 import EmailLicenseManagement from '@/components/admin/EmailLicenseManagement';
 import AdminGuide from '@/components/admin/AdminGuide';
 import AdminSettings from '@/components/admin/AdminSettings';
@@ -16,8 +15,6 @@ export default function AdminPage() {
       case 'dashboard':
         return <AdminDashboard />;
       case 'licenses':
-        return <LicenseManagement />;
-      case 'email-licenses':
         return <EmailLicenseManagement />;
       case 'guide':
         return <AdminGuide />;
