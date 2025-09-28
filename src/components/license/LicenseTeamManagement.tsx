@@ -21,6 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLicense } from '@/hooks/useLicense';
 import toast from 'react-hot-toast';
 import type { LicenseMember } from '@/types/license';
+import { SUBSCRIPTION_PLANS } from '@/types/license';
 
 export default function LicenseTeamManagement() {
   const { user } = useAuth();
@@ -40,11 +41,20 @@ export default function LicenseTeamManagement() {
 
     setLoading(true);
     try {
+      // First get the license ID from key_code
+      const { data: licenseData, error: licenseError } = await supabase
+        .from('license_keys')
+        .select('id')
+        .eq('key_code', licenseInfo.license.key_code)
+        .single();
+
+      if (licenseError) throw licenseError;
+
       const { data, error } = await supabase
         .from('license_members')
         .select('*')
-        .eq('license_key_id', licenseInfo.license.key_code)
-        .order('created_at', { ascending: true });
+        .eq('license_key_id', licenseData.id)
+        .order('invited_at', { ascending: true });
 
       if (error) throw error;
       setMembers(data || []);
@@ -88,19 +98,29 @@ export default function LicenseTeamManagement() {
       return;
     }
 
-    // Check license limits
-    const maxEmails = licenseInfo.license.max_emails || 1;
+    // Check license limits using plan type
+    const planLimits = SUBSCRIPTION_PLANS[licenseInfo.license.plan_type];
+    const maxEmails = planLimits?.max_emails || 1;
     if (members.length >= maxEmails && maxEmails !== 999) {
-      toast.error(`Gói license chỉ cho phép tối đa ${maxEmails} thành viên`);
+      toast.error(`Gói ${licenseInfo.license.plan_type} chỉ cho phép tối đa ${maxEmails} thành viên`);
       return;
     }
 
     setInviting(true);
     try {
+      // First get the license ID from key_code
+      const { data: licenseData, error: licenseError } = await supabase
+        .from('license_keys')
+        .select('id')
+        .eq('key_code', licenseInfo.license.key_code)
+        .single();
+
+      if (licenseError) throw licenseError;
+
       const { error } = await supabase
         .from('license_members')
         .insert({
-          license_key_id: licenseInfo.license.key_code,
+          license_key_id: licenseData.id,
           email: inviteEmail.trim(),
           role: 'member',
           status: 'active',
@@ -172,7 +192,11 @@ export default function LicenseTeamManagement() {
           <Users className="h-5 w-5 text-blue-600" />
           Quản lý Team
           <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-normal">
-            {members.length}/{licenseInfo.license.max_emails === 999 ? '∞' : licenseInfo.license.max_emails}
+            {members.length}/{(() => {
+              const planLimits = SUBSCRIPTION_PLANS[licenseInfo.license.plan_type];
+              const maxEmails = planLimits?.max_emails || 1;
+              return maxEmails === 999 ? '∞' : maxEmails;
+            })()}
           </span>
         </CardTitle>
       </CardHeader>
@@ -308,7 +332,11 @@ export default function LicenseTeamManagement() {
             <p><strong>📋 Quy định team:</strong></p>
             <p>• Chủ sở hữu có thể mời/xóa thành viên</p>
             <p>• Tất cả thành viên có thể sử dụng đầy đủ tính năng</p>
-            <p>• Gói {licenseInfo.license.plan_type} cho phép tối đa {licenseInfo.license.max_emails === 999 ? 'không giới hạn' : licenseInfo.license.max_emails} thành viên</p>
+            <p>• Gói {licenseInfo.license.plan_type} cho phép tối đa {(() => {
+              const planLimits = SUBSCRIPTION_PLANS[licenseInfo.license.plan_type];
+              const maxEmails = planLimits?.max_emails || 1;
+              return maxEmails === 999 ? 'không giới hạn' : maxEmails;
+            })()} thành viên</p>
           </div>
         </div>
       </CardContent>

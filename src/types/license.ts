@@ -102,6 +102,7 @@ export interface LicenseUsageInfo {
     plan_type: string;
     valid_until: string;
     status: string;
+    max_emails: number;
     features: Record<string, any>;
   };
   usage: {
