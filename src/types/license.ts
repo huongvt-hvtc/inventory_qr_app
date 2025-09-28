@@ -39,6 +39,21 @@ export interface LicenseKey {
   created_by?: string;
   created_at: string;
   updated_at: string;
+
+  // License Members (optional relation)
+  license_members?: LicenseMember[];
+}
+
+export interface LicenseMember {
+  id: string;
+  license_key_id: string;
+  email: string;
+  role: 'owner' | 'member';
+  status: 'active' | 'pending' | 'inactive';
+  invited_by?: string;
+  invited_at: string;
+  joined_at?: string;
+  last_active_at?: string;
 }
 
 export interface Company {

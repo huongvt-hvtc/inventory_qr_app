@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import LicenseActivation from '@/components/license/LicenseActivation';
 import LicenseUsageDisplay from '@/components/license/LicenseUsageDisplay';
+import LicenseTeamManagement from '@/components/license/LicenseTeamManagement';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -84,6 +85,7 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <LicenseUsageDisplay />
             <LicenseActivation />
+            <LicenseTeamManagement />
           </div>
 
         </div>

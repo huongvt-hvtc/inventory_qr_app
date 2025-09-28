@@ -5,7 +5,8 @@ import type {
   LicenseActivationRequest,
   LicenseActivationResponse,
   LicenseUsageInfo,
-  Company
+  Company,
+  LicenseMember
 } from '@/types/license';
 import toast from 'react-hot-toast';
 
@@ -15,13 +16,40 @@ export function useLicense() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
   const [licenseInfo, setLicenseInfo] = useState<LicenseUsageInfo | null>(null);
+  const [userLicenseRole, setUserLicenseRole] = useState<'owner' | 'member' | null>(null);
 
-  // Load user's companies
+  // Check if user has access to license (as owner or member)
+  const checkUserLicenseAccess = async (licenseKeyId?: string) => {
+    if (!user || !licenseKeyId) {
+      setUserLicenseRole(null);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('license_members')
+        .select('role, status')
+        .eq('license_key_id', licenseKeyId)
+        .eq('email', user.email)
+        .eq('status', 'active')
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      setUserLicenseRole(data?.role || null);
+    } catch (error) {
+      console.error('Error checking license access:', error);
+      setUserLicenseRole(null);
+    }
+  };
+
+  // Load user's companies (owned or member of)
   const loadCompanies = async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // First load companies owned by user
+      const { data: ownedCompanies, error: ownedError } = await supabase
         .from('companies')
         .select(`
           *,
@@ -35,13 +63,53 @@ export function useLicense() {
         .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (ownedError) throw ownedError;
 
-      setCompanies(data || []);
+      // Then load companies where user is a license member
+      const { data: memberLicenses, error: memberError } = await supabase
+        .from('license_members')
+        .select(`
+          license_key_id,
+          role,
+          license_key:license_keys(
+            id,
+            key_code,
+            plan_type,
+            status,
+            valid_until,
+            company_name
+          )
+        `)
+        .eq('email', user.email)
+        .eq('status', 'active');
+
+      if (memberError) throw memberError;
+
+      // Combine owned companies and member companies
+      const allCompanies = [...(ownedCompanies || [])];
+
+      // Add companies from member licenses that aren't already owned
+      for (const memberLicense of memberLicenses || []) {
+        const existingCompany = allCompanies.find(c => c.license_key_id === memberLicense.license_key_id);
+        if (!existingCompany && memberLicense.license_key) {
+          // Create a pseudo-company for member access
+          allCompanies.push({
+            id: `member-${memberLicense.license_key_id}`,
+            name: memberLicense.license_key.company_name || 'Công ty thành viên',
+            owner_id: '',
+            license_key_id: memberLicense.license_key_id,
+            created_at: '',
+            updated_at: '',
+            license_key: memberLicense.license_key
+          });
+        }
+      }
+
+      setCompanies(allCompanies);
 
       // Set first company as current if none selected
-      if (data && data.length > 0 && !currentCompany) {
-        setCurrentCompany(data[0]);
+      if (allCompanies.length > 0 && !currentCompany) {
+        setCurrentCompany(allCompanies[0]);
       }
     } catch (error) {
       console.error('Error loading companies:', error);
@@ -168,6 +236,7 @@ export function useLicense() {
   useEffect(() => {
     if (currentCompany && currentCompany.license_key_id) {
       loadLicenseInfo(currentCompany.id);
+      checkUserLicenseAccess(currentCompany.license_key_id);
     }
   }, [currentCompany]);
 
@@ -177,11 +246,13 @@ export function useLicense() {
     companies,
     currentCompany,
     licenseInfo,
+    userLicenseRole,
 
     // Actions
     activateLicense,
     loadCompanies,
     switchCompany,
+    checkUserLicenseAccess,
 
     // Utilities
     checkLicenseLimit,
@@ -191,6 +262,9 @@ export function useLicense() {
 
     // Computed
     hasActiveLicense: licenseInfo && licenseInfo.license.status === 'active' && !isLicenseExpired(),
-    isTrialUser: !licenseInfo || !currentCompany?.license_key_id
+    isTrialUser: !licenseInfo || !currentCompany?.license_key_id,
+    isLicenseOwner: userLicenseRole === 'owner',
+    isLicenseMember: userLicenseRole === 'member',
+    hasLicenseAccess: userLicenseRole !== null
   };
 }

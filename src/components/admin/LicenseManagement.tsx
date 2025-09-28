@@ -19,7 +19,10 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Copy
+  Copy,
+  Mail,
+  X,
+  UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +41,7 @@ interface KeyGenerationForm {
   valid_until: string;
   price: number;
   notes: string;
+  additional_emails: string[]; // List of additional emails that can use this license
 }
 
 export default function LicenseManagement() {
@@ -57,8 +61,57 @@ export default function LicenseManagement() {
     valid_from: new Date().toISOString().split('T')[0],
     valid_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     price: 5000000,
-    notes: ''
+    notes: '',
+    additional_emails: []
   });
+
+  const [currentEmail, setCurrentEmail] = useState('');
+
+  // Functions to handle additional emails
+  const addEmail = () => {
+    if (!currentEmail.trim()) {
+      toast.error('Vui lòng nhập email');
+      return;
+    }
+
+    if (!currentEmail.includes('@')) {
+      toast.error('Email không hợp lệ');
+      return;
+    }
+
+    if (currentEmail.toLowerCase() === formData.customer_email.toLowerCase()) {
+      toast.error('Email này đã là email chủ');
+      return;
+    }
+
+    if (formData.additional_emails.some(email => email.toLowerCase() === currentEmail.toLowerCase())) {
+      toast.error('Email này đã được thêm');
+      return;
+    }
+
+    const planLimits = SUBSCRIPTION_PLANS[formData.plan_type];
+    const totalEmails = formData.additional_emails.length + 1; // +1 for owner email
+
+    if (totalEmails >= planLimits.max_emails && planLimits.max_emails !== 999) {
+      toast.error(`Gói ${formData.plan_type} chỉ cho phép tối đa ${planLimits.max_emails} email`);
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      additional_emails: [...prev.additional_emails, currentEmail.trim()]
+    }));
+    setCurrentEmail('');
+    toast.success('Đã thêm email thành công');
+  };
+
+  const removeEmail = (emailToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      additional_emails: prev.additional_emails.filter(email => email !== emailToRemove)
+    }));
+    toast.success('Đã xóa email');
+  };
 
   // Load licenses on component mount
   useEffect(() => {
@@ -145,7 +198,7 @@ export default function LicenseManagement() {
       const validFrom = new Date(formData.valid_from);
       const validUntil = new Date(formData.valid_until);
 
-      const { data, error } = await supabase
+      const { data: licenseData, error: licenseError } = await supabase
         .from('license_keys')
         .insert({
           key_code: keyCode,
@@ -166,7 +219,43 @@ export default function LicenseManagement() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (licenseError) throw licenseError;
+
+      // Create license members
+      const membersToInsert = [
+        // Owner
+        {
+          license_key_id: licenseData.id,
+          email: formData.customer_email,
+          role: 'owner',
+          status: 'active',
+          invited_by: user?.id,
+          invited_at: new Date().toISOString(),
+          joined_at: new Date().toISOString()
+        },
+        // Additional members
+        ...formData.additional_emails.map(email => ({
+          license_key_id: licenseData.id,
+          email: email,
+          role: 'member',
+          status: 'active',
+          invited_by: user?.id,
+          invited_at: new Date().toISOString(),
+          joined_at: new Date().toISOString()
+        }))
+      ];
+
+      if (membersToInsert.length > 0) {
+        const { error: membersError } = await supabase
+          .from('license_members')
+          .insert(membersToInsert);
+
+        if (membersError) {
+          console.error('Error creating license members:', membersError);
+          // Don't throw here as license is already created
+          toast.error('License tạo thành công nhưng có lỗi khi thêm thành viên');
+        }
+      }
 
       toast.success('🎉 License key đã được tạo thành công!');
 
@@ -178,8 +267,10 @@ export default function LicenseManagement() {
         valid_from: new Date().toISOString().split('T')[0],
         valid_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         price: 5000000,
-        notes: ''
+        notes: '',
+        additional_emails: []
       });
+      setCurrentEmail('');
       setShowGenerateForm(false);
 
       // Reload licenses
@@ -400,6 +491,98 @@ export default function LicenseManagement() {
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     placeholder="Ghi chú về license này..."
                   />
+                </div>
+              </div>
+
+              {/* Additional Emails Section */}
+              <div className="space-y-4 border-t pt-4">
+                <div className="flex items-center gap-2">
+                  <UserPlus className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-medium text-gray-900">Thành viên được phép sử dụng</h3>
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                    {formData.additional_emails.length + 1}/{SUBSCRIPTION_PLANS[formData.plan_type].max_emails === 999 ? '∞' : SUBSCRIPTION_PLANS[formData.plan_type].max_emails}
+                  </span>
+                </div>
+
+                {/* Owner Email Display */}
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <Mail className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-green-900">
+                        {formData.customer_email || 'Email chủ (chưa nhập)'}
+                      </div>
+                      <div className="text-xs text-green-700">Chủ sở hữu license</div>
+                    </div>
+                    <div className="px-2 py-1 bg-green-200 text-green-800 text-xs font-medium rounded">
+                      Owner
+                    </div>
+                  </div>
+                </div>
+
+                {/* Add Email Input */}
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    value={currentEmail}
+                    onChange={(e) => setCurrentEmail(e.target.value)}
+                    placeholder="Nhập email thành viên mới..."
+                    onKeyPress={(e) => e.key === 'Enter' && addEmail()}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={addEmail}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={!currentEmail.trim()}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Thêm
+                  </Button>
+                </div>
+
+                {/* Additional Emails List */}
+                {formData.additional_emails.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-gray-700">
+                      Thành viên ({formData.additional_emails.length})
+                    </div>
+                    {formData.additional_emails.map((email, index) => (
+                      <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Mail className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">{email}</div>
+                            <div className="text-xs text-gray-600">Thành viên</div>
+                          </div>
+                          <div className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                            Member
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeEmail(email)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Plan Limits Info */}
+                <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+                  <p><strong>📋 Quy định gói {formData.plan_type}:</strong></p>
+                  <p>• Tối đa {SUBSCRIPTION_PLANS[formData.plan_type].max_emails === 999 ? 'không giới hạn' : SUBSCRIPTION_PLANS[formData.plan_type].max_emails} email có thể sử dụng license</p>
+                  <p>• Email chủ có quyền quản lý thành viên trong app</p>
+                  <p>• Thành viên có thể được mời/xóa bởi email chủ</p>
                 </div>
               </div>
 
