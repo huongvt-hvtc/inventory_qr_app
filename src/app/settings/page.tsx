@@ -11,7 +11,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import NewLicenseDisplay from '@/components/license/NewLicenseDisplay';
-import LicenseTeamManagement from '@/components/license/LicenseTeamManagement';
 import CompanyManagement from '@/components/license/CompanyManagement';
 import MemberPermissionsManagement from '@/components/license/MemberPermissionsManagement';
 import { useEmailLicense } from '@/hooks/useEmailLicense';

@@ -93,7 +93,7 @@ export function CompanyProvider({ children }: CompanyProviderProps) {
 
         if (permError) throw permError;
 
-        const accessibleCompanies = permissions?.map(p => p.company).filter(Boolean) as Company[] || [];
+        const accessibleCompanies = permissions?.map(p => p.company).filter(Boolean) as unknown as Company[] || [];
         setAvailableCompanies(accessibleCompanies);
 
         // Set first accessible company as current if none selected

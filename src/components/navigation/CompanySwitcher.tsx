@@ -75,7 +75,7 @@ export default function CompanySwitcher({ onCompanyChange, showCreateButton = tr
 
         if (permError) throw permError;
 
-        const accessibleCompanies = permissions?.map(p => p.company).filter(Boolean) as Company[] || [];
+        const accessibleCompanies = permissions?.map(p => p.company).filter(Boolean) as unknown as Company[] || [];
         setCompanies(accessibleCompanies);
 
         // Set first accessible company as selected

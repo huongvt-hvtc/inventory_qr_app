@@ -213,6 +213,9 @@ export interface LicenseUsageInfo {
     valid_until: string;
     status: string;
     max_members: number;
+    max_companies: number;
+    max_users: number;
+    max_assets: number;
     features: Record<string, any>;
   };
   usage: {

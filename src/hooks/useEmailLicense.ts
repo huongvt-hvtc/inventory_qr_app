@@ -55,7 +55,7 @@ export function useEmailLicense() {
           .single();
 
         if (memberData && !memberError && memberData.licenses) {
-          license = memberData.licenses as License;
+          license = memberData.licenses as unknown as License;
           role = memberData.role as 'owner' | 'member';
         }
       }
@@ -112,6 +112,9 @@ export function useEmailLicense() {
           valid_until: license.valid_until,
           status: license.status,
           max_members: license.max_members,
+          max_companies: license.max_companies,
+          max_users: license.max_users,
+          max_assets: license.max_assets,
           features: license.features || {}
         },
         usage: currentUsage,

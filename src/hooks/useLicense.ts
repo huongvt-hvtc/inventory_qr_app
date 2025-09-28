@@ -221,7 +221,7 @@ export function useLicense() {
   // Switch current company
   const switchCompany = async (company: Company) => {
     setCurrentCompany(company);
-    if (company.license_key_id) {
+    if (company.license_id) {
       await loadLicenseInfo(company.id);
     }
   };
@@ -234,9 +234,9 @@ export function useLicense() {
   }, [user]);
 
   useEffect(() => {
-    if (currentCompany && currentCompany.license_key_id) {
+    if (currentCompany && currentCompany.license_id) {
       loadLicenseInfo(currentCompany.id);
-      checkUserLicenseAccess(currentCompany.license_key_id);
+      checkUserLicenseAccess(currentCompany.license_id);
     }
   }, [currentCompany]);
 
@@ -262,7 +262,7 @@ export function useLicense() {
 
     // Computed
     hasActiveLicense: licenseInfo && licenseInfo.license.status === 'active' && !isLicenseExpired(),
-    isTrialUser: !licenseInfo || !currentCompany?.license_key_id,
+    isTrialUser: !licenseInfo || !currentCompany?.license_id,
     isLicenseOwner: userLicenseRole === 'owner',
     isLicenseMember: userLicenseRole === 'member',
     hasLicenseAccess: userLicenseRole !== null
