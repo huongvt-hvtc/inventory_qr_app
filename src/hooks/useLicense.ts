@@ -95,7 +95,7 @@ export function useLicense() {
           // Create a pseudo-company for member access
           allCompanies.push({
             id: `member-${memberLicense.license_key_id}`,
-            name: memberLicense.license_key.company_name || 'Công ty thành viên',
+            name: (memberLicense.license_key as any).company_name || 'Công ty thành viên',
             owner_id: '',
             license_key_id: memberLicense.license_key_id,
             created_at: '',
