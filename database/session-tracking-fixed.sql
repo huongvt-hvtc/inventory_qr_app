@@ -1,10 +1,18 @@
 -- Session Tracking Schema for Login Limits
 -- Mỗi user chỉ được login 1 mobile + 1 desktop cùng lúc
+-- Fixed version with proper column naming
+
+-- Drop existing objects if any (for clean setup)
+DROP TABLE IF EXISTS user_sessions CASCADE;
+DROP FUNCTION IF EXISTS validate_session_limit CASCADE;
+DROP FUNCTION IF EXISTS force_new_session CASCADE;
+DROP FUNCTION IF EXISTS update_session_activity CASCADE;
+DROP FUNCTION IF EXISTS cleanup_old_sessions CASCADE;
 
 -- Create user sessions table
 CREATE TABLE IF NOT EXISTS user_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_email TEXT NOT NULL,
+  email TEXT NOT NULL, -- Changed from user_email to email
   device_type TEXT NOT NULL CHECK (device_type IN ('mobile', 'desktop')),
   device_info TEXT, -- User agent, IP, etc.
   session_token TEXT UNIQUE NOT NULL,
@@ -13,7 +21,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 );
 
 -- Create index for faster lookups
-CREATE INDEX IF NOT EXISTS idx_user_sessions_email ON user_sessions(user_email);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_email ON user_sessions(email);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(session_token);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_last_active ON user_sessions(last_active_at);
 
@@ -32,7 +40,7 @@ BEGIN
   -- Check if there's an existing session for this device type
   SELECT * INTO existing_session
   FROM user_sessions
-  WHERE user_email = p_user_email
+  WHERE email = p_user_email
     AND device_type = p_device_type
     AND session_token != p_session_token
     AND last_active_at > NOW() - INTERVAL '24 hours';
@@ -55,11 +63,11 @@ BEGIN
 
   -- Clean up old sessions (inactive for more than 24 hours)
   DELETE FROM user_sessions 
-  WHERE user_email = p_user_email 
+  WHERE email = p_user_email 
     AND last_active_at < NOW() - INTERVAL '24 hours';
 
   -- Update or create session
-  INSERT INTO user_sessions (user_email, device_type, session_token, device_info)
+  INSERT INTO user_sessions (email, device_type, session_token, device_info)
   VALUES (p_user_email, p_device_type, p_session_token, p_device_info)
   ON CONFLICT (session_token) 
   DO UPDATE SET 
@@ -84,12 +92,12 @@ RETURNS JSON AS $$
 BEGIN
   -- Delete existing sessions of same device type
   DELETE FROM user_sessions
-  WHERE user_email = p_user_email
+  WHERE email = p_user_email
     AND device_type = p_device_type
     AND session_token != p_session_token;
 
   -- Create new session
-  INSERT INTO user_sessions (user_email, device_type, session_token, device_info)
+  INSERT INTO user_sessions (email, device_type, session_token, device_info)
   VALUES (p_user_email, p_device_type, p_session_token, p_device_info)
   ON CONFLICT (session_token) 
   DO UPDATE SET 
@@ -125,16 +133,40 @@ $$ LANGUAGE plpgsql;
 -- Enable Row Level Security
 ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
 
--- RLS Policy: Users can only see their own sessions
+-- RLS Policy: Users can only see their own sessions (using email)
 CREATE POLICY "users_see_own_sessions" ON user_sessions
-FOR SELECT USING (user_email = current_setting('app.current_user_email', true));
+FOR SELECT USING (
+  email = (
+    SELECT email FROM users WHERE id = auth.uid() LIMIT 1
+  )
+);
+
+-- RLS Policy: Users can insert/update their own sessions
+CREATE POLICY "users_manage_own_sessions" ON user_sessions
+FOR ALL USING (
+  email = (
+    SELECT email FROM users WHERE id = auth.uid() LIMIT 1
+  )
+);
 
 -- Admin can see all sessions
 CREATE POLICY "admin_see_all_sessions" ON user_sessions
 FOR ALL USING (
   EXISTS (
     SELECT 1 FROM users
-    WHERE email = current_setting('app.current_user_email', true)
+    WHERE id = auth.uid()
       AND role = 'admin'
   )
 );
+
+-- Grant necessary permissions
+GRANT ALL ON user_sessions TO authenticated;
+GRANT EXECUTE ON FUNCTION validate_session_limit TO authenticated;
+GRANT EXECUTE ON FUNCTION force_new_session TO authenticated;
+GRANT EXECUTE ON FUNCTION update_session_activity TO authenticated;
+
+-- Success message
+DO $$
+BEGIN
+  RAISE NOTICE 'Session tracking schema created successfully!';
+END $$;
