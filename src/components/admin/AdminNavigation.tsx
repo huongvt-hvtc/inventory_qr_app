@@ -4,7 +4,6 @@ import React from 'react';
 import {
   Shield,
   Key,
-  Mail,
   BookOpen,
   Settings,
   User
@@ -20,7 +19,6 @@ interface AdminNavigationProps {
 const adminNavigation = [
   { id: 'dashboard', name: 'Dashboard', icon: Shield },
   { id: 'licenses', name: 'License', icon: Key },
-  { id: 'companies', name: 'Công ty & User', icon: User },
   { id: 'guide', name: 'Hướng dẫn', icon: BookOpen },
   { id: 'settings', name: 'Thiết lập', icon: Settings },
 ];

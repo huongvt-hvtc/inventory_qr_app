@@ -146,24 +146,6 @@ export interface LicenseActivityLog {
   performed_at: string;
 }
 
-// NEW License Creation Requests (for admin)
-export interface LicenseCreationRequest {
-  owner_email: string;
-  plan_type: 'basic' | 'pro' | 'max' | 'enterprise';
-  valid_from: string;
-  valid_until: string;
-  max_members: number;  // Số email được dùng chung
-  max_companies: number; // Số danh sách tài sản (công ty) được tạo
-  price: number; // Giá tiền
-  notes?: string;
-}
-
-export interface LicenseCreationResponse {
-  success: boolean;
-  error?: string;
-  license_id?: string;
-}
-
 // Company Creation in Settings
 export interface CompanyCreationRequest {
   name: string;
