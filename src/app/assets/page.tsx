@@ -570,9 +570,9 @@ export default function AssetsPage() {
       </div>
 
       {/* Action Buttons - Professional Layout */}
-        <div className="px-4 md:px-6 py-3 bg-white border-b border-gray-100">
-          {/* Desktop Layout */}
-          <div className="hidden md:flex items-center justify-between">
+      <div className="px-4 md:px-6 py-3 bg-white border-b border-gray-100">
+        {/* Desktop Layout */}
+        <div className="hidden md:flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* Primary Actions */}
               <button
@@ -663,10 +663,10 @@ export default function AssetsPage() {
                 </button>
               </div>
             )}
-          </div>
+        </div>
 
-          {/* Mobile Layout */}
-          <div className="md:hidden space-y-3">
+        {/* Mobile Layout */}
+        <div className="md:hidden space-y-3">
             {/* Primary Actions */}
             <div className="flex items-center gap-2 flex-wrap">
               <button
@@ -754,12 +754,12 @@ export default function AssetsPage() {
                 </button>
               </div>
             )}
-          </div>
         </div>
+      </div>
 
-        {/* Search and Filter */}
-        <div className="px-4 md:px-6 py-3 bg-gray-50 border-b border-gray-200">
-          <div className="flex items-center gap-3">
+      {/* Search and Filter */}
+      <div className="px-4 md:px-6 py-3 bg-gray-50 border-b border-gray-200">
+        <div className="flex items-center gap-3">
             {/* Search Box */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -860,7 +860,6 @@ export default function AssetsPage() {
               </div>
             </div>
           )}
-        </div>
 
         {/* Status Legend */}
         <div className="px-4 md:px-6 py-3 bg-white border-b border-gray-200">
@@ -876,7 +875,6 @@ export default function AssetsPage() {
           </div>
         </div>
       </div>
-
       {/* Assets Table - Optimized for maximum space */}
       <div className="flex-1 overflow-hidden pb-0 md:pb-0">
         {/* Loading State */}
@@ -1038,7 +1036,6 @@ export default function AssetsPage() {
             )}
           </div>
         </div>
-
 
       {/* Modals */}
       <AssetDetailModal

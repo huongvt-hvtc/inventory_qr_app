@@ -58,7 +58,17 @@
       "Bash(HOSTNAME=0.0.0.0 pnpm dev)",
       "Bash(xargs kill:*)",
       "WebSearch",
-      "WebFetch(domain:resend.com)"
+      "WebFetch(domain:resend.com)",
+      "Bash(npx tsc:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(nvm list:*)",
+      "Bash(nvm install:*)",
+      "Bash(nvm use:*)",
+      "Bash(nvm alias:*)",
+      "Bash(echo $PATH)",
+      "Bash(npx next build:*)",
+      "Bash(./node_modules/.bin/eslint:*)",
+      "WebFetch(domain:claude.ai)"
     ],
     "deny": [],
     "ask": []

@@ -309,7 +309,6 @@ export default function ScannerPage() {
                 <span className="font-bold text-blue-600 text-lg md:text-xl">{loading ? '...' : (stats.total_assets - stats.checked_assets)}</span>
               </div>
             </div>
-          </div>
         </div>
       </div>
 
