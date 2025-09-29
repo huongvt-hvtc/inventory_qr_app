@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { User as AppUser } from '@/types';
+import { useSessionManager } from '@/hooks/useSessionManager';
 import toast from 'react-hot-toast';
 
 interface AuthContextType {
@@ -12,6 +13,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  refreshSession: () => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [supabaseUser, setSupabaseUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { validateSession } = useSessionManager();
 
   useEffect(() => {
     // PWA Debug: Check if running in standalone mode
@@ -105,6 +108,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user_metadata: supabaseUser.user_metadata,
         created_at: supabaseUser.created_at
       });
+
+      // Validate session (check device limits)
+      if (supabaseUser.email) {
+        console.log('🔐 Validating session for device limits...');
+        const isValid = await validateSession(supabaseUser.email);
+        
+        if (!isValid) {
+          console.log('❌ Session validation failed - user cancelled or limit reached');
+          // Sign out if session is not valid
+          await supabase.auth.signOut();
+          setSupabaseUser(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        console.log('✅ Session validated successfully');
+      }
 
       // Check if user exists in our users table
       console.log('🔍 Checking if user exists in database...');
@@ -237,6 +257,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      // Clear session token
+      localStorage.removeItem('session_token');
+      
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 

@@ -34,6 +34,7 @@ import { exportToExcel } from '@/lib/excel';
 import { Asset, AssetWithInventoryStatus } from '@/types';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default function AssetsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -519,18 +520,13 @@ export default function AssetsPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      {/* Header Container - Compact & Professional */}
+      {/* Company Switcher & Page Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 relative z-30">
-        {/* Header Section - Matching QR Scanner Layout */}
         <div className="px-6 py-3">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <FolderOpen className="h-6 w-6 text-purple-600" />
-                Quản lý tài sản
-              </h1>
-
-              {/* WiFi & Refresh Button in Header */}
+          <PageHeader
+            title="Quản lý tài sản"
+            description="Quản lý và theo dõi tài sản của công ty"
+            actions={
               <div className="flex items-center gap-3">
                 <WiFiIndicator />
                 <button
@@ -543,10 +539,11 @@ export default function AssetsPage() {
                   <span>Làm mới</span>
                 </button>
               </div>
-            </div>
+            }
+          />
 
-            {/* Dashboard Stats - Matching QR Scanner */}
-            <div className="flex items-center gap-6 text-sm md:text-base border-b border-gray-100 pb-2">
+          {/* Dashboard Stats - Matching QR Scanner */}
+          <div className="flex items-center gap-6 text-sm md:text-base border-b border-gray-100 pb-2 mt-4">
             {/* Total Assets - Purple */}
             <div className="flex items-center gap-2">
               <span className="text-gray-700 font-semibold text-sm md:text-base">Tổng:</span>
@@ -568,11 +565,11 @@ export default function AssetsPage() {
               <span className="text-gray-700 font-semibold text-sm md:text-base">Chưa kiểm:</span>
               <span className="font-bold text-blue-600 text-lg md:text-xl">{dashboardStats.unchecked}</span>
             </div>
-            </div>
           </div>
         </div>
+      </div>
 
-        {/* Action Buttons - Professional Layout */}
+      {/* Action Buttons - Professional Layout */}
         <div className="px-4 md:px-6 py-3 bg-white border-b border-gray-100">
           {/* Desktop Layout */}
           <div className="hidden md:flex items-center justify-between">

@@ -24,6 +24,7 @@ import AssetDetailModal from '@/components/assets/AssetDetailModal';
 import { AssetWithInventoryStatus } from '@/types';
 import { WiFiIndicator } from '@/components/WiFiIndicator';
 import toast from 'react-hot-toast';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default function ScannerPage() {
   const { setRefreshFunction } = useRefresh();
@@ -263,14 +264,10 @@ export default function ScannerPage() {
       {/* QR Scanner Header - Always sticky at top, no interference with navigation */}
       <div className="sticky top-0 bg-white border-b border-gray-200 shadow-sm z-20">
         <div className="px-6 py-3">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <QrCode className="h-6 w-6 text-blue-600" />
-                QR Scanner
-              </h1>
-
-              {/* WiFi & Refresh Button in Header */}
+          <PageHeader
+            title="QR Scanner"
+            description="Quét mã QR để kiểm kê tài sản"
+            actions={
               <div className="flex items-center gap-3">
                 <WiFiIndicator />
                 <button
@@ -283,10 +280,11 @@ export default function ScannerPage() {
                   <span>Làm mới</span>
                 </button>
               </div>
-            </div>
+            }
+          />
 
-            {/* Dashboard Stats */}
-            <div className="flex items-center gap-6 text-sm md:text-base border-b border-gray-100 pb-2">
+          {/* Dashboard Stats */}
+          <div className="flex items-center gap-6 text-sm md:text-base border-b border-gray-100 pb-2 mt-4">
               {/* Total Assets - Purple like Assets Page */}
               <div className="flex items-center gap-2">
                 <span className="text-gray-700 font-semibold">Tổng:</span>

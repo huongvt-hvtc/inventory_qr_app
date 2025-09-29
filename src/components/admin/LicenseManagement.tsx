@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Key,
-  Plus,
   Search,
   Building,
   Users,
@@ -13,138 +12,49 @@ import {
   RefreshCw,
   Edit,
   Eye,
-  Trash2,
-  DollarSign,
   Clock,
   CheckCircle,
   XCircle,
   AlertCircle,
   Copy,
   Mail,
-  X,
-  UserPlus
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import type { LicenseKey } from '@/types/license';
-import { SUBSCRIPTION_PLANS } from '@/types/license';
+import type { License } from '@/types/license';
 import toast from 'react-hot-toast';
-
-interface KeyGenerationForm {
-  customer_email: string;
-  company_name: string;
-  plan_type: 'basic' | 'pro' | 'max' | 'enterprise';
-  valid_from: string;
-  valid_until: string;
-  price: number;
-  notes: string;
-  additional_emails: string[]; // List of additional emails that can use this license
-}
 
 export default function LicenseManagement() {
   const { user } = useAuth();
-  const [licenses, setLicenses] = useState<LicenseKey[]>([]);
+  const [licenses, setLicenses] = useState<License[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showGenerateForm, setShowGenerateForm] = useState(false);
-  const [generatingKey, setGeneratingKey] = useState(false);
-  const [selectedLicense, setSelectedLicense] = useState<LicenseKey | null>(null);
+  const [selectedLicense, setSelectedLicense] = useState<License | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
-  const [formData, setFormData] = useState<KeyGenerationForm>({
-    customer_email: '',
-    company_name: '',
-    plan_type: 'basic',
-    valid_from: new Date().toISOString().split('T')[0],
-    valid_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    price: 5000000,
-    notes: '',
-    additional_emails: []
-  });
-
-  const [currentEmail, setCurrentEmail] = useState('');
-
-  // Functions to handle additional emails
-  const addEmail = () => {
-    if (!currentEmail.trim()) {
-      toast.error('Vui lòng nhập email');
-      return;
-    }
-
-    if (!currentEmail.includes('@')) {
-      toast.error('Email không hợp lệ');
-      return;
-    }
-
-    if (currentEmail.toLowerCase() === formData.customer_email.toLowerCase()) {
-      toast.error('Email này đã là email chủ');
-      return;
-    }
-
-    if (formData.additional_emails.some(email => email.toLowerCase() === currentEmail.toLowerCase())) {
-      toast.error('Email này đã được thêm');
-      return;
-    }
-
-    const planLimits = SUBSCRIPTION_PLANS[formData.plan_type];
-    const totalEmails = formData.additional_emails.length + 1; // +1 for owner email
-
-    if (totalEmails >= planLimits.max_members && planLimits.max_members !== 999) {
-      toast.error(`Gói ${formData.plan_type} chỉ cho phép tối đa ${planLimits.max_members} email`);
-      return;
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      additional_emails: [...prev.additional_emails, currentEmail.trim()]
-    }));
-    setCurrentEmail('');
-    toast.success('Đã thêm email thành công');
-  };
-
-  const removeEmail = (emailToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      additional_emails: prev.additional_emails.filter(email => email !== emailToRemove)
-    }));
-    toast.success('Đã xóa email');
-  };
 
   // Load licenses on component mount
   useEffect(() => {
     loadLicenses();
   }, []);
 
-  // Update price when plan changes
-  useEffect(() => {
-    const plan = SUBSCRIPTION_PLANS[formData.plan_type];
-    if (plan) {
-      setFormData(prev => ({ ...prev, price: plan.price_vnd }));
-    }
-  }, [formData.plan_type]);
-
-  // Load all license keys with comprehensive data
+  // Load all licenses with comprehensive data
   const loadLicenses = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('license_keys')
+        .from('licenses')
         .select(`
           *,
-          companies:companies(
-            id,
-            name,
-            contact_email,
-            phone,
-            address,
-            created_at
-          ),
-          license_activity_logs:license_activity_logs(
-            action,
-            performed_at
+          license_members:license_members(
+            email,
+            role,
+            status,
+            joined_at
           )
         `)
         .order('created_at', { ascending: false });
@@ -159,157 +69,28 @@ export default function LicenseManagement() {
     }
   };
 
-  // Generate new license key
-  const generateLicenseKey = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validation
-    if (!formData.customer_email.trim()) {
-      toast.error('Email đăng ký là bắt buộc');
-      return;
-    }
-
-    if (!formData.customer_email.includes('@')) {
-      toast.error('Email không hợp lệ');
-      return;
-    }
-
-    if (new Date(formData.valid_until) <= new Date(formData.valid_from)) {
-      toast.error('Thời hạn kết thúc phải sau thời hạn bắt đầu');
-      return;
-    }
-
-    if (formData.price <= 0) {
-      toast.error('Giá phải lớn hơn 0');
-      return;
-    }
-
-    setGeneratingKey(true);
-
-    try {
-      // Generate unique key code
-      const year = new Date().getFullYear();
-      const month = String(new Date().getMonth() + 1).padStart(2, '0');
-      const planPrefix = formData.plan_type.toUpperCase();
-      const randomCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-      const keyCode = `INV-${year}${month}-${planPrefix}-${randomCode}`;
-
-      const planLimits = SUBSCRIPTION_PLANS[formData.plan_type];
-      const validFrom = new Date(formData.valid_from);
-      const validUntil = new Date(formData.valid_until);
-
-      const { data: licenseData, error: licenseError } = await supabase
-        .from('license_keys')
-        .insert({
-          key_code: keyCode,
-          company_name: formData.company_name || 'Chưa cập nhật',
-          customer_email: formData.customer_email,
-          plan_type: formData.plan_type,
-          max_companies: planLimits.max_companies,
-          max_users: planLimits.max_users,
-          max_assets: planLimits.max_assets,
-          max_emails: planLimits.max_members,
-          valid_from: validFrom.toISOString().split('T')[0],
-          valid_until: validUntil.toISOString().split('T')[0],
-          features: { plan_features: planLimits.features },
-          created_by: user?.id,
-          price: formData.price,
-          notes: formData.notes
-        })
-        .select()
-        .single();
-
-      if (licenseError) throw licenseError;
-
-      // Create license members
-      const membersToInsert = [
-        // Owner
-        {
-          license_key_id: licenseData.id,
-          email: formData.customer_email,
-          role: 'owner',
-          status: 'active',
-          joined_at: new Date().toISOString()
-        },
-        // Additional members
-        ...formData.additional_emails.map(email => ({
-          license_key_id: licenseData.id,
-          email: email,
-          role: 'member',
-          status: 'active',
-          joined_at: new Date().toISOString()
-        }))
-      ];
-
-      if (membersToInsert.length > 0) {
-        const { error: membersError } = await supabase
-          .from('license_members')
-          .insert(membersToInsert);
-
-        if (membersError) {
-          console.error('Error creating license members:', membersError);
-          // Don't throw here as license is already created
-          toast.error('License tạo thành công nhưng có lỗi khi thêm thành viên');
-        }
-      }
-
-      toast.success('🎉 License key đã được tạo thành công!');
-
-      // Reset form
-      setFormData({
-        customer_email: '',
-        company_name: '',
-        plan_type: 'basic',
-        valid_from: new Date().toISOString().split('T')[0],
-        valid_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        price: 5000000,
-        notes: '',
-        additional_emails: []
-      });
-      setCurrentEmail('');
-      setShowGenerateForm(false);
-
-      // Reload licenses
-      await loadLicenses();
-
-      // Show generated key with copy functionality
-      navigator.clipboard.writeText(keyCode);
-      toast.success(`License key: ${keyCode} (đã copy vào clipboard)`, { duration: 10000 });
-
-    } catch (error: any) {
-      console.error('Error generating license:', error);
-      toast.error(error.message || 'Không thể tạo license key');
-    } finally {
-      setGeneratingKey(false);
-    }
-  };
 
   // Filter licenses based on search
   const filteredLicenses = licenses.filter(license =>
-    license.key_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    license.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    license.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    license.plan_type.toLowerCase().includes(searchTerm.toLowerCase())
+    license.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    license.plan_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    license.license_members?.some(member =>
+      member.email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   // Export licenses to CSV
   const exportLicenses = () => {
     const csvContent = [
-      ['Key Code', 'Company', 'Email', 'Plan', 'Status', 'Valid From', 'Valid Until', 'Price', 'Companies', 'Users', 'Assets', 'Emails', 'Notes'],
+      ['License Name', 'Plan', 'Status', 'Owner Email', 'Members Count', 'Created Date', 'Expires Date'],
       ...filteredLicenses.map(license => [
-        license.key_code,
-        license.company_name,
-        license.customer_email || '',
+        license.name,
         license.plan_type,
         license.status,
-        license.valid_from,
-        license.valid_until,
-        license.price || 0,
-        license.current_companies,
-        license.current_users,
-        license.current_assets,
-        license.current_emails || 0,
-        license.notes || ''
+        license.license_members?.find(m => m.role === 'owner')?.email || '',
+        license.license_members?.length || 0,
+        license.created_at ? new Date(license.created_at).toLocaleDateString('vi-VN') : '',
+        license.expires_at ? new Date(license.expires_at).toLocaleDateString('vi-VN') : ''
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -322,16 +103,13 @@ export default function LicenseManagement() {
     window.URL.revokeObjectURL(url);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
   };
 
   const getStatusColor = (status: string) => {
@@ -357,7 +135,7 @@ export default function LicenseManagement() {
     toast.success('Đã copy vào clipboard');
   };
 
-  const showLicenseDetails = (license: LicenseKey) => {
+  const showLicenseDetails = (license: License) => {
     setSelectedLicense(license);
     setShowDetails(true);
   };
@@ -367,7 +145,7 @@ export default function LicenseManagement() {
       {/* Header */}
       <div className="mb-4 md:mb-6">
         <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Quản lý Licenses</h1>
-        <p className="text-sm md:text-base text-gray-600">Tạo, chỉnh sửa và theo dõi các license keys</p>
+        <p className="text-sm md:text-base text-gray-600">Theo dõi và quản lý các license email-based</p>
       </div>
 
       {/* Action Bar */}
@@ -398,219 +176,16 @@ export default function LicenseManagement() {
         </div>
 
         <Button
-          onClick={() => setShowGenerateForm(!showGenerateForm)}
           className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
           size="sm"
+          onClick={() => window.open('/admin/email-licenses', '_blank')}
         >
-          <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-          <span className="hidden sm:inline">Tạo License Mới</span>
-          <span className="sm:hidden">Tạo mới</span>
+          <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">Quản lý Email License</span>
+          <span className="sm:hidden">Email License</span>
         </Button>
       </div>
 
-      {/* Generate Form */}
-      {showGenerateForm && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5 text-purple-600" />
-              Tạo License Key Mới
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={generateLicenseKey} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Email đăng ký *</label>
-                  <Input
-                    type="email"
-                    value={formData.customer_email}
-                    onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
-                    placeholder="email@company.com"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Tên công ty</label>
-                  <Input
-                    value={formData.company_name}
-                    onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                    placeholder="Tên công ty (không bắt buộc)"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Gói dịch vụ</label>
-                  <select
-                    value={formData.plan_type}
-                    onChange={(e) => setFormData({ ...formData, plan_type: e.target.value as any })}
-                    className="w-full h-10 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  >
-                    <option value="basic">Basic - 1 user - {SUBSCRIPTION_PLANS.basic.price_display}</option>
-                    <option value="pro">Pro - 5 users - {SUBSCRIPTION_PLANS.pro.price_display}</option>
-                    <option value="max">Max - 10 users - {SUBSCRIPTION_PLANS.max.price_display}</option>
-                    <option value="enterprise">Enterprise - Không giới hạn - {SUBSCRIPTION_PLANS.enterprise.price_display}</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Thời hạn bắt đầu</label>
-                  <Input
-                    type="date"
-                    value={formData.valid_from}
-                    onChange={(e) => setFormData({ ...formData, valid_from: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Thời hạn kết thúc</label>
-                  <Input
-                    type="date"
-                    value={formData.valid_until}
-                    onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Giá (VNĐ)</label>
-                  <Input
-                    type="text"
-                    value={formData.price.toLocaleString('vi-VN')}
-                    onChange={(e) => {
-                      const numericValue = e.target.value.replace(/[^0-9]/g, '');
-                      setFormData({ ...formData, price: parseInt(numericValue) || 0 });
-                    }}
-                    placeholder="5 000 000"
-                  />
-                  <div className="text-xs text-gray-500 mt-1">
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(formData.price)}
-                  </div>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium text-gray-700">Ghi chú</label>
-                  <Input
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Ghi chú về license này..."
-                  />
-                </div>
-              </div>
-
-              {/* Additional Emails Section */}
-              <div className="space-y-4 border-t pt-4">
-                <div className="flex items-center gap-2">
-                  <UserPlus className="h-5 w-5 text-blue-600" />
-                  <h3 className="text-lg font-medium text-gray-900">Thành viên được phép sử dụng</h3>
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                    {formData.additional_emails.length + 1}/{SUBSCRIPTION_PLANS[formData.plan_type].max_members === 999 ? '∞' : SUBSCRIPTION_PLANS[formData.plan_type].max_members}
-                  </span>
-                </div>
-
-                {/* Owner Email Display */}
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <Mail className="h-4 w-4 text-green-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-green-900">
-                        {formData.customer_email || 'Email chủ (chưa nhập)'}
-                      </div>
-                      <div className="text-xs text-green-700">Chủ sở hữu license</div>
-                    </div>
-                    <div className="px-2 py-1 bg-green-200 text-green-800 text-xs font-medium rounded">
-                      Owner
-                    </div>
-                  </div>
-                </div>
-
-                {/* Add Email Input */}
-                <div className="flex gap-2">
-                  <Input
-                    type="email"
-                    value={currentEmail}
-                    onChange={(e) => setCurrentEmail(e.target.value)}
-                    placeholder="Nhập email thành viên mới..."
-                    onKeyPress={(e) => e.key === 'Enter' && addEmail()}
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    onClick={addEmail}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    disabled={!currentEmail.trim()}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Thêm
-                  </Button>
-                </div>
-
-                {/* Additional Emails List */}
-                {formData.additional_emails.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-700">
-                      Thành viên ({formData.additional_emails.length})
-                    </div>
-                    {formData.additional_emails.map((email, index) => (
-                      <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <Mail className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-gray-900">{email}</div>
-                            <div className="text-xs text-gray-600">Thành viên</div>
-                          </div>
-                          <div className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
-                            Member
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeEmail(email)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Plan Limits Info */}
-                <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-                  <p><strong>📋 Quy định gói {formData.plan_type}:</strong></p>
-                  <p>• Tối đa {SUBSCRIPTION_PLANS[formData.plan_type].max_members === 999 ? 'không giới hạn' : SUBSCRIPTION_PLANS[formData.plan_type].max_members} email có thể sử dụng license</p>
-                  <p>• Email chủ có quyền quản lý thành viên trong app</p>
-                  <p>• Thành viên có thể được mời/xóa bởi email chủ</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowGenerateForm(false)}
-                  className="flex-1"
-                >
-                  Hủy
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={generatingKey}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700"
-                >
-                  {generatingKey ? 'Đang tạo...' : 'Tạo License'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Search */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-4 md:mb-6">
@@ -632,29 +207,24 @@ export default function LicenseManagement() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
         {filteredLicenses.map((license) => {
           const StatusIcon = getStatusIcon(license.status);
+          const ownerEmail = license.license_members?.find(m => m.role === 'owner')?.email;
+          const memberCount = license.license_members?.length || 0;
+
           return (
             <Card key={license.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
               <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1 mb-1">
-                      <div className="font-mono text-xs sm:text-sm font-bold text-purple-600 truncate">
-                        {license.key_code}
+                      <div className="font-bold text-sm sm:text-base text-gray-900 truncate">
+                        {license.name}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(license.key_code)}
-                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-purple-100 flex-shrink-0"
-                      >
-                        <Copy className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                      </Button>
-                    </div>
-                    <div className="font-medium text-sm sm:text-base text-gray-900 truncate">
-                      {license.company_name}
                     </div>
                     <div className="text-xs sm:text-sm text-gray-600 truncate">
-                      {license.customer_email}
+                      {ownerEmail || 'No owner assigned'}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {memberCount} thành viên
                     </div>
                   </div>
                   <div className={`px-1.5 sm:px-2 py-1 rounded text-xs font-medium flex items-center gap-1 flex-shrink-0 ${getStatusColor(license.status)}`}>
@@ -665,61 +235,56 @@ export default function LicenseManagement() {
               </CardHeader>
 
               <CardContent className="space-y-2 sm:space-y-3 p-3 sm:p-4 pt-0">
-                {/* Plan & Price */}
+                {/* Plan Type */}
                 <div className="flex items-center justify-between text-xs sm:text-sm">
                   <span className="font-medium capitalize bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
                     {license.plan_type}
                   </span>
-                  <div className="font-bold text-green-600 text-xs sm:text-sm">
-                    {formatPrice(license.price || 0)}
+                  <div className="text-xs text-gray-500">
+                    ID: {license.id}
                   </div>
                 </div>
 
-                {/* Validity */}
+                {/* Dates */}
                 <div className="bg-gray-50 p-2 rounded text-xs">
                   <div className="flex items-center gap-1 text-gray-600 mb-1">
                     <Calendar className="h-3 w-3" />
                     <span className="font-medium">Thời hạn</span>
                   </div>
-                  <div className="text-gray-800 font-mono">
-                    {formatDate(license.valid_from)} → {formatDate(license.valid_until)}
-                  </div>
-                </div>
-
-                {/* Created Date & Notes */}
-                <div className="text-xs text-gray-500">
-                  <div className="flex items-center gap-1 mb-1">
-                    <Clock className="h-3 w-3" />
+                  <div className="text-gray-800">
                     Tạo: {formatDate(license.created_at)}
                   </div>
-                  {license.notes && (
-                    <div className="italic bg-yellow-50 p-2 rounded border-l-2 border-yellow-300">
-                      "{license.notes}"
+                  {license.expires_at && (
+                    <div className="text-gray-800">
+                      Hết hạn: {formatDate(license.expires_at)}
                     </div>
                   )}
                 </div>
 
-                {/* Usage Stats */}
-                <div className="grid grid-cols-4 gap-1 sm:gap-2 text-xs">
-                  <div className="text-center p-1.5 sm:p-2 bg-purple-50 rounded">
-                    <Building className="h-3 w-3 mx-auto mb-1 text-purple-600" />
-                    <div className="font-medium text-xs">{license.current_companies}/{license.max_companies}</div>
-                    <div className="text-gray-600 text-xs">Công ty</div>
+                {/* License Members */}
+                <div className="bg-blue-50 p-2 rounded text-xs">
+                  <div className="flex items-center gap-1 text-blue-600 mb-1">
+                    <Mail className="h-3 w-3" />
+                    <span className="font-medium">Thành viên ({memberCount})</span>
                   </div>
-                  <div className="text-center p-1.5 sm:p-2 bg-green-50 rounded">
-                    <Users className="h-3 w-3 mx-auto mb-1 text-green-600" />
-                    <div className="font-medium text-xs">{license.current_users}/{license.max_users}</div>
-                    <div className="text-gray-600 text-xs">Users</div>
-                  </div>
-                  <div className="text-center p-1.5 sm:p-2 bg-blue-50 rounded">
-                    <Package className="h-3 w-3 mx-auto mb-1 text-blue-600" />
-                    <div className="font-medium text-xs">{license.current_assets}/{license.max_assets}</div>
-                    <div className="text-gray-600 text-xs">Assets</div>
-                  </div>
-                  <div className="text-center p-1.5 sm:p-2 bg-orange-50 rounded">
-                    <Mail className="h-3 w-3 mx-auto mb-1 text-orange-600" />
-                    <div className="font-medium text-xs">{license.current_emails || 0}/{license.max_emails || 0}</div>
-                    <div className="text-gray-600 text-xs">Emails</div>
+                  <div className="space-y-1">
+                    {license.license_members?.slice(0, 2).map((member, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="text-gray-700 truncate">{member.email}</span>
+                        <span className={`px-1 py-0.5 rounded text-xs ${
+                          member.role === 'owner'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {member.role}
+                        </span>
+                      </div>
+                    ))}
+                    {memberCount > 2 && (
+                      <div className="text-gray-500 text-center">
+                        +{memberCount - 2} thành viên khác
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -739,9 +304,10 @@ export default function LicenseManagement() {
                     variant="outline"
                     size="sm"
                     className="flex-1 text-xs sm:text-sm h-7 sm:h-8"
+                    onClick={() => window.open(`/admin/email-licenses?license=${license.id}`, '_blank')}
                   >
                     <Edit className="h-3 w-3 mr-1" />
-                    <span className="hidden sm:inline">Chỉnh sửa</span>
+                    <span className="hidden sm:inline">Quản lý</span>
                     <span className="sm:hidden">Sửa</span>
                   </Button>
                 </div>
@@ -759,15 +325,15 @@ export default function LicenseManagement() {
               {searchTerm ? 'Không tìm thấy license' : 'Chưa có license nào'}
             </h3>
             <p className="text-sm sm:text-base text-gray-500 mb-4">
-              {searchTerm ? 'Thử thay đổi từ khóa tìm kiếm' : 'Tạo license đầu tiên để bắt đầu'}
+              {searchTerm ? 'Thử thay đổi từ khóa tìm kiếm' : 'Quản lý license thông qua Email License Management'}
             </p>
             {!searchTerm && (
               <Button
-                onClick={() => setShowGenerateForm(true)}
+                onClick={() => window.open('/admin/email-licenses', '_blank')}
                 className="bg-blue-600 hover:bg-blue-700 text-sm"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Tạo License Đầu Tiên
+                <Settings className="h-4 w-4 mr-2" />
+                Quản lý Email License
               </Button>
             )}
           </div>
