@@ -22,6 +22,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Drop all policies first
 DROP POLICY IF EXISTS "users_view_own" ON users;
 DROP POLICY IF EXISTS "users_update_own" ON users;
+DROP POLICY IF EXISTS "users_insert_self" ON users;
 DROP POLICY IF EXISTS "assets_access" ON assets;
 DROP POLICY IF EXISTS "inventory_access" ON inventory_records;
 DROP POLICY IF EXISTS "activity_view_own" ON activity_logs;
@@ -376,30 +377,37 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- SECTION 4: CREATE TRIGGERS
 -- ================================================================
 
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at 
   BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_assets_updated_at ON assets;
 CREATE TRIGGER update_assets_updated_at 
   BEFORE UPDATE ON assets
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_licenses_updated_at ON licenses;
 CREATE TRIGGER update_licenses_updated_at 
   BEFORE UPDATE ON licenses
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_companies_updated_at ON companies;
 CREATE TRIGGER update_companies_updated_at 
   BEFORE UPDATE ON companies
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_license_on_companies ON companies;
 CREATE TRIGGER update_license_on_companies
   AFTER INSERT OR UPDATE OR DELETE ON companies
   FOR EACH ROW EXECUTE FUNCTION update_license_usage();
 
+DROP TRIGGER IF EXISTS update_license_on_members ON license_members;
 CREATE TRIGGER update_license_on_members
   AFTER INSERT OR UPDATE OR DELETE ON license_members
   FOR EACH ROW EXECUTE FUNCTION update_license_usage();
 
+DROP TRIGGER IF EXISTS update_license_on_assets ON assets;
 CREATE TRIGGER update_license_on_assets
   AFTER INSERT OR UPDATE OR DELETE ON assets
   FOR EACH ROW EXECUTE FUNCTION update_license_usage();
@@ -423,6 +431,8 @@ ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
 -- ================================================================
 
 -- Users policies
+DROP POLICY IF EXISTS "users_view_own" ON users;
+DROP POLICY IF EXISTS "users_update_own" ON users;
 CREATE POLICY "users_view_own" ON users
   FOR SELECT USING (
     auth.uid() IS NOT NULL AND (
@@ -436,7 +446,15 @@ CREATE POLICY "users_update_own" ON users
     auth.uid() IS NOT NULL AND auth.uid()::text = id::text
   );
 
+CREATE POLICY "users_insert_self" ON users
+  FOR INSERT
+  WITH CHECK (
+    auth.uid() IS NOT NULL
+    AND auth.uid()::text = id::text
+  );
+
 -- Assets policies
+DROP POLICY IF EXISTS "assets_access" ON assets;
 CREATE POLICY "assets_access" ON assets
   FOR ALL USING (
     auth.uid() IS NOT NULL AND (
@@ -457,6 +475,7 @@ CREATE POLICY "assets_access" ON assets
   );
 
 -- Inventory records policies  
+DROP POLICY IF EXISTS "inventory_access" ON inventory_records;
 CREATE POLICY "inventory_access" ON inventory_records
   FOR ALL USING (
     auth.uid() IS NOT NULL AND (
@@ -472,6 +491,8 @@ CREATE POLICY "inventory_access" ON inventory_records
   );
 
 -- Activity logs policies
+DROP POLICY IF EXISTS "activity_view_own" ON activity_logs;
+DROP POLICY IF EXISTS "activity_insert" ON activity_logs;
 CREATE POLICY "activity_view_own" ON activity_logs
   FOR SELECT USING (
     auth.uid() IS NOT NULL AND (
@@ -484,6 +505,8 @@ CREATE POLICY "activity_insert" ON activity_logs
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Licenses policies
+DROP POLICY IF EXISTS "licenses_view" ON licenses;
+DROP POLICY IF EXISTS "licenses_manage" ON licenses;
 CREATE POLICY "licenses_view" ON licenses
   FOR SELECT USING (
     auth.uid() IS NOT NULL AND (
@@ -506,6 +529,8 @@ CREATE POLICY "licenses_manage" ON licenses
   );
 
 -- License members policies
+DROP POLICY IF EXISTS "members_view" ON license_members;
+DROP POLICY IF EXISTS "members_manage" ON license_members;
 CREATE POLICY "members_view" ON license_members
   FOR SELECT USING (
     auth.uid() IS NOT NULL AND (
@@ -532,6 +557,8 @@ CREATE POLICY "members_manage" ON license_members
   );
 
 -- Companies policies
+DROP POLICY IF EXISTS "companies_view" ON companies;
+DROP POLICY IF EXISTS "companies_manage" ON companies;
 CREATE POLICY "companies_view" ON companies
   FOR SELECT USING (
     auth.uid() IS NOT NULL AND (
@@ -563,6 +590,8 @@ CREATE POLICY "companies_manage" ON companies
   );
 
 -- Company permissions policies
+DROP POLICY IF EXISTS "permissions_view" ON company_permissions;
+DROP POLICY IF EXISTS "permissions_manage" ON company_permissions;
 CREATE POLICY "permissions_view" ON company_permissions
   FOR SELECT USING (
     auth.uid() IS NOT NULL AND (
@@ -595,19 +624,52 @@ CREATE POLICY "permissions_manage" ON company_permissions
   );
 
 -- User sessions policies
+DROP POLICY IF EXISTS "sessions_view" ON user_sessions;
+DROP POLICY IF EXISTS "sessions_manage" ON user_sessions;
 CREATE POLICY "sessions_view" ON user_sessions
   FOR SELECT USING (
-    auth.uid() IS NOT NULL AND (
-      EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
-      OR email IN (SELECT email FROM users WHERE id = auth.uid())
+    auth.role() = 'authenticated' AND (
+      EXISTS (
+        SELECT 1 FROM users
+        WHERE id = auth.uid() AND role = 'admin'
+      )
+      OR email = COALESCE(auth.jwt() ->> 'email', '')
+      OR email IN (
+        'mr.ngoctmn@gmail.com',
+        'huongvt.hvtc@gmail.com',
+        'vietnambusinessportal@gmail.com'
+      )
     )
   );
 
 CREATE POLICY "sessions_manage" ON user_sessions
-  FOR ALL USING (
-    auth.uid() IS NOT NULL AND (
-      EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
-      OR email IN (SELECT email FROM users WHERE id = auth.uid())
+  FOR ALL
+  USING (
+    auth.role() = 'authenticated' AND (
+      EXISTS (
+        SELECT 1 FROM users
+        WHERE id = auth.uid() AND role = 'admin'
+      )
+      OR email = COALESCE(auth.jwt() ->> 'email', '')
+      OR email IN (
+        'mr.ngoctmn@gmail.com',
+        'huongvt.hvtc@gmail.com',
+        'vietnambusinessportal@gmail.com'
+      )
+    )
+  )
+  WITH CHECK (
+    auth.role() = 'authenticated' AND (
+      EXISTS (
+        SELECT 1 FROM users
+        WHERE id = auth.uid() AND role = 'admin'
+      )
+      OR email = COALESCE(auth.jwt() ->> 'email', '')
+      OR email IN (
+        'mr.ngoctmn@gmail.com',
+        'huongvt.hvtc@gmail.com',
+        'vietnambusinessportal@gmail.com'
+      )
     )
   );
 
@@ -632,14 +694,20 @@ GRANT SELECT ON assets TO anon;
 -- SECTION 8: INSERT SAMPLE DATA
 -- ================================================================
 
--- Sample assets (will work after you create companies)
-INSERT INTO assets (asset_code, name, model, serial, tech_code, department, status, location, notes) VALUES
-('IT001', 'Dell Laptop Inspiron 15', 'Inspiron 15 3000', 'DL123456789', 'TECH001', 'IT Department', 'Đang sử dụng', 'Tầng 2 - Phòng IT', 'Laptop chính cho nhân viên IT'),
-('IT002', 'HP Printer LaserJet', 'LaserJet Pro MFP M428fdw', 'HP987654321', 'TECH002', 'IT Department', 'Tốt', 'Tầng 1 - Khu vực in ấn', 'Máy in đa năng cho văn phòng'),
-('HR001', 'Canon Camera EOS', 'EOS 80D', 'CN456789123', 'TECH003', 'HR Department', 'Tốt', 'Tầng 3 - Phòng HR', 'Máy ảnh cho sự kiện công ty'),
-('FIN001', 'Samsung Monitor 27"', 'Odyssey G7', 'SM789123456', 'TECH004', 'Finance Department', 'Đang sử dụng', 'Tầng 2 - Phòng Tài chính', 'Màn hình cong cho kế toán'),
-('ADM001', 'Cisco Router', 'ISR 4321', 'CS321654987', 'TECH005', 'IT Department', 'Đang sử dụng', 'Tầng B1 - Phòng server', 'Router chính của công ty')
-ON CONFLICT (asset_code) DO NOTHING;
+
+-- (Optional) Thêm dữ liệu mẫu sau khi đã tạo license & companies phù hợp
+-- Ví dụ:
+-- INSERT INTO assets (company_id, asset_code, name, status)
+-- VALUES ('<company-uuid>', 'IT001', 'Dell Laptop Inspiron 15', 'Đang sử dụng');
+
+-- Thiết lập sẵn quyền admin cho các email chủ nhóm (nếu đã tồn tại trong bảng users)
+UPDATE users
+SET role = 'admin'
+WHERE email IN (
+  'mr.ngoctmn@gmail.com',
+  'huongvt.hvtc@gmail.com',
+  'vietnambusinessportal@gmail.com'
+);
 
 -- ================================================================
 -- SECTION 9: FINAL MESSAGE

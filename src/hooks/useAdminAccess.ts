@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+const FALLBACK_ADMIN_EMAILS = new Set([
+  'mr.ngoctmn@gmail.com',
+  'huongvt.hvtc@gmail.com',
+  'vietnambusinessportal@gmail.com'
+]);
 
 export function useAdminAccess() {
   const { user, loading: authLoading } = useAuth();
@@ -23,30 +27,18 @@ export function useAdminAccess() {
         return;
       }
 
-      try {
-        // Check if user is in admin_users table
-        const { data, error } = await supabase
-          .from('admin_users')
-          .select('email, role')
-          .eq('email', user.email)
-          .single();
+      const hasAdminRole = user.role === 'admin';
+      const isFallbackAdmin = FALLBACK_ADMIN_EMAILS.has(user.email.toLowerCase());
 
-        if (error) {
-          console.log('❌ Error checking admin status:', error);
-          setIsAdmin(false);
-        } else if (data) {
-          console.log('✅ User is admin:', data);
-          setIsAdmin(true);
-        } else {
-          console.log('❌ User not found in admin_users table');
-          setIsAdmin(false);
-        }
-      } catch (error) {
-        console.error('❌ Exception checking admin access:', error);
+      if (hasAdminRole || isFallbackAdmin) {
+        console.log('✅ User recognised as admin');
+        setIsAdmin(true);
+      } else {
+        console.log('❌ User is not admin');
         setIsAdmin(false);
-      } finally {
-        setLoading(false);
       }
+
+      setLoading(false);
     }
 
     checkAdminAccess();
