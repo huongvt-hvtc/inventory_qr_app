@@ -317,14 +317,14 @@ export default function AssetsPage() {
       const userName = user.name || user.email || 'Unknown User';
       await checkAssets(assetsToCheck.map(a => a.id), userName);
 
-      // Add checked assets to recent scans
+      // Add checked assets to recent scans (async)
       assetsToCheck.forEach(asset => {
         addToRecentScans({
           ...asset,
           is_checked: true,
           checked_by: userName,
           checked_at: new Date().toISOString()
-        });
+        }).catch(err => console.error('Failed to add to recent scans:', err));
       });
 
       setSelectedAssets(new Set());
@@ -1066,7 +1066,7 @@ export default function AssetsPage() {
         onSave={handleAssetSave}
         onCheck={async (assetId, checkedBy) => {
           await checkAssets([assetId], checkedBy);
-          // Add to recent scans after checking
+          // Add to recent scans after checking (async)
           const asset = assets.find(a => a.id === assetId);
           if (asset) {
             addToRecentScans({
@@ -1074,7 +1074,7 @@ export default function AssetsPage() {
               is_checked: true,
               checked_by: checkedBy,
               checked_at: new Date().toISOString()
-            });
+            }).catch(err => console.error('Failed to add to recent scans:', err));
           }
         }}
         onUncheck={(assetId) => uncheckAssets([assetId])}

@@ -162,8 +162,10 @@ export default function ScannerPage() {
       setScannedAsset(foundAsset);
       setAssetDetailModal({ isOpen: true, asset: foundAsset, mode: 'view' });
 
-      // Add to recent scans
-      addToRecentScans(foundAsset);
+      // Add to recent scans (async)
+      addToRecentScans(foundAsset).catch(err =>
+        console.error('Failed to add to recent scans:', err)
+      );
 
       // Remove duplicate toast - already shown in scanner component
     } else {
@@ -189,8 +191,10 @@ export default function ScannerPage() {
         setScannedAsset(foundAsset);
         setAssetDetailModal({ isOpen: true, asset: foundAsset, mode: 'view' });
 
-        // Add to recent scans
-        addToRecentScans(foundAsset);
+        // Add to recent scans (async)
+        addToRecentScans(foundAsset).catch(err =>
+          console.error('Failed to add to recent scans:', err)
+        );
 
         toast.success(`Đã tìm thấy tài sản: ${foundAsset.asset_code}`);
       } else {
