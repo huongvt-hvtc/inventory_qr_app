@@ -68,7 +68,8 @@
       "Bash(echo $PATH)",
       "Bash(npx next build:*)",
       "Bash(./node_modules/.bin/eslint:*)",
-      "WebFetch(domain:claude.ai)"
+      "WebFetch(domain:claude.ai)",
+      "Bash(git rebase:*)"
     ],
     "deny": [],
     "ask": []
