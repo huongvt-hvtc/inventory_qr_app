@@ -543,8 +543,9 @@ export default function AssetsPage() {
                 <button
                   disabled={loading}
                   onClick={handleRefresh}
-                  className="h-10 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg"
+                  className="h-10 px-4 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg active:shadow-sm touch-manipulation"
                   title="Làm mới dữ liệu từ server"
+                  style={{ touchAction: 'manipulation' }}
                 >
                   <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   <span>Làm mới</span>

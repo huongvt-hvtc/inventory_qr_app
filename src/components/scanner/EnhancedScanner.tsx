@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode'
+import { Html5Qrcode, Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import { Button } from '@/components/ui/button'
 import { Camera, CameraOff, AlertCircle, Focus, ZoomIn, ZoomOut, Shield, RotateCcw } from 'lucide-react'
 import { getCameraConfig, getOptimalScanSettings, setupAutoFocus } from '@/lib/qr-detection'
@@ -15,7 +15,7 @@ interface EnhancedScannerProps {
 type PermissionState = 'prompt' | 'granted' | 'denied' | 'checking' | null
 
 export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps) {
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null)
+  const scannerRef = useRef<Html5Qrcode | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isScanning, setIsScanning] = useState(false)
   const [permissionState, setPermissionState] = useState<PermissionState>('checking')
@@ -144,17 +144,17 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
       const isDesktop = !(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
       const isMacOS = /Mac OS X/.test(navigator.userAgent)
 
+      // Get camera configuration
+      let cameraConfig: any
+      if (cameraId) {
+        cameraConfig = cameraId
+      } else {
+        // Use default camera constraints for best compatibility
+        cameraConfig = { facingMode: 'environment' }
+      }
+
       const config = {
-        ...scanSettings,
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.QR_CODE,
-          Html5QrcodeSupportedFormats.DATA_MATRIX,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.EAN_13
-        ],
-        verbose: false,
-        // Enhanced qrbox configuration
+        fps: scanSettings.fps,
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
           const minEdge = Math.min(viewfinderWidth, viewfinderHeight)
           const size = Math.min(
@@ -163,57 +163,49 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
           )
           return { width: size, height: size }
         },
-        // Specify camera if provided
-        ...(cameraId ? { cameraIdOrConfig: cameraId } : {}),
-        // Additional settings for better detection
+        aspectRatio: 1.0,
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.DATA_MATRIX,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.EAN_13
+        ],
         experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true,
-          // Additional experimental features if available
-          ...((window as any).BarcodeDetector ? { nativeBarCodeDetector: true } : {})
+          useBarCodeDetectorIfSupported: true
         }
       }
 
-      const scanner = new Html5QrcodeScanner(
-        'enhanced-qr-reader',
-        config as any,
-        false
-      )
+      console.log('🎥 Initializing scanner with:', {
+        cameraId,
+        cameraConfig,
+        config
+      })
 
-      scanner.render(
+      const scanner = new Html5Qrcode('enhanced-qr-reader', {
+        formatsToSupport: config.formatsToSupport,
+        experimentalFeatures: config.experimentalFeatures,
+        verbose: false
+      })
+
+      // Start scanning
+      await scanner.start(
+        cameraConfig,
+        config,
         handleScanSuccess,
         (error) => {
+          // Ignore common "not found" errors
           if (!error.includes('NotFoundException') &&
               !error.includes('No MultiFormat Readers')) {
             console.warn('Scan error:', error)
-
-            // Check if it's a permission error
-            if (error.includes('NotAllowedError') ||
-                error.includes('Permission denied') ||
-                error.includes('Permission dismissed')) {
-              setPermissionState('denied')
-              setIsScanning(false)
-              toast.error('Camera bị từ chối. Vui lòng cấp quyền trong cài đặt.')
-            }
           }
         }
       )
 
-      setTimeout(() => {
-        const container = containerRef.current
-        const startButton = container?.querySelector<HTMLButtonElement>("button[id^='html5-qrcode-button-camera-start']")
-        if (startButton) {
-          // Temporarily show the button to click it
-          startButton.style.display = 'block'
-          startButton.click()
-          // Hide it again
-          setTimeout(() => {
-            startButton.style.display = 'none'
-          }, 100)
-        }
-      }, 50)
-
       scannerRef.current = scanner
       setIsScanning(true)
+
+      console.log('✅ Scanner started successfully')
 
       // Show tips for MacOS desktop users only (not iOS)
       if (isMacOS && isDesktop) {
@@ -242,10 +234,15 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
   }, [handleScanSuccess])
 
   // Stop scanner
-  const stopScanner = useCallback(() => {
+  const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
-      scannerRef.current.clear().catch(console.error)
-      scannerRef.current = null
+      try {
+        await scannerRef.current.stop()
+        scannerRef.current.clear()
+        scannerRef.current = null
+      } catch (error) {
+        console.error('Error stopping scanner:', error)
+      }
     }
     setIsScanning(false)
     setZoomLevel(1)
@@ -324,7 +321,7 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
 
     // If scanning, restart with new camera
     if (isScanning) {
-      stopScanner()
+      await stopScanner()
       setTimeout(() => {
         initScanner(nextCamera.deviceId)
       }, 500) // Small delay to ensure cleanup
@@ -348,24 +345,22 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
     checkPermission()
   }, [checkPermission])
 
-  // Remove all library UI elements - we only want the video stream
+  // Style the video element
   useEffect(() => {
-    const hideLibraryElements = () => {
-      const container = document.getElementById('enhanced-qr-reader')
-      if (container) {
-        // Hide all UI elements except video
-        const elementsToHide = container.querySelectorAll('button, select, div:not([id="enhanced-qr-reader__scan_region"]), span')
-        elementsToHide.forEach(element => {
-          const videoElement = element.querySelector('video')
-          if (!videoElement && element instanceof HTMLElement) {
-            element.style.display = 'none'
-          }
-        })
+    if (!isScanning) return
+
+    const styleVideo = () => {
+      const video = document.querySelector('#enhanced-qr-reader video') as HTMLVideoElement
+      if (video) {
+        video.style.borderRadius = '12px'
+        video.style.width = '100%'
+        video.style.height = 'auto'
+        video.style.objectFit = 'cover'
       }
     }
 
-    hideLibraryElements()
-    const interval = setInterval(hideLibraryElements, 100)
+    styleVideo()
+    const interval = setInterval(styleVideo, 100)
 
     return () => clearInterval(interval)
   }, [isScanning])
@@ -532,14 +527,28 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
       <style jsx global>{`
         #enhanced-qr-reader {
           border: none !important;
+          position: relative;
+        }
+
+        #enhanced-qr-reader video {
+          border-radius: 12px !important;
+          width: 100% !important;
+          height: auto !important;
+          object-fit: cover !important;
+          transition: transform 0.3s ease;
+          display: block !important;
+        }
+
+        #enhanced-qr-reader canvas {
+          display: none !important;
         }
 
         #enhanced-qr-reader__scan_region {
-          position: relative;
+          position: relative !important;
           border: 3px solid #10b981 !important;
           border-radius: 16px !important;
-          overflow: hidden;
-          box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.1);
+          overflow: hidden !important;
+          box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.1) !important;
         }
 
         #enhanced-qr-reader__scan_region::before {
@@ -551,6 +560,7 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
           height: 3px;
           background: linear-gradient(90deg, transparent, #10b981, transparent);
           animation: scan-line 2s linear infinite;
+          z-index: 10;
         }
 
         @keyframes scan-line {
@@ -563,86 +573,14 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
         }
 
         @keyframes pulse-success {
-          0%, 100% { 
-            border-color: #10b981;
-            box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.1);
+          0%, 100% {
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.1) !important;
           }
-          50% { 
-            border-color: #34d399;
-            box-shadow: 0 0 0 15px rgba(16, 185, 129, 0.3);
+          50% {
+            border-color: #34d399 !important;
+            box-shadow: 0 0 0 15px rgba(16, 185, 129, 0.3) !important;
           }
-        }
-
-        #enhanced-qr-reader__dashboard_section_csr {
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          flex-wrap: wrap !important;
-          gap: 12px !important;
-          padding: 12px !important;
-          background: transparent !important;
-          border-radius: 0 !important;
-          border: none !important;
-          box-shadow: none !important;
-        }
-
-        #enhanced-qr-reader__dashboard_section_csr button {
-          background-color: #10b981 !important;
-          color: white !important;
-          border: none !important;
-          padding: 10px 20px !important;
-          border-radius: 8px !important;
-          font-weight: 600 !important;
-          font-size: 14px !important;
-        }
-
-        #enhanced-qr-reader__dashboard_section_csr button:active {
-          background-color: #059669 !important;
-        }
-
-        #enhanced-qr-reader__dashboard_section_csr select {
-          padding: 8px 12px !important;
-          border: 1px solid #d1d5db !important;
-          border-radius: 6px !important;
-          font-size: 14px !important;
-          background: white !important;
-        }
-
-        #enhanced-qr-reader video {
-          border-radius: 12px !important;
-          width: 100% !important;
-          height: auto !important;
-          object-fit: cover !important;
-          transition: transform 0.3s ease;
-        }
-
-        /* Hide ALL library UI elements - we only want the video stream */
-        #enhanced-qr-reader__camera_selection,
-        #enhanced-qr-reader__fileio_input,
-        #enhanced-qr-reader__status_span,
-        #enhanced-qr-reader__header_message,
-        #html5-qrcode-anchor-scan-type-change,
-        #enhanced-qr-reader__dashboard_section_swaplink,
-        #enhanced-qr-reader__dashboard_section_fsr,
-        #enhanced-qr-reader__dashboard_section_csr,
-        #enhanced-qr-reader [id*="stop"],
-        #enhanced-qr-reader [id*="button-camera-stop"],
-        #enhanced-qr-reader [id*="start"],
-        #enhanced-qr-reader [id*="button-camera-start"],
-        #enhanced-qr-reader button,
-        #enhanced-qr-reader select {
-          display: none !important;
-        }
-        
-        /* Torch button styling if available */
-        #enhanced-qr-reader button[title*="torch"],
-        #enhanced-qr-reader button[title*="flash"] {
-          background-color: #f59e0b !important;
-        }
-        
-        #enhanced-qr-reader button[title*="torch"]:active,
-        #enhanced-qr-reader button[title*="flash"]:active {
-          background-color: #d97706 !important;
         }
       `}</style>
     </div>

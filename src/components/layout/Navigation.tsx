@@ -157,7 +157,7 @@ export function Navigation() {
         {/* Mobile bottom navigation - Pro Grab-style Design */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 md:hidden shadow-2xl">
           {/* Better padding for home indicator and visual balance */}
-          <div className="pb-6 pt-1">
+          <div className="pb-3 pt-2">
             <nav className="flex px-2 pt-2 pb-2">
               {navigation.map((item, index) => {
                 const isActive = pathname === item.href;
