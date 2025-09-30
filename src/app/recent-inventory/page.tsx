@@ -537,17 +537,19 @@ export default function RecentInventoryPage() {
                   {filteredScans.map((scan) => (
                     <Card
                       key={`mobile-${scan.id}-${scan.checked_at || 'unchecked'}`}
-                      className={`cursor-pointer transition-all duration-200 hover:shadow-md border ${
+                      className={`transition-all duration-200 hover:shadow-md border ${
                         selectedScans.has(scan.id)
                           ? 'border-indigo-500 bg-indigo-50'
                           : 'border-gray-200'
                       }`}
-                      onClick={() => toggleSelectScan(scan.id)}
                     >
                       <CardContent className="p-3">
                         <div className="flex items-start justify-between gap-3">
                           {/* Left side: Main info */}
-                          <div className="flex-1 min-w-0 space-y-2">
+                          <div
+                            className="flex-1 min-w-0 space-y-2 cursor-pointer"
+                            onClick={() => toggleSelectScan(scan.id)}
+                          >
                             {/* Asset Code and Status */}
                             <div className="flex items-center gap-2">
                               <div className={`font-bold text-sm ${scan.is_checked ? 'text-green-600' : 'text-blue-600'}`}>
@@ -583,19 +585,34 @@ export default function RecentInventoryPage() {
                             </div>
                           </div>
 
-                          {/* Right side: Inspector and Time */}
-                          <div className="flex flex-col items-end justify-start gap-1 text-[10px] text-gray-500 flex-shrink-0">
-                            {scan.is_checked && scan.checked_by && (
+                          {/* Right side: View button + Inspector and Time */}
+                          <div className="flex flex-col items-end justify-between gap-2 flex-shrink-0">
+                            {/* View button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewAsset(scan);
+                              }}
+                              className="h-8 w-8 flex items-center justify-center bg-white border border-blue-300 hover:bg-blue-50 rounded-lg transition-colors"
+                              aria-label="Xem chi tiết"
+                            >
+                              <Eye className="h-4 w-4 text-blue-600" />
+                            </button>
+
+                            {/* Inspector and Time */}
+                            <div className="flex flex-col items-end gap-1 text-[10px] text-gray-500">
+                              {scan.is_checked && scan.checked_by && (
+                                <div className="flex items-center gap-1 text-right">
+                                  <User className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                                  <span className="truncate max-w-[80px]">{scan.checked_by}</span>
+                                </div>
+                              )}
                               <div className="flex items-center gap-1 text-right">
-                                <User className="h-3 w-3 text-gray-400 flex-shrink-0" />
-                                <span className="truncate max-w-[80px]">{scan.checked_by}</span>
+                                <Clock className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                                <span className="font-mono text-[9px]">
+                                  {scan.is_checked ? formatDate(scan.checked_at)?.replace(/:\d{2}$/, '') : 'Chưa kiểm'}
+                                </span>
                               </div>
-                            )}
-                            <div className="flex items-center gap-1 text-right">
-                              <Clock className="h-3 w-3 text-gray-400 flex-shrink-0" />
-                              <span className="font-mono text-[9px]">
-                                {scan.is_checked ? formatDate(scan.checked_at)?.replace(/:\d{2}$/, '') : 'Chưa kiểm'}
-                              </span>
                             </div>
                           </div>
                         </div>
