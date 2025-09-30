@@ -267,16 +267,17 @@ export default function GuidePage() {
                 </div>
 
                 {/* Offline Scenario */}
-                <div className="border border-orange-200 rounded-lg p-4">
+                <div className="border border-red-200 bg-red-50 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                    <h4 className="font-medium text-orange-700">📱 Khi mất Internet (Offline)</h4>
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <h4 className="font-medium text-red-700">📱 Khi mất Internet (Offline)</h4>
                   </div>
-                  <ul className="text-sm text-gray-600 space-y-1 ml-5">
-                    <li>• <strong>Local storage:</strong> Dữ liệu lưu trong máy, vẫn xem được</li>
-                    <li>• <strong>Queue actions:</strong> Check/uncheck assets vẫn hoạt động</li>
-                    <li>• <strong>Pending sync:</strong> Thao tác được queue, chờ online</li>
-                    <li>• <strong>Offline indicator:</strong> Hiển thị trạng thái offline</li>
+                  <ul className="text-sm text-gray-700 space-y-1 ml-5">
+                    <li>• <strong>⚠️ YÊU CẦU INTERNET:</strong> App cần kết nối để hoạt động</li>
+                    <li>• <strong>Xem data cũ:</strong> Có thể xem dữ liệu đã load trước đó</li>
+                    <li>• <strong>Không thể thao tác:</strong> Không check/uncheck/edit/tạo mới</li>
+                    <li>• <strong>WiFi indicator:</strong> Icon WiFi đỏ khi offline</li>
+                    <li>• <strong>Giải pháp:</strong> Kết nối lại internet để tiếp tục làm việc</li>
                   </ul>
                 </div>
 
@@ -287,10 +288,10 @@ export default function GuidePage() {
                     <h4 className="font-medium text-blue-700">🔄 Khi có Internet trở lại</h4>
                   </div>
                   <ul className="text-sm text-gray-600 space-y-1 ml-5">
-                    <li>• <strong>Auto sync:</strong> Tự động đồng bộ các thao tác đã queue</li>
-                    <li>• <strong>Conflict resolution:</strong> Timestamp mới nhất thắng</li>
-                    <li>• <strong>Manual refresh:</strong> Click "Làm mới" để đảm bảo sync 100%</li>
+                    <li>• <strong>Manual refresh:</strong> Click "Làm mới" để tải dữ liệu mới nhất</li>
                     <li>• <strong>Real-time resume:</strong> Tiếp tục nhận live updates</li>
+                    <li>• <strong>Tiếp tục làm việc:</strong> Có thể check/uncheck/edit/tạo mới</li>
+                    <li>• <strong>WiFi indicator:</strong> Icon WiFi xanh khi online</li>
                   </ul>
                 </div>
 
@@ -302,9 +303,9 @@ export default function GuidePage() {
                   </div>
                   <ul className="text-sm text-gray-600 space-y-1 ml-5">
                     <li>• <strong>Tất cả online:</strong> Thay đổi sync ngay lập tức</li>
-                    <li>• <strong>A online, B offline:</strong> B sync khi có mạng trở lại</li>
-                    <li>• <strong>Conflict handling:</strong> Check sau cùng được ưu tiên</li>
-                    <li>• <strong>Race conditions:</strong> Timestamp quyết định thắng thua</li>
+                    <li>• <strong>Cùng sửa 1 tài sản:</strong> Người lưu sau ghi đè người trước</li>
+                    <li>• <strong>Làm mới:</strong> Click "Làm mới" để xem thay đổi mới nhất</li>
+                    <li>• <strong>Yêu cầu internet:</strong> Tất cả users phải online để làm việc</li>
                   </ul>
                 </div>
               </div>
