@@ -266,7 +266,6 @@ export default function ScannerPage() {
         <div className="px-6 py-3">
           <PageHeader
             title="QR Scanner"
-            description="Quét mã QR để kiểm kê tài sản"
             actions={
               <div className="flex items-center gap-3">
                 <WiFiIndicator />

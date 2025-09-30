@@ -525,7 +525,6 @@ export default function AssetsPage() {
         <div className="px-6 py-3">
           <PageHeader
             title="Quản lý tài sản"
-            description="Quản lý và theo dõi tài sản của công ty"
             actions={
               <div className="flex items-center gap-3">
                 <WiFiIndicator />
