@@ -18,19 +18,22 @@ export async function getRecentScans(
   limit: number = 50
 ): Promise<AssetWithInventoryStatus[]> {
   try {
+    console.log('📊 Fetching recent scans for:', userEmail);
+
     const { data, error } = await supabase.rpc('get_recent_scans', {
       user_email_param: userEmail,
       limit_count: limit
     });
 
     if (error) {
-      console.error('Error fetching recent scans:', error);
+      console.error('❌ Error fetching recent scans:', error);
       throw error;
     }
 
+    console.log('✅ Fetched', data?.length || 0, 'recent scans');
     return data || [];
   } catch (error) {
-    console.error('Failed to get recent scans:', error);
+    console.error('❌ Failed to get recent scans:', error);
     return [];
   }
 }
@@ -43,19 +46,22 @@ export async function addScanToHistory(
   assetId: string
 ): Promise<string | null> {
   try {
+    console.log('➕ Adding scan to history:', { userEmail, assetId });
+
     const { data, error } = await supabase.rpc('add_scan_to_history', {
       user_email_param: userEmail,
       asset_id_param: assetId
     });
 
     if (error) {
-      console.error('Error adding scan to history:', error);
+      console.error('❌ Error adding scan to history:', error);
       throw error;
     }
 
+    console.log('✅ Scan added to history, ID:', data);
     return data;
   } catch (error) {
-    console.error('Failed to add scan to history:', error);
+    console.error('❌ Failed to add scan to history:', error);
     return null;
   }
 }

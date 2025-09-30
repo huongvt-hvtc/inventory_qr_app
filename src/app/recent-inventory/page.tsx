@@ -34,7 +34,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function RecentInventoryPage() {
   const { user } = useAuth();
   const { setRefreshFunction } = useRefresh();
-  const { recentScans, clearRecentScans, updateRecentScan } = useRecentScans();
+  const { recentScans, clearRecentScans, updateRecentScan, refreshScans } = useRecentScans();
   const { assets, checkAssets, uncheckAssets, loadAssets, loading } = useAssets();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -195,10 +195,14 @@ export default function RecentInventoryPage() {
   const handleRefresh = async () => {
     const toastId = toast.loading('Đang cập nhật dữ liệu...');
     try {
-      await loadAssets(true); // Force refresh bypassing cache
+      // Refresh both assets and scan history in parallel
+      await Promise.all([
+        loadAssets(true), // Force refresh bypassing cache
+        refreshScans()     // Refresh scan history from database
+      ]);
       toast.success('Đã cập nhật dữ liệu mới nhất', { id: toastId });
     } catch (error) {
-      console.error('Error refreshing assets:', error);
+      console.error('Error refreshing data:', error);
       toast.error('Có lỗi xảy ra khi cập nhật dữ liệu', { id: toastId });
     }
   };

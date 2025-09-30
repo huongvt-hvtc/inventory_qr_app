@@ -59,7 +59,7 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
   RETURN QUERY
-  SELECT DISTINCT ON (sh.asset_id)
+  SELECT
     sh.id,
     a.id as asset_id,
     a.asset_code,
@@ -71,12 +71,10 @@ BEGIN
     a.status,
     a.location,
     a.notes,
-    COALESCE(
-      (SELECT TRUE FROM inventory_records ir
-       WHERE ir.asset_id = a.id
-       ORDER BY ir.checked_at DESC
-       LIMIT 1),
-      FALSE
+    EXISTS(
+      SELECT 1 FROM inventory_records ir
+      WHERE ir.asset_id = a.id
+      LIMIT 1
     ) as is_checked,
     (SELECT ir.checked_by FROM inventory_records ir
      WHERE ir.asset_id = a.id
@@ -90,7 +88,7 @@ BEGIN
   FROM scan_history sh
   INNER JOIN assets a ON sh.asset_id = a.id
   WHERE sh.user_email = user_email_param
-  ORDER BY sh.asset_id, sh.scanned_at DESC
+  ORDER BY sh.scanned_at DESC
   LIMIT limit_count;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
