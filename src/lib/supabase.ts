@@ -18,48 +18,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-interface CurrentUserIdentity {
-  id: string | null;
-  email: string | null;
-}
-
-const resolveCurrentUserIdentity = async (): Promise<CurrentUserIdentity> => {
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    const sessionUser = data.session?.user;
-    if (!error && sessionUser?.email) {
-      return {
-        id: sessionUser.id ?? null,
-        email: sessionUser.email
-      };
-    }
-
-    if (error) {
-      console.warn('Failed to resolve current session via getSession:', error);
-    }
-
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (userError) {
-      console.error('Failed to resolve current user via getUser:', userError);
-      return {
-        id: sessionUser?.id ?? null,
-        email: null
-      };
-    }
-
-    return {
-      id: userData.user?.id ?? sessionUser?.id ?? null,
-      email: userData.user?.email ?? null
-    };
-  } catch (sessionError) {
-    console.error('Unexpected error resolving session:', sessionError);
-    return {
-      id: null,
-      email: null
-    };
-  }
-};
-
 // Database service functions
 export const db = {
   // User management
@@ -233,54 +191,13 @@ export const db = {
   },
 
   async createAsset(asset: Omit<Asset, 'id' | 'created_at' | 'updated_at' | 'qr_generated'>): Promise<Asset> {
-    const identity = await resolveCurrentUserIdentity();
-    const createdBy = asset.created_by?.trim() || identity.email || identity.id;
-
-    if (!createdBy) {
-      throw new Error('Không xác định được người tạo tài sản. Vui lòng đăng nhập lại.');
-    }
-
-    const payload = {
-      ...asset,
-      created_by: createdBy,
-      qr_generated: false
-    };
-
     const { data, error } = await supabase
       .from('assets')
-      .insert(payload)
+      .insert({ ...asset, qr_generated: false })
       .select()
       .single();
 
     if (error) {
-      const needsFallback =
-        identity.id &&
-        identity.email &&
-        createdBy === identity.email &&
-        (error.code === '22P02' || error.code === '23503' || (typeof error.message === 'string' && error.message.toLowerCase().includes('uuid')));
-
-      if (needsFallback) {
-        console.warn('Retrying asset creation with user id due to created_by constraint:', error.message);
-        const fallbackPayload = {
-          ...asset,
-          created_by: identity.id,
-          qr_generated: false
-        };
-
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('assets')
-          .insert(fallbackPayload)
-          .select()
-          .single();
-
-        if (fallbackError) {
-          console.error('Fallback asset creation failed:', fallbackError);
-          throw fallbackError;
-        }
-
-        return fallbackData;
-      }
-
       console.error('Error creating asset:', error);
       throw error;
     }
@@ -317,25 +234,10 @@ export const db = {
   },
 
   async bulkCreateAssets(assets: Omit<Asset, 'id' | 'created_at' | 'updated_at' | 'qr_generated'>[]): Promise<Asset[]> {
-    const identity = await resolveCurrentUserIdentity();
-
-    const assetsWithDefaults = assets.map(asset => {
-      const createdBy = asset.created_by?.trim() || identity.email || identity.id;
-
-      if (!createdBy) {
-        throw new Error('Thiếu thông tin người tạo khi import tài sản.');
-      }
-
-      return {
-        ...asset,
-        created_by: createdBy,
-        qr_generated: false
-      };
-    });
-
-    const usedEmailForCreatedBy = identity.email
-      ? assetsWithDefaults.some(asset => asset.created_by === identity.email)
-      : false;
+    const assetsWithDefaults = assets.map(asset => ({
+      ...asset,
+      qr_generated: false
+    }));
 
     const { data, error } = await supabase
       .from('assets')
@@ -343,41 +245,6 @@ export const db = {
       .select();
 
     if (error) {
-      const shouldRetryWithId = (
-        identity.id &&
-        usedEmailForCreatedBy &&
-        (error.code === '22P02' || error.code === '23503' || (typeof error.message === 'string' && error.message.toLowerCase().includes('uuid')))
-      );
-
-      if (shouldRetryWithId) {
-        console.warn('Retrying bulk asset creation with user id due to created_by constraint:', error.message);
-        const fallbackAssets = assets.map(asset => {
-          const createdById = asset.created_by?.trim() || identity.id;
-
-          if (!createdById) {
-            throw new Error('Thiếu thông tin người tạo khi import tài sản.');
-          }
-
-          return {
-            ...asset,
-            created_by: createdById,
-            qr_generated: false
-          };
-        });
-
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('assets')
-          .insert(fallbackAssets)
-          .select();
-
-        if (fallbackError) {
-          console.error('Fallback bulk asset creation failed:', fallbackError);
-          throw fallbackError;
-        }
-
-        return fallbackData;
-      }
-
       console.error('Error bulk creating assets:', error);
       throw error;
     }

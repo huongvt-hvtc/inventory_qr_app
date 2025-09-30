@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { db, supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
 import { offlineStorage } from '@/lib/offline-storage';
 import type { AssetWithInventoryStatus, AssetFilters } from '@/types';
 import toast from 'react-hot-toast';
@@ -12,8 +11,6 @@ const CACHE_EXPIRY_KEY = 'assets_cache_expiry';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export function useAssets() {
-  const { user: authUser, supabaseUser } = useAuth();
-  const currentUserEmail = supabaseUser?.email || authUser?.email || null;
   const isInitialized = useRef(false);
   const realtimeSubscription = useRef<any>(null);
 
@@ -253,19 +250,7 @@ export function useAssets() {
 
   const createAsset = async (assetData: Omit<AssetWithInventoryStatus, 'id' | 'created_at' | 'updated_at' | 'qr_generated' | 'is_checked'>) => {
     try {
-      if (!currentUserEmail) {
-        toast.error('Không xác định được người dùng hiện tại. Vui lòng đăng nhập lại.');
-        throw new Error('Missing authenticated user email for asset creation');
-      }
-
-      const userEmail = currentUserEmail as string;
-
-      const payload = {
-        ...assetData,
-        created_by: userEmail
-      };
-
-      const newAsset = await db.createAsset(payload);
+      const newAsset = await db.createAsset(assetData);
       toast.success('Đã thêm tài sản thành công');
       await loadAssets(true); // Force refresh the list
       return newAsset;
@@ -316,11 +301,6 @@ export function useAssets() {
     let toastId: string | null = null;
 
     try {
-      if (!currentUserEmail) {
-        toast.error('Không xác định được người dùng để import tài sản. Vui lòng đăng nhập lại.');
-        throw new Error('Missing authenticated user email for bulk import');
-      }
-      const userEmail = currentUserEmail as string;
       // Show progress toast for large imports
       if (assetsData.length > 5) {
         toastId = toast.loading(`Đang import ${assetsData.length} tài sản... 0%`, { duration: Infinity });
@@ -346,8 +326,7 @@ export function useAssets() {
           department: asset.department || '',
           status: asset.status || '',
           location: asset.location || '',
-          notes: asset.notes || '',
-          created_by: userEmail
+          notes: asset.notes || ''
         };
 
         console.log('✨ Cleaned asset for database:', cleanAsset);
@@ -390,11 +369,6 @@ export function useAssets() {
     let toastId: string | null = null;
 
     try {
-      if (!currentUserEmail) {
-        toast.error('Không xác định được người dùng để import tài sản. Vui lòng đăng nhập lại.');
-        throw new Error('Missing authenticated user email for import with overwrite');
-      }
-      const userEmail = currentUserEmail as string;
       let createdCount = 0;
       let updatedCount = 0;
       const totalOperations = (assetsData.length > 0 ? 1 : 0) + duplicates.length;
@@ -414,8 +388,7 @@ export function useAssets() {
           department: asset.department || '',
           status: asset.status || '',
           location: asset.location || '',
-          notes: asset.notes || '',
-          created_by: userEmail
+          notes: asset.notes || ''
         }));
 
         const newAssets = await db.bulkCreateAssets(cleanAssetsData);
@@ -439,8 +412,7 @@ export function useAssets() {
           department: duplicate.asset.department || '',
           status: duplicate.asset.status || '',
           location: duplicate.asset.location || '',
-          notes: duplicate.asset.notes || '',
-          created_by: userEmail
+          notes: duplicate.asset.notes || ''
         };
 
         await updateAsset(duplicate.existingAsset.id, cleanAsset);
