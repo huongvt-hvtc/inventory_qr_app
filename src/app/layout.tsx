@@ -97,7 +97,11 @@ export default function RootLayout({
                 background: '#363636',
                 color: '#fff',
                 marginTop: '60px', // Avoid header overlap on mobile
+                zIndex: 9999, // Ensure toast appears above all content
               },
+            }}
+            containerStyle={{
+              zIndex: 9999,
             }}
           />
       </body>

@@ -35,7 +35,7 @@ export default function RecentInventoryPage() {
   const { user } = useAuth();
   const { setRefreshFunction } = useRefresh();
   const { recentScans, clearRecentScans, updateRecentScan, refreshScans } = useRecentScans();
-  const { assets, checkAssets, uncheckAssets, loadAssets, loading } = useAssets();
+  const { assets, checkAssets, uncheckAssets, loadAssets, loading, updateAsset } = useAssets();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
@@ -136,6 +136,45 @@ export default function RecentInventoryPage() {
 
   const handleViewAsset = (asset: AssetWithInventoryStatus) => {
     setAssetDetailModal({ isOpen: true, asset, mode: 'view' });
+  };
+
+  const handleAssetSave = async (asset: AssetWithInventoryStatus) => {
+    try {
+      console.log('🚀 Starting asset save:', { asset, user });
+
+      // Check if user is authenticated
+      if (!user) {
+        toast.error('Vui lòng đăng nhập để lưu tài sản');
+        return;
+      }
+
+      if (asset.id) {
+        // Filter out inventory-related fields that don't belong in assets table
+        const { is_checked, checked_by, checked_at, inventory_notes, ...assetData } = asset;
+
+        console.log('📝 Updating existing asset:', assetData);
+        // Update existing asset in database
+        await updateAsset(asset.id, assetData);
+
+        // Immediately update the modal's asset state
+        setAssetDetailModal(prev => ({
+          ...prev,
+          asset: {
+            ...asset,
+            updated_at: new Date().toISOString()
+          }
+        }));
+
+        // Update recent scan in context
+        updateRecentScan(asset.id, asset);
+
+        toast.success('Đã cập nhật tài sản');
+        console.log('✅ Asset saved successfully');
+      }
+    } catch (error) {
+      console.error('💥 Error saving asset:', error);
+      toast.error('Lỗi khi lưu tài sản');
+    }
   };
 
   const toggleSelectScan = (scanId: string) => {
@@ -632,6 +671,7 @@ export default function RecentInventoryPage() {
         isOpen={assetDetailModal.isOpen}
         onClose={() => setAssetDetailModal({ isOpen: false, asset: null, mode: 'view' })}
         mode={assetDetailModal.mode}
+        onSave={handleAssetSave}
         onCheck={async (assetId, checkedBy) => {
           await checkAssets([assetId], checkedBy);
         }}
