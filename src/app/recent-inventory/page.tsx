@@ -224,26 +224,27 @@ export default function RecentInventoryPage() {
       {/* Header Container */}
       <div className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 relative z-30">
         {/* Header Section */}
-        <div className="px-6 py-3">
+        <div className="px-4 md:px-6 py-3">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <History className="h-6 w-6 text-green-600" />
-                Kiểm kê gần đây
+            <div className="flex items-center justify-between gap-2">
+              <h1 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2 flex-shrink min-w-0">
+                <History className="h-5 w-5 md:h-6 md:w-6 text-green-600 flex-shrink-0" />
+                <span className="truncate">Kiểm kê gần đây</span>
               </h1>
 
               {/* WiFi & Refresh Button in Header */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 relative z-40">
                 <WiFiIndicator />
                 <button
                   disabled={loading}
                   onClick={handleRefresh}
-                  className="h-10 px-4 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg active:shadow-sm touch-manipulation"
+                  className="h-10 px-3 md:px-4 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg active:shadow-sm relative z-50"
                   title="Làm mới dữ liệu từ server"
-                  style={{ touchAction: 'manipulation' }}
+                  style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+                  type="button"
                 >
                   <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                  <span>Làm mới</span>
+                  <span className="hidden sm:inline">Làm mới</span>
                 </button>
               </div>
             </div>
@@ -279,10 +280,10 @@ export default function RecentInventoryPage() {
         <div className="px-4 md:px-6 py-3 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <Button
+              <button
                 onClick={selectAllScans}
                 disabled={filteredScans.length === 0}
-                className="h-11 px-5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2.5 shadow-md hover:shadow-lg"
+                className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg"
               >
                 {selectedScans.size === filteredScans.length && filteredScans.length > 0 ? (
                   <>
@@ -295,38 +296,36 @@ export default function RecentInventoryPage() {
                     Chọn hết
                   </>
                 )}
-              </Button>
+              </button>
 
-
-              <Button
+              <button
                 onClick={handleClearRecentScans}
                 disabled={recentScans.length === 0}
-                variant="outline"
-                className="h-11 px-5 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2.5 shadow-md hover:shadow-lg"
+                className="h-10 px-4 bg-white border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg"
               >
                 <Trash2 className="h-4 w-4" />
                 Xóa lịch sử
-              </Button>
+              </button>
             </div>
 
             {/* Bulk Actions */}
             {selectedScans.size > 0 && (
               <div className="flex items-center gap-3">
-                <Button
+                <button
                   onClick={handleBulkCheck}
-                  className="h-11 px-5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2.5 shadow-md hover:shadow-lg"
+                  className="h-10 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
                 >
                   <Check className="h-4 w-4" />
                   Kiểm kê ({selectedScans.size})
-                </Button>
+                </button>
 
-                <Button
+                <button
                   onClick={handleBulkUncheck}
-                  className="h-11 px-5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2.5 shadow-md hover:shadow-lg"
+                  className="h-10 px-4 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
                 >
                   <X className="h-4 w-4" />
                   Bỏ kiểm kê ({selectedScans.size})
-                </Button>
+                </button>
               </div>
             )}
           </div>
@@ -460,9 +459,9 @@ export default function RecentInventoryPage() {
                       }`}
                       onClick={() => toggleSelectScan(scan.id)}
                     >
-                      <CardContent className="p-4 flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-4 min-w-0">
-                          <div>
+                      <CardContent className="p-4 flex items-start justify-between gap-6">
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                          <div className="flex-shrink-0">
                             <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
                               scan.is_checked ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
                             }`}>
@@ -470,17 +469,23 @@ export default function RecentInventoryPage() {
                               {scan.is_checked ? 'Đã kiểm' : 'Chưa kiểm'}
                             </span>
                           </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 mb-1">
                               <span className={`font-bold text-sm ${scan.is_checked ? 'text-green-600' : 'text-blue-600'}`}>
                                 {scan.asset_code}
                               </span>
-                              <span className="text-xs text-gray-400">{scan.department || 'N/A'}</span>
+                              <span className="text-xs text-gray-500 font-medium">{scan.department || 'N/A'}</span>
                             </div>
-                            <div className="text-sm font-medium text-gray-900 truncate max-w-md">
+                            <div className="text-sm font-medium text-gray-900 mb-2">
                               {scan.name}
                             </div>
-                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-2">
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                              {scan.status && (
+                                <span className="flex items-center gap-1">
+                                  <Package className="h-3 w-3" />
+                                  {scan.status}
+                                </span>
+                              )}
                               {scan.location && (
                                 <span className="flex items-center gap-1">
                                   <MapPin className="h-3 w-3" />
@@ -496,7 +501,7 @@ export default function RecentInventoryPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 flex-shrink-0">
                           <div className="text-xs text-gray-500 text-right">
                             {scan.is_checked && scan.checked_by && (
                               <div className="flex items-center gap-1 justify-end">
@@ -509,24 +514,22 @@ export default function RecentInventoryPage() {
                               <span className="font-mono">{scan.is_checked ? formatDate(scan.checked_at) : 'Chưa kiểm kê'}</span>
                             </div>
                           </div>
-                          <Button
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleViewAsset(scan);
                             }}
-                            variant="outline"
-                            size="sm"
-                            className="h-9 px-3 border-gray-300 hover:border-blue-300 hover:bg-blue-50"
+                            className="h-8 px-3 bg-white border border-gray-300 hover:border-blue-300 hover:bg-blue-50 text-sm font-medium text-gray-700 rounded-lg transition-colors"
                           >
                             Xem
-                          </Button>
+                          </button>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 md:hidden">
+                <div className="grid grid-cols-1 gap-2 md:hidden">
                   {filteredScans.map((scan) => (
                     <Card
                       key={`mobile-${scan.id}-${scan.checked_at || 'unchecked'}`}
@@ -537,54 +540,59 @@ export default function RecentInventoryPage() {
                       }`}
                       onClick={() => toggleSelectScan(scan.id)}
                     >
-                      <CardContent className="p-2.5 space-y-1.5">
-                        {/* Header: Asset Code and Status */}
-                        <div className="flex items-center justify-between gap-1">
-                          <div className={`font-bold text-xs ${scan.is_checked ? 'text-green-600' : 'text-blue-600'}`}>
-                            {scan.asset_code}
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          {/* Left side: Main info */}
+                          <div className="flex-1 min-w-0 space-y-2">
+                            {/* Asset Code and Status */}
+                            <div className="flex items-center gap-2">
+                              <div className={`font-bold text-sm ${scan.is_checked ? 'text-green-600' : 'text-blue-600'}`}>
+                                {scan.asset_code}
+                              </div>
+                              <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                                scan.is_checked ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                              }`}>
+                                {scan.is_checked ? <CheckCircle className="h-3 w-3 mr-0.5" /> : <AlertCircle className="h-3 w-3 mr-0.5" />}
+                                {scan.is_checked ? 'Đã kiểm' : 'Chưa kiểm'}
+                              </span>
+                            </div>
+
+                            {/* Asset Name */}
+                            <div className="text-xs text-gray-900 font-medium line-clamp-2 leading-relaxed">
+                              {scan.name}
+                            </div>
+
+                            {/* Department and Location */}
+                            <div className="space-y-1 text-[10px] text-gray-600">
+                              {scan.department && (
+                                <div className="flex items-center gap-1">
+                                  <Building className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                                  <span className="truncate">{scan.department}</span>
+                                </div>
+                              )}
+                              {scan.location && (
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                                  <span className="truncate">{scan.location}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <span className={`inline-flex items-center px-1.5 py-0.5 text-[9px] font-medium rounded-full ${
-                            scan.is_checked ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                          }`}>
-                            {scan.is_checked ? <CheckCircle className="h-2.5 w-2.5 mr-0.5" /> : <AlertCircle className="h-2.5 w-2.5 mr-0.5" />}
-                            {scan.is_checked ? 'Đã kiểm' : 'Chưa kiểm'}
-                          </span>
-                        </div>
 
-                        {/* Asset Name */}
-                        <div className="text-[10px] text-gray-800 font-medium line-clamp-2 leading-tight">
-                          {scan.name}
-                        </div>
-
-                        {/* Department and Location in compact layout */}
-                        <div className="space-y-0.5 text-[9px] text-gray-600">
-                          {scan.department && (
-                            <div className="flex items-center gap-1 truncate">
-                              <Building className="h-2.5 w-2.5 text-gray-400 flex-shrink-0" />
-                              <span className="truncate">{scan.department}</span>
+                          {/* Right side: Inspector and Time */}
+                          <div className="flex flex-col items-end justify-start gap-1 text-[10px] text-gray-500 flex-shrink-0">
+                            {scan.is_checked && scan.checked_by && (
+                              <div className="flex items-center gap-1 text-right">
+                                <User className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                                <span className="truncate max-w-[80px]">{scan.checked_by}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1 text-right">
+                              <Clock className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                              <span className="font-mono text-[9px]">
+                                {scan.is_checked ? formatDate(scan.checked_at)?.replace(/:\d{2}$/, '') : 'Chưa kiểm'}
+                              </span>
                             </div>
-                          )}
-                          {scan.location && (
-                            <div className="flex items-center gap-1 truncate">
-                              <MapPin className="h-2.5 w-2.5 text-gray-400 flex-shrink-0" />
-                              <span className="truncate">{scan.location}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Inspector and Time - Compact */}
-                        <div className="pt-1 border-t border-gray-100 space-y-0.5 text-[8px] text-gray-500">
-                          {scan.is_checked && scan.checked_by && (
-                            <div className="flex items-center gap-1 truncate">
-                              <User className="h-2.5 w-2.5 text-gray-400 flex-shrink-0" />
-                              <span className="truncate">{scan.checked_by}</span>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-2.5 w-2.5 text-gray-400 flex-shrink-0" />
-                            <span className="font-mono text-[8px] truncate">
-                              {scan.is_checked ? formatDate(scan.checked_at)?.replace(/:\d{2}$/, '') : 'Chưa kiểm'}
-                            </span>
                           </div>
                         </div>
                       </CardContent>
