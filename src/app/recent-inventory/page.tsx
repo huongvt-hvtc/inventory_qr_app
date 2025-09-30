@@ -390,7 +390,7 @@ export default function RecentInventoryPage() {
 
       {/* Content Area */}
       <div className="flex-1 overflow-hidden">
-        <div className="h-full overflow-auto pb-32 md:pb-6">
+        <div className="h-full overflow-auto pb-40 md:pb-6">
           <div className="px-4 md:px-6 py-4">
             {filteredScans.length === 0 ? (
               <div className="text-center py-16">
