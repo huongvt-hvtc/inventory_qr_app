@@ -31,15 +31,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       displayMode: window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
     });
 
-    // Safety timeout to prevent infinite loading
+    // Safety timeout to prevent infinite loading (increased to 15s for slower connections)
     const loadingTimeout = setTimeout(() => {
       console.warn('⚠️ Auth loading timeout - forcing loading to false');
       setLoading(false);
-    }, 10000); // 10 second timeout
+    }, 15000); // 15 second timeout
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(loadingTimeout);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log('🔍 PWA Debug - Initial session check:', {
         hasSession: !!session,
         userEmail: session?.user?.email,
@@ -48,10 +47,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (session?.user) {
         setSupabaseUser(session.user);
-        loadUserProfile(session.user);
+        await loadUserProfile(session.user);
       } else {
         setLoading(false);
       }
+
+      // Clear timeout after profile loaded
+      clearTimeout(loadingTimeout);
     }).catch((error) => {
       clearTimeout(loadingTimeout);
       console.error('❌ Error getting initial session:', error);
