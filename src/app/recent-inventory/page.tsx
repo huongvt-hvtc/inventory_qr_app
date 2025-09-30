@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   History,
   Search,
@@ -35,10 +34,11 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function RecentInventoryPage() {
   const { user } = useAuth();
   const { setRefreshFunction } = useRefresh();
-  const { recentScans, clearRecentScans } = useRecentScans();
+  const { recentScans, clearRecentScans, updateRecentScan } = useRecentScans();
   const { assets, checkAssets, uncheckAssets, loadAssets, loading } = useAssets();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'checked' | 'unchecked'>('all');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
@@ -55,11 +55,43 @@ export default function RecentInventoryPage() {
   });
 
   // Filter and search logic
+  useEffect(() => {
+    if (assets.length === 0 || recentScans.length === 0) return;
+
+    recentScans.forEach(scan => {
+      const updatedAsset = assets.find(asset => asset.id === scan.id);
+      if (updatedAsset) {
+        const hasChanges =
+          updatedAsset.is_checked !== scan.is_checked ||
+          updatedAsset.checked_by !== scan.checked_by ||
+          updatedAsset.checked_at !== scan.checked_at;
+        if (hasChanges) {
+          updateRecentScan(scan.id, {
+            is_checked: updatedAsset.is_checked,
+            checked_by: updatedAsset.checked_by,
+            checked_at: updatedAsset.checked_at
+          });
+        }
+      }
+    });
+  }, [assets, recentScans, updateRecentScan]);
+
+  const handleSearchSubmit = () => {
+    setActiveSearchTerm(searchTerm.trim());
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleSearchSubmit();
+    }
+  };
+
   const filteredScans = useMemo(() => {
     return recentScans.filter(scan => {
       // Search filter
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
+      if (activeSearchTerm) {
+        const term = activeSearchTerm.toLowerCase();
         if (!scan.asset_code.toLowerCase().includes(term) &&
             !scan.name.toLowerCase().includes(term) &&
             !(scan.department?.toLowerCase().includes(term)) &&
@@ -77,7 +109,7 @@ export default function RecentInventoryPage() {
 
       return true;
     });
-  }, [recentScans, searchTerm, statusFilter, departmentFilter]);
+  }, [recentScans, activeSearchTerm, statusFilter, departmentFilter]);
 
   // Get unique departments for filter
   const departments = Array.from(new Set(recentScans.map(s => s.department).filter(dept => dept && dept.trim() !== ''))) as string[];
@@ -161,12 +193,13 @@ export default function RecentInventoryPage() {
   };
 
   const handleRefresh = async () => {
+    const toastId = toast.loading('Đang cập nhật dữ liệu...');
     try {
       await loadAssets(true); // Force refresh bypassing cache
-      toast.success('Đã cập nhật dữ liệu mới nhất');
+      toast.success('Đã cập nhật dữ liệu mới nhất', { id: toastId });
     } catch (error) {
       console.error('Error refreshing assets:', error);
-      toast.error('Có lỗi xảy ra khi cập nhật dữ liệu');
+      toast.error('Có lỗi xảy ra khi cập nhật dữ liệu', { id: toastId });
     }
   };
 
@@ -183,6 +216,7 @@ export default function RecentInventoryPage() {
     setStatusFilter('all');
     setDepartmentFilter('all');
     setSearchTerm('');
+    setActiveSearchTerm('');
   };
 
   return (
@@ -300,15 +334,22 @@ export default function RecentInventoryPage() {
         {/* Search and Filter */}
         <div className="px-4 md:px-6 py-3 bg-gray-50 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
+            <div className="flex-1 flex items-center gap-2">
+              <input
                 type="text"
                 placeholder="Tìm kiếm theo mã, tên, bộ phận, serial..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-10 pl-12 pr-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                onKeyDown={handleSearchKeyDown}
+                className="flex-1 h-10 px-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
               />
+              <Button
+                type="button"
+                onClick={handleSearchSubmit}
+                className="h-10 w-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow-md" aria-label="Tìm kiếm"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
             </div>
 
             <Button
@@ -328,7 +369,7 @@ export default function RecentInventoryPage() {
                 </span>
               )}
             </Button>
-          </div>
+          </div>          </div>
 
           {/* Collapsible Filters */}
           {showFilters && (
@@ -406,10 +447,10 @@ export default function RecentInventoryPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="hidden md:flex md:flex-col gap-3">
                 {filteredScans.map((scan) => (
                   <Card
-                    key={`${scan.id}-${scan.checked_at || 'unchecked'}`}
+                    key={`desktop-${scan.id}-${scan.checked_at || 'unchecked'}`}
                     className={`cursor-pointer transition-all duration-200 hover:shadow-lg border-2 ${
                       selectedScans.has(scan.id)
                         ? 'border-indigo-500 bg-indigo-50'
@@ -417,32 +458,55 @@ export default function RecentInventoryPage() {
                     }`}
                     onClick={() => toggleSelectScan(scan.id)}
                   >
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={`font-bold text-sm ${
-                              scan.is_checked ? 'text-green-600' : 'text-blue-600'
-                            }`}>
+                    <CardContent className="p-4 flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-4 min-w-0">
+                        <div>
+                          <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
+                            scan.is_checked ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                          }`}>
+                            {scan.is_checked ? <CheckCircle className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
+                            {scan.is_checked ? 'Đã kiểm' : 'Chưa kiểm'}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-3">
+                            <span className={`font-bold text-sm ${scan.is_checked ? 'text-green-600' : 'text-blue-600'}`}>
                               {scan.asset_code}
                             </span>
-                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                              scan.is_checked
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-orange-100 text-orange-800'
-                            }`}>
-                              {scan.is_checked ? (
-                                <><CheckCircle className="h-3 w-3 mr-1" />Đã kiểm</>
-                              ) : (
-                                <><AlertCircle className="h-3 w-3 mr-1" />Chưa kiểm</>
-                              )}
-                            </span>
+                            <span className="text-xs text-gray-400">{scan.department || 'N/A'}</span>
                           </div>
-                          <h3 className="font-medium text-gray-900 text-sm leading-tight break-words">
+                          <div className="text-sm font-medium text-gray-900 truncate max-w-md">
                             {scan.name}
-                          </h3>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-2">
+                            {scan.location && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {scan.location}
+                              </span>
+                            )}
+                            {scan.serial && (
+                              <span className="flex items-center gap-1 font-mono">
+                                <Tag className="h-3 w-3" />
+                                {scan.serial}
+                              </span>
+                            )}
+                          </div>
                         </div>
-
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-xs text-gray-500 text-right">
+                          {scan.is_checked && scan.checked_by && (
+                            <div className="flex items-center gap-1 justify-end">
+                              <User className="h-3 w-3 text-gray-400" />
+                              <span>{scan.checked_by}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1 justify-end mt-1 text-gray-500">
+                            <Clock className="h-3 w-3" />
+                            <span className="font-mono">{scan.is_checked ? formatDate(scan.checked_at) : 'Chưa kiểm kê'}</span>
+                          </div>
+                        </div>
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -450,53 +514,81 @@ export default function RecentInventoryPage() {
                           }}
                           variant="outline"
                           size="sm"
-                          className="h-8 w-8 p-0 ml-2 flex-shrink-0 hover:bg-blue-50 hover:border-blue-300"
+                          className="h-9 px-3 border-gray-300 hover:border-blue-300 hover:bg-blue-50"
                         >
-                          <Eye className="h-4 w-4" />
+                          Xem
                         </Button>
                       </div>
-                    </CardHeader>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
 
-                    <CardContent className="pt-0">
-                      <div className="space-y-2 text-xs text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <Building className="h-3 w-3 text-gray-400" />
-                          <span className="break-words">{scan.department || 'N/A'}</span>
+              <div className="grid grid-cols-2 gap-2 md:hidden">
+                {filteredScans.map((scan) => (
+                  <Card
+                    key={`mobile-${scan.id}-${scan.checked_at || 'unchecked'}`}
+                    className={`cursor-pointer transition-all duration-200 hover:shadow-md border ${
+                      selectedScans.has(scan.id)
+                        ? 'border-indigo-500 bg-indigo-50'
+                        : 'border-gray-200'
+                    }`}
+                    onClick={() => toggleSelectScan(scan.id)}
+                  >
+                    <CardContent className="p-2.5 space-y-1.5">
+                      {/* Header: Asset Code and Status */}
+                      <div className="flex items-center justify-between gap-1">
+                        <div className={`font-bold text-xs ${scan.is_checked ? 'text-green-600' : 'text-blue-600'}`}>
+                          {scan.asset_code}
                         </div>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 text-[9px] font-medium rounded-full ${
+                          scan.is_checked ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                        }`}>
+                          {scan.is_checked ? <CheckCircle className="h-2.5 w-2.5 mr-0.5" /> : <AlertCircle className="h-2.5 w-2.5 mr-0.5" />}
+                          {scan.is_checked ? 'Đã kiểm' : 'Chưa kiểm'}
+                        </span>
+                      </div>
 
+                      {/* Asset Name */}
+                      <div className="text-[10px] text-gray-800 font-medium line-clamp-2 leading-tight">
+                        {scan.name}
+                      </div>
+
+                      {/* Department and Location in compact layout */}
+                      <div className="space-y-0.5 text-[9px] text-gray-600">
+                        {scan.department && (
+                          <div className="flex items-center gap-1 truncate">
+                            <Building className="h-2.5 w-2.5 text-gray-400 flex-shrink-0" />
+                            <span className="truncate">{scan.department}</span>
+                          </div>
+                        )}
                         {scan.location && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-3 w-3 text-gray-400" />
-                            <span className="break-words">{scan.location}</span>
+                          <div className="flex items-center gap-1 truncate">
+                            <MapPin className="h-2.5 w-2.5 text-gray-400 flex-shrink-0" />
+                            <span className="truncate">{scan.location}</span>
                           </div>
                         )}
+                      </div>
 
-                        {scan.serial && (
-                          <div className="flex items-center gap-2">
-                            <Tag className="h-3 w-3 text-gray-400" />
-                            <span className="font-mono break-words">{scan.serial}</span>
+                      {/* Inspector and Time - Compact */}
+                      <div className="pt-1 border-t border-gray-100 space-y-0.5 text-[8px] text-gray-500">
+                        {scan.is_checked && scan.checked_by && (
+                          <div className="flex items-center gap-1 truncate">
+                            <User className="h-2.5 w-2.5 text-gray-400 flex-shrink-0" />
+                            <span className="truncate">{scan.checked_by}</span>
                           </div>
                         )}
-
-                        <div className="pt-2 border-t border-gray-100 space-y-1">
-                          {scan.is_checked && scan.checked_by && (
-                            <div className="flex items-center gap-2">
-                              <User className="h-3 w-3 text-gray-400" />
-                              <span className="break-words">{scan.checked_by}</span>
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-3 w-3 text-gray-400" />
-                            <span className="font-mono text-xs">
-                              {scan.is_checked ? formatDate(scan.checked_at) : 'Chưa kiểm kê'}
-                            </span>
-                          </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-2.5 w-2.5 text-gray-400 flex-shrink-0" />
+                          <span className="font-mono text-[8px] truncate">
+                            {scan.is_checked ? formatDate(scan.checked_at)?.replace(/:\d{2}$/, '') : 'Chưa kiểm'}
+                          </span>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
+              </div>
               </div>
             )}
           </div>

@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import type { KeyboardEvent } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { 
   QrCode, 
   Printer, 
@@ -39,16 +39,34 @@ export default function QRGenerator({
   const [isGenerating, setIsGenerating] = useState(false)
   const [qrCodes, setQrCodes] = useState<Map<string, string>>(new Map())
   const [searchTerm, setSearchTerm] = useState('')
+  const [activeSearchTerm, setActiveSearchTerm] = useState('')
   const [selectedForPrint, setSelectedForPrint] = useState<Set<string>>(new Set(selectedAssets))
+
+  const handleSearchSubmit = () => {
+    setActiveSearchTerm(searchTerm.trim())
+  }
+
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      handleSearchSubmit()
+    }
+  }
   const [previewMode, setPreviewMode] = useState(false)
   const [itemsPerPage, setItemsPerPage] = useState(12)
   
   // Filter assets based on search
-  const filteredAssets = assets.filter(asset => 
-    asset.asset_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    asset.department?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredAssets = assets.filter(asset => {
+    if (!activeSearchTerm) return true
+    const term = activeSearchTerm.toLowerCase()
+    return [
+      asset.asset_code.toLowerCase(),
+      asset.name.toLowerCase(),
+      asset.department?.toLowerCase() || '',
+      asset.location?.toLowerCase() || '',
+      asset.serial?.toLowerCase() || ''
+    ].some(field => field.includes(term))
+  })
   
   // Generate QR codes for selected assets
   const generateSelectedQR = async () => {
@@ -167,15 +185,22 @@ export default function QRGenerator({
           <div className="space-y-4">
             {/* Search and filters */}
             <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
+              <div className="flex-1 flex items-center gap-2">
+                <input
                   type="text"
                   placeholder="Tìm theo mã, tên, phòng ban..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  onKeyDown={handleSearchKeyDown}
+                  className="flex-1 h-10 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
+                <Button
+                  type="button"
+                  onClick={handleSearchSubmit}
+                  className="h-10 w-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg" aria-label="Tìm kiếm"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
               </div>
               
               <select

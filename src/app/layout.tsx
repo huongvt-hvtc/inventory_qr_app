@@ -8,6 +8,7 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RecentScansProvider } from "@/contexts/RecentScansContext";
 import { RefreshProvider } from "@/contexts/RefreshContext";
+import { PWAInstallProvider } from "@/contexts/PWAInstallContext";
 import AuthGuard from "@/components/auth/AuthGuard";
 import VisibilityHandler from "@/components/layout/VisibilityHandler";
 import MobilePWAFix from "@/components/layout/MobilePWAFix";
@@ -59,7 +60,8 @@ export default function RootLayout({
         <meta name="theme-color" content="#2563eb" />
       </head>
       <body className={`${beVietnamPro.variable} font-sans h-full bg-gray-50`}>
-        <AuthProvider>
+        <PWAInstallProvider>
+          <AuthProvider>
             <RecentScansProvider>
               <RefreshProvider>
                 <AuthGuard>
@@ -85,7 +87,9 @@ export default function RootLayout({
                 </AuthGuard>
               </RefreshProvider>
             </RecentScansProvider>
-          <Toaster
+          </AuthProvider>
+        </PWAInstallProvider>
+        <Toaster
             position="top-center"
             toastOptions={{
               duration: 3000,

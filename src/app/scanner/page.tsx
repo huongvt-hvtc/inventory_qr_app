@@ -234,12 +234,13 @@ export default function ScannerPage() {
   };
 
   const handleRefresh = async () => {
+    const toastId = toast.loading('Đang cập nhật dữ liệu...');
     try {
       await loadAssets(true); // Force refresh bypassing cache
-      toast.success('Đã cập nhật dữ liệu mới nhất');
+      toast.success('Đã cập nhật dữ liệu mới nhất', { id: toastId });
     } catch (error) {
       console.error('Error refreshing assets:', error);
-      toast.error('Có lỗi xảy ra khi cập nhật dữ liệu');
+      toast.error('Có lỗi xảy ra khi cập nhật dữ liệu', { id: toastId });
     }
   };
 

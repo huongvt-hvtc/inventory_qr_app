@@ -30,9 +30,17 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { usePWAInstall } from '@/contexts/PWAInstallContext';
 
 export default function GuidePage() {
   const [showPWAGuide, setShowPWAGuide] = useState(false);
+  const { installApp, canInstall, isIOS, isStandalone } = usePWAInstall();
+  const handleInstallFromGuide = async () => {
+    const result = await installApp();
+    if (result === "accepted") {
+      setShowPWAGuide(false);
+    }
+  };
   const [showTOCDropdown, setShowTOCDropdown] = useState(false);
 
   const sections = [
@@ -532,13 +540,25 @@ export default function GuidePage() {
                   <Info className="h-5 w-5" />
                   Hướng dẫn cài đặt PWA
                 </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowPWAGuide(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {(!isStandalone && (canInstall || isIOS)) && (
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      onClick={handleInstallFromGuide}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Cài đặt ngay
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPWAGuide(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Package,
   Search,
@@ -74,6 +72,7 @@ export default function AssetsPage() {
   const prevAssetsRef = useRef<AssetWithInventoryStatus[]>([]);
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
+  const [submittedSearchTerm, setSubmittedSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [inventoryFilter, setInventoryFilter] = useState<'all' | 'checked' | 'unchecked'>('all');
@@ -132,23 +131,35 @@ export default function AssetsPage() {
   // Handle search and filter changes with debouncing to prevent multiple rapid calls
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      // If no search term and no filters, load all assets
-      if (!searchTerm && departmentFilter === 'all' && statusFilter === 'all' && inventoryFilter === 'all') {
-        loadAssets(true);
-        return;
-      }
-
       const filters = {
         department: departmentFilter !== 'all' ? departmentFilter : undefined,
         status: statusFilter !== 'all' ? statusFilter : undefined,
         inventory_status: inventoryFilter
       };
 
-      searchAssets(searchTerm, filters);
-    }, 200); // Shorter debounce for faster response
+      if (!submittedSearchTerm && !filters.department && !filters.status && inventoryFilter === 'all') {
+        loadAssets(true);
+        return;
+      }
+
+      searchAssets(submittedSearchTerm, filters);
+    }, 200);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, departmentFilter, statusFilter, inventoryFilter]);
+  }, [submittedSearchTerm, departmentFilter, statusFilter, inventoryFilter]);
+
+  const handleSearchSubmit = () => {
+    setSubmittedSearchTerm(searchTerm.trim());
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+    
+      handleSearchSubmit();
+    }
+  };
+
 
   // Toast notification for selection count
   useEffect(() => {
@@ -499,6 +510,7 @@ export default function AssetsPage() {
     setStatusFilter('all');
     setInventoryFilter('all');
     setSearchTerm('');
+    setSubmittedSearchTerm('');
     // Don't call loadAssets manually - let useEffect handle it
   };
 
@@ -760,16 +772,24 @@ export default function AssetsPage() {
       <div className="px-4 md:px-6 py-3 bg-gray-50 border-b border-gray-200">
         <div className="flex items-center gap-3">
             {/* Search Box */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <div className="flex-1 flex items-center gap-2">
               <input
                 type="text"
                 placeholder="Tìm kiếm tài sản theo mã, tên, model, serial..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 disabled={loading}
-                className="w-full h-10 pl-12 pr-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed shadow-sm"
+                className="flex-1 h-10 px-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed shadow-sm"
               />
+              <button
+                type="button"
+                onClick={handleSearchSubmit}
+                disabled={loading}
+                className="h-10 w-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow-md disabled:opacity-50" aria-label="Tìm kiếm"
+              >
+                <Search className="h-4 w-4" />
+              </button>
             </div>
 
             {/* Filter Toggle Button */}

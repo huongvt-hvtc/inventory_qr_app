@@ -3,12 +3,20 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Mail, Shield, QrCode, Info, X, Smartphone, Monitor } from 'lucide-react';
+import { Package, Mail, Shield, QrCode, Info, X, Smartphone, Monitor, Download } from 'lucide-react';
+import { usePWAInstall } from '@/contexts/PWAInstallContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
   const { signInWithGoogle, loading } = useAuth();
+  const { installApp, canInstall, isIOS, isStandalone } = usePWAInstall();
   const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const handleInstallFromGuide = async () => {
+    const result = await installApp();
+    if (result === "accepted") {
+      setShowInstallGuide(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -77,6 +85,16 @@ export default function LoginPage() {
               )}
             </Button>
 
+            {(!isStandalone && (canInstall || isIOS)) && (
+              <Button
+                onClick={handleInstallFromGuide}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Cài đặt ứng dụng
+              </Button>
+            )}
+
             {/* Install Guide Button */}
             <Button
               onClick={() => setShowInstallGuide(true)}
@@ -125,13 +143,25 @@ export default function LoginPage() {
                   <Info className="h-5 w-5" />
                   Hướng dẫn cài đặt PWA
                 </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowInstallGuide(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {(!isStandalone && (canInstall || isIOS)) && (
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      onClick={handleInstallFromGuide}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Cài đặt ngay
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowInstallGuide(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

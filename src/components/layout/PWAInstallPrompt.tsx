@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -10,92 +10,23 @@ import {
   Monitor,
   Share
 } from 'lucide-react';
-
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-    platform: string;
-  }>;
-  prompt(): Promise<void>;
-}
+import { usePWAInstall } from '@/contexts/PWAInstallContext';
 
 export default function PWAInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
+  const {
+    canInstall,
+    isIOS,
+    isStandalone,
+    isInstalled,
+    showPrompt,
+    installApp,
+    dismissPrompt,
+  } = usePWAInstall();
 
-  useEffect(() => {
-    // Check if already installed
-    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches);
-    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
-
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-
-      // Show prompt after a delay if not already dismissed
-      const dismissed = typeof window !== 'undefined' ? localStorage.getItem('pwa-install-dismissed') : null;
-      if (!dismissed) {
-        setTimeout(() => setShowPrompt(true), 3000);
-      }
-    };
-
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setShowPrompt(false);
-      setDeferredPrompt(null);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('pwa-installed', 'true');
-      }
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    // Check if already installed
-    if (typeof window !== 'undefined' && localStorage.getItem('pwa-installed')) {
-      setIsInstalled(true);
-    }
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === 'accepted') {
-      setIsInstalled(true);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('pwa-installed', 'true');
-      }
-    }
-
-    setShowPrompt(false);
-    setDeferredPrompt(null);
-  };
-
-  const handleDismiss = () => {
-    setShowPrompt(false);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('pwa-install-dismissed', Date.now().toString());
-    }
-  };
-
-  // Don't show if already installed or in standalone mode
   if (isInstalled || isStandalone) {
     return null;
   }
 
-  // iOS install instructions
   if (isIOS && showPrompt) {
     return (
       <Card className="fixed bottom-4 left-4 right-4 z-50 border-blue-200 bg-blue-50 md:left-auto md:right-4 md:w-96">
@@ -118,7 +49,7 @@ export default function PWAInstallPrompt() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleDismiss}
+              onClick={dismissPrompt}
               className="text-blue-600"
             >
               <X className="h-4 w-4" />
@@ -129,8 +60,35 @@ export default function PWAInstallPrompt() {
     );
   }
 
-  // Regular install prompt for browsers that support it
-  if (showPrompt && deferredPrompt) {
+  if (showPrompt && !isIOS && !canInstall) {
+    return (
+      <Card className="fixed bottom-4 left-4 right-4 z-50 border-blue-200 bg-blue-50 md:left-auto md:right-4 md:w-96">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <Monitor className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
+            <div className="flex-1">
+              <h3 className="font-medium text-blue-900 mb-2">
+                Cài đặt ứng dụng từ menu trình duyệt
+              </h3>
+              <p className="text-sm text-blue-800 mb-2">
+                Tìm tuỳ chọn "Install" hoặc "Add to Home screen" trong menu trình duyệt và làm theo hướng dẫn.
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={dismissPrompt}
+              className="text-blue-600"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (showPrompt && canInstall) {
     return (
       <Card className="fixed bottom-4 left-4 right-4 z-50 border-green-200 bg-green-50 md:left-auto md:right-4 md:w-96">
         <CardContent className="p-4">
@@ -146,7 +104,7 @@ export default function PWAInstallPrompt() {
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  onClick={handleInstallClick}
+                  onClick={installApp}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <Download className="h-4 w-4 mr-2" />
@@ -155,7 +113,7 @@ export default function PWAInstallPrompt() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleDismiss}
+                  onClick={dismissPrompt}
                   className="border-green-300 text-green-700"
                 >
                   Để sau
@@ -165,7 +123,7 @@ export default function PWAInstallPrompt() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleDismiss}
+              onClick={dismissPrompt}
               className="text-green-600"
             >
               <X className="h-4 w-4" />

@@ -494,7 +494,7 @@ export function useAssets() {
         const assetId = assetIds[i];
         const asset = assets.find(a => a.id === assetId);
         if (asset) {
-          await db.createInventoryRecord({
+          await db.upsertInventoryRecord({
             asset_id: assetId,
             asset_code: asset.asset_code,
             checked_by: checkedBy,

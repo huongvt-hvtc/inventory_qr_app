@@ -91,7 +91,7 @@ export const db = {
         throw assetsError;
       }
 
-      // Get inventory records separately
+      // Get inventory records separately and build latest record map
       const { data: records, error: recordsError } = await supabase
         .from('inventory_records')
         .select('*');
@@ -101,15 +101,35 @@ export const db = {
         // Continue without inventory records
       }
 
+      const latestRecordByAsset = new Map<string, Partial<InventoryRecord>>();
+      if (records) {
+        for (const record of records) {
+          if (!record.asset_id) continue;
+          const existing = latestRecordByAsset.get(record.asset_id);
+          const currentTimestamp = existing?.checked_at ?? existing?.created_at;
+          const recordTimestamp = record.checked_at ?? record.created_at;
+          if (!existing) {
+            latestRecordByAsset.set(record.asset_id, record);
+          } else if (!currentTimestamp) {
+            latestRecordByAsset.set(record.asset_id, record);
+          } else if (!recordTimestamp) {
+            continue;
+          } else if (new Date(recordTimestamp).getTime() >= new Date(currentTimestamp).getTime()) {
+            latestRecordByAsset.set(record.asset_id, record);
+          }
+        }
+      }
+
       // Combine assets with inventory status
       const assetsWithStatus: AssetWithInventoryStatus[] = (assets || []).map(asset => {
-        const latestRecord = records?.find(r => r.asset_id === asset.id);
+        const latestRecord = latestRecordByAsset.get(asset.id);
+        const checkedAt = latestRecord?.checked_at ?? latestRecord?.created_at ?? undefined;
         return {
           ...asset,
           is_checked: !!latestRecord,
-          checked_by: latestRecord?.checked_by,
-          checked_at: latestRecord?.checked_at,
-          inventory_notes: latestRecord?.notes
+          checked_by: latestRecord?.checked_by ?? undefined,
+          checked_at: checkedAt,
+          inventory_notes: latestRecord?.notes ?? undefined
         };
       });
 
@@ -294,6 +314,41 @@ export const db = {
     return data;
   },
 
+  async upsertInventoryRecord(record: Omit<InventoryRecord, 'id' | 'created_at'>): Promise<InventoryRecord> {
+    // For re-checking assets, we want to update the latest record instead of creating a new one
+    // First, try to find the latest record for this asset
+    const { data: existingRecord } = await supabase
+      .from('inventory_records')
+      .select('*')
+      .eq('asset_id', record.asset_id)
+      .order('checked_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (existingRecord) {
+      // Update the existing record with new inspector and timestamp
+      const { data, error } = await supabase
+        .from('inventory_records')
+        .update({
+          checked_by: record.checked_by,
+          checked_at: record.checked_at,
+          notes: record.notes
+        })
+        .eq('id', existingRecord.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating inventory record:', error);
+        throw error;
+      }
+      return data;
+    } else {
+      // No existing record, create a new one
+      return this.createInventoryRecord(record);
+    }
+  },
+
   async deleteInventoryRecord(assetId: string): Promise<void> {
     const { error } = await supabase
       .from('inventory_records')
@@ -414,15 +469,36 @@ export const db = {
         .select('*')
         .in('asset_id', assetIds);
 
-      // Combine with inventory status
+      // Build latest record map for search results too
+      const latestRecordByAssetSearch = new Map<string, Partial<InventoryRecord>>();
+      if (records) {
+        for (const record of records) {
+          if (!record.asset_id) continue;
+          const existing = latestRecordByAssetSearch.get(record.asset_id);
+          const currentTimestamp = existing?.checked_at ?? existing?.created_at;
+          const recordTimestamp = record.checked_at ?? record.created_at;
+          if (!existing) {
+            latestRecordByAssetSearch.set(record.asset_id, record);
+          } else if (!currentTimestamp) {
+            latestRecordByAssetSearch.set(record.asset_id, record);
+          } else if (!recordTimestamp) {
+            continue;
+          } else if (new Date(recordTimestamp).getTime() >= new Date(currentTimestamp).getTime()) {
+            latestRecordByAssetSearch.set(record.asset_id, record);
+          }
+        }
+      }
+
+      // Combine with inventory status using latest records
       let assetsWithStatus: AssetWithInventoryStatus[] = assets.map(asset => {
-        const latestRecord = records?.find(r => r.asset_id === asset.id);
+        const latestRecord = latestRecordByAssetSearch.get(asset.id);
+        const checkedAt = latestRecord?.checked_at ?? latestRecord?.created_at ?? undefined;
         return {
           ...asset,
           is_checked: !!latestRecord,
-          checked_by: latestRecord?.checked_by,
-          checked_at: latestRecord?.checked_at,
-          inventory_notes: latestRecord?.notes
+          checked_by: latestRecord?.checked_by ?? undefined,
+          checked_at: checkedAt,
+          inventory_notes: latestRecord?.notes ?? undefined
         };
       });
 

@@ -5,14 +5,19 @@
 
 BEGIN;
 
--- 1. Loosen created_by so it is optional and not constrained
+-- 1. Ensure schema matches application expectations
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS qr_generated BOOLEAN DEFAULT false;
+ALTER TABLE assets ALTER COLUMN qr_generated SET DEFAULT false;
+UPDATE assets SET qr_generated = COALESCE(qr_generated, false);
+
+-- 2. Loosen created_by so it is optional and not constrained
 ALTER TABLE assets DROP CONSTRAINT IF EXISTS assets_created_by_fkey;
 ALTER TABLE assets ALTER COLUMN created_by DROP NOT NULL;
 
 -- Optional: if legacy UUID strings got stored, clear them since we no longer track creator
 UPDATE assets SET created_by = NULL WHERE created_by IS NOT NULL;
 
--- 2. Rebuild simple RLS policies: authenticated users can CRUD everything
+-- 3. Rebuild simple RLS policies: authenticated users can CRUD everything
 DROP POLICY IF EXISTS "assets_select_policy" ON assets;
 DROP POLICY IF EXISTS "assets_insert_policy" ON assets;
 DROP POLICY IF EXISTS "assets_update_policy" ON assets;

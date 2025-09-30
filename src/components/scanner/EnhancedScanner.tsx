@@ -198,6 +198,20 @@ export default function EnhancedScanner({ onScanSuccess }: EnhancedScannerProps)
         }
       )
 
+      setTimeout(() => {
+        const container = containerRef.current
+        const startButton = container?.querySelector<HTMLButtonElement>("button[id^='html5-qrcode-button-camera-start']")
+        if (startButton) {
+          // Temporarily show the button to click it
+          startButton.style.display = 'block'
+          startButton.click()
+          // Hide it again
+          setTimeout(() => {
+            startButton.style.display = 'none'
+          }, 100)
+        }
+      }, 50)
+
       scannerRef.current = scanner
       setIsScanning(true)
 

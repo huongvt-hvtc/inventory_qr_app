@@ -16,8 +16,10 @@ import {
   FolderOpen,
   Settings,
   History,
-  BookOpen
+  BookOpen,
+  Download
 } from 'lucide-react';
+import { usePWAInstall } from '@/contexts/PWAInstallContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,6 +37,13 @@ export function Navigation() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const { installApp, canInstall, isIOS, isStandalone } = usePWAInstall();
+  const handleInstallFromGuide = async () => {
+    const result = await installApp();
+    if (result === "accepted") {
+      setShowInstallGuide(false);
+    }
+  };
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const { user, signOut } = useAuth();
@@ -264,13 +273,25 @@ export function Navigation() {
                   <Info className="h-5 w-5" />
                   Hướng dẫn cài đặt PWA
                 </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowInstallGuide(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {(!isStandalone && (canInstall || isIOS)) && (
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      onClick={handleInstallFromGuide}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Cài đặt ngay
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowInstallGuide(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
