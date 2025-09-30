@@ -125,11 +125,10 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // TEMPORARY: Skip authentication for local testing
-  // TODO: Re-enable authentication later
-  // if (!user) {
-  //   return <LoginPage />;
-  // }
+  // Require authentication to access protected pages
+  if (!user) {
+    return <LoginPage />;
+  }
 
   return <>{children}</>;
 }

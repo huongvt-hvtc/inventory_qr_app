@@ -114,7 +114,7 @@ export default function TestDatabasePage() {
   };
 
   return (
-    <div className="space-y-6 pb-40 md:pb-6">
+    <div className="space-y-6 pb-48 md:pb-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <Package className="h-8 w-8 text-blue-600" />

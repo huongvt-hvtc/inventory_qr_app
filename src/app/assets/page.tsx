@@ -895,7 +895,7 @@ export default function AssetsPage() {
 
         {/* Table Container */}
         <div className="h-full overflow-hidden bg-white">
-          <div className="h-full overflow-auto pb-40 md:pb-6 table-scroll-container" data-scroll="true">
+          <div className="h-full overflow-auto pb-48 md:pb-6 table-scroll-container" data-scroll="true">
             <table className="w-full table-fixed table-optimized">
               {/* Table Header - Sticky */}
               <thead className="bg-gray-50 border-b-2 border-gray-200 sticky top-0 z-20" style={{ position: 'sticky', top: 0 }}>

@@ -14,10 +14,10 @@ export default function PageHeader({
   actions
 }: PageHeaderProps) {
   return (
-    <div className="mb-6">
+    <div className="mb-3">
       {/* Page Title and Actions - Aligned in same line */}
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900 truncate">
+        <h1 className="text-xl font-bold text-gray-900 truncate">
           {title}
         </h1>
 
