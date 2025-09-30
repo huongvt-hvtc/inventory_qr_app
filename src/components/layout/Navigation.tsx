@@ -148,7 +148,7 @@ export function Navigation() {
         {/* Mobile bottom navigation - Pro Grab-style Design */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 md:hidden shadow-2xl">
           {/* Better padding for home indicator and visual balance */}
-          <div className="pb-2 pt-1">
+          <div className="pb-6 pt-1">
             <nav className="flex px-2 pt-2 pb-2">
               {navigation.map((item, index) => {
                 const isActive = pathname === item.href;
@@ -212,7 +212,7 @@ export function Navigation() {
                       }`}>
 
                         {/* Background Circle */}
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
                           isActive
                             ? `bg-gradient-to-br ${color.primary} shadow-lg ${color.glow}`
                             : 'bg-gray-100 group-hover:bg-gray-200'
