@@ -16,14 +16,12 @@ import {
   FolderOpen,
   Settings,
   History,
-  BookOpen,
-  Building2
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCompany } from '@/contexts/CompanyContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import CompanySwitcher from '@/components/navigation/CompanySwitcher';
+import { NetworkStatus } from '@/components/NetworkStatus';
 
 const navigation = [
   { name: 'Tài sản', href: '/assets', icon: FolderOpen },
@@ -40,7 +38,6 @@ export function Navigation() {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const { user, signOut } = useAuth();
-  const { currentCompany, setCurrentCompany } = useCompany();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -72,15 +69,6 @@ export function Navigation() {
               Kiểm kê tài sản
             </span>
           </div>
-
-          {/* Company Switcher */}
-          <div className="pb-4">
-            <CompanySwitcher
-              onCompanyChange={setCurrentCompany}
-              showCreateButton={true}
-            />
-          </div>
-
           <nav className="flex flex-1 flex-col">
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
@@ -154,31 +142,14 @@ export function Navigation() {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
+      {/* Mobile Navigation - Hidden top navigation, only bottom navigation */}
       <div className="md:hidden">
-
-        {/* Mobile Top Company Bar */}
-        {currentCompany && (
-          <div className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100 px-4 py-2">
-            <div className="flex items-center justify-center">
-              <div className="flex items-center gap-2 text-sm">
-                <Building2 className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-gray-900 truncate max-w-48">
-                  {currentCompany.name}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Spacer for mobile top bar */}
-        {currentCompany && <div className="h-12"></div>}
 
         {/* Mobile bottom navigation - Pro Grab-style Design */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 md:hidden shadow-2xl">
           {/* Better padding for home indicator and visual balance */}
-          <div className="pb-6 pt-2">
-            <nav className="flex px-3 pt-1 pb-1">
+          <div className="pb-2 pt-1">
+            <nav className="flex px-2 pt-2 pb-2">
               {navigation.map((item, index) => {
                 const isActive = pathname === item.href;
                 // Define unique colors for each tab
@@ -230,10 +201,10 @@ export function Navigation() {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="flex-1 flex flex-col items-center group relative px-1"
+                    className="flex-1 flex flex-col items-center group relative px-2"
                   >
                     {/* Main Container with proper spacing */}
-                    <div className="flex flex-col items-center space-y-1.5 py-2 px-2 rounded-2xl transition-all duration-300 w-full">
+                    <div className="flex flex-col items-center space-y-2 py-2 px-3 rounded-2xl transition-all duration-300 w-full">
 
                       {/* Icon Container - Grab style */}
                       <div className={`relative transition-all duration-300 ease-out ${
@@ -241,14 +212,14 @@ export function Navigation() {
                       }`}>
 
                         {/* Background Circle */}
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${
                           isActive
                             ? `bg-gradient-to-br ${color.primary} shadow-lg ${color.glow}`
                             : 'bg-gray-100 group-hover:bg-gray-200'
                         }`}>
 
                           {/* Icon */}
-                          <item.icon className={`h-5 w-5 transition-all duration-300 ${
+                          <item.icon className={`h-6 w-6 transition-all duration-300 ${
                             isActive
                               ? 'text-white drop-shadow-sm'
                               : 'text-gray-600 group-hover:text-gray-700'
