@@ -22,6 +22,7 @@ export interface Asset {
   status?: string; // Tình trạng
   location?: string; // Vị trí
   notes?: string; // Ghi chú
+  created_by?: string; // Email người tạo (phục vụ RLS)
   qr_generated: boolean;
   created_at: string;
   updated_at: string;
