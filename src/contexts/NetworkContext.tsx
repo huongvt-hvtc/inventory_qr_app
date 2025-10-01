@@ -129,7 +129,9 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
       }
     })
 
-    return unsubscribe
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
   // Initial pending count load
