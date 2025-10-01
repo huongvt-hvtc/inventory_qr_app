@@ -95,7 +95,7 @@ export function useAssets() {
     }
   };
 
-  const loadAssets = async (forceRefresh = false) => {
+  const loadAssets = useCallback(async (forceRefresh = false) => {
     const isStandalone = (window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches;
     console.log('🔍 PWA Debug - loadAssets called:', {
       forceRefresh,
@@ -226,7 +226,7 @@ export function useAssets() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // loadAssets has no external dependencies, all state setters are stable
 
   const searchAssets = useCallback(async (query: string, filters: Partial<AssetFilters> = {}) => {
     try {
