@@ -248,10 +248,18 @@ export default function ScannerPage() {
     }
 
     setRefreshStatus('loading');
-    const toastId = toast.loading('Đang cập nhật dữ liệu...');
+    const toastId = 'scanner-refresh';
+    const isOfflineMode = !navigator.onLine;
+    toast.loading(isOfflineMode ? 'Đang tải dữ liệu offline...' : 'Đang cập nhật dữ liệu...', {
+      id: toastId,
+      duration: Infinity
+    });
     try {
       await loadAssets(true); // Force refresh bypassing cache
-      toast.success('Đã cập nhật dữ liệu mới nhất', { id: toastId });
+      toast.success(
+        isOfflineMode ? 'Đang hiển thị dữ liệu offline gần nhất' : 'Đã cập nhật dữ liệu mới nhất',
+        { id: toastId, duration: 3000 }
+      );
       setRefreshStatus('success');
       refreshStatusTimeoutRef.current = setTimeout(() => {
         setRefreshStatus('idle');
@@ -259,7 +267,7 @@ export default function ScannerPage() {
       }, 2200);
     } catch (error) {
       console.error('Error refreshing assets:', error);
-      toast.error('Có lỗi xảy ra khi cập nhật dữ liệu', { id: toastId });
+      toast.error('Có lỗi xảy ra khi cập nhật dữ liệu', { id: toastId, duration: 4000 });
       setRefreshStatus('error');
       refreshStatusTimeoutRef.current = setTimeout(() => {
         setRefreshStatus('idle');

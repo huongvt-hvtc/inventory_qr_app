@@ -44,6 +44,8 @@ export interface AssetWithInventoryStatus extends Asset {
   checked_by?: string;
   checked_at?: string;
   inventory_notes?: string;
+  isOffline?: boolean;
+  pendingAction?: 'create' | 'update' | 'delete';
 }
 
 export interface ActivityLog {

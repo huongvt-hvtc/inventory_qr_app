@@ -1,5 +1,7 @@
 'use client';
 
+import type { AssetWithInventoryStatus } from '@/types';
+
 // Offline storage using IndexedDB for robust offline functionality
 interface OfflineOperation {
   id: string;
@@ -19,6 +21,8 @@ interface OfflineAsset {
   data: any;
   lastModified: number;
   isLocal: boolean;
+  pendingAction?: 'create' | 'update' | 'delete';
+  isDeleted?: boolean;
 }
 
 class OfflineStorage {
@@ -156,8 +160,108 @@ class OfflineStorage {
     });
   }
 
+  async createAssetOffline(
+    assetData: Partial<AssetWithInventoryStatus>,
+    userId: string
+  ): Promise<AssetWithInventoryStatus> {
+    if (!this.db) await this.init();
+
+    const tempId = this.generateTempAssetId();
+    const timestamp = new Date().toISOString();
+
+    const normalized: AssetWithInventoryStatus = {
+      id: tempId,
+      asset_code: assetData.asset_code || '',
+      name: assetData.name || 'Tài sản chưa đặt tên',
+      model: assetData.model || '',
+      serial: assetData.serial || '',
+      tech_code: assetData.tech_code || '',
+      department: assetData.department || '',
+      status: assetData.status || 'Đang sử dụng',
+      location: assetData.location || '',
+      notes: assetData.notes || '',
+      qr_generated: Boolean(assetData.qr_generated),
+      created_at: assetData.created_at || timestamp,
+      updated_at: timestamp,
+      is_checked: false,
+      checked_by: undefined,
+      checked_at: undefined,
+      inventory_notes: undefined,
+      isOffline: true,
+      pendingAction: 'create'
+    };
+
+    const offlineAsset: OfflineAsset = {
+      id: tempId,
+      data: normalized,
+      lastModified: Date.now(),
+      isLocal: true,
+      pendingAction: 'create'
+    };
+
+    const transaction = this.db!.transaction(['offline_assets'], 'readwrite');
+    const store = transaction.objectStore('offline_assets');
+    await store.put(offlineAsset);
+
+    const queuePayload = {
+      asset_code: normalized.asset_code,
+      name: normalized.name,
+      model: normalized.model || '',
+      serial: normalized.serial || '',
+      tech_code: normalized.tech_code || '',
+      department: normalized.department || '',
+      status: normalized.status || '',
+      location: normalized.location || '',
+      notes: normalized.notes || ''
+    };
+
+    await this.queueOperation({
+      type: 'create',
+      assetId: tempId,
+      assetCode: normalized.asset_code,
+      data: queuePayload,
+      userId
+    });
+
+    console.log('🆕 Asset created offline:', normalized.asset_code);
+    return normalized;
+  }
+
+  async deleteAssetOffline(assetId: string, userId: string): Promise<void> {
+    if (!this.db) await this.init();
+
+    const transaction = this.db!.transaction(['offline_assets'], 'readwrite');
+    const store = transaction.objectStore('offline_assets');
+    const request = store.get(assetId);
+
+    request.onsuccess = async () => {
+      const offlineAsset = request.result as OfflineAsset | undefined;
+      const assetCode = offlineAsset?.data?.asset_code;
+
+      await store.delete(assetId);
+
+      await this.queueOperation({
+        type: 'delete',
+        assetId,
+        assetCode,
+        data: {},
+        userId
+      });
+
+      console.log('🗑️ Asset deleted offline:', assetId);
+    };
+  }
+
+  async removeOfflineAsset(assetId: string): Promise<void> {
+    if (!this.db) await this.init();
+
+    const transaction = this.db!.transaction(['offline_assets'], 'readwrite');
+    const store = transaction.objectStore('offline_assets');
+    await store.delete(assetId);
+  }
+
   // Update asset locally (for offline edits)
-  async updateAssetOffline(assetId: string, updates: any, userId: string): Promise<void> {
+  async updateAssetOffline(assetId: string, updates: Partial<AssetWithInventoryStatus>, userId: string): Promise<void> {
     if (!this.db) await this.init();
 
     // Get current asset
@@ -167,40 +271,52 @@ class OfflineStorage {
 
     request.onsuccess = async () => {
       const offlineAsset = request.result;
-      if (offlineAsset) {
-        // Update the asset data
-        const updatedAsset = {
-          ...offlineAsset.data,
-          ...updates,
-          updated_at: new Date().toISOString()
-        };
-
-        const newOfflineAsset: OfflineAsset = {
-          ...offlineAsset,
-          data: updatedAsset,
-          lastModified: Date.now(),
-          isLocal: true // Mark as locally modified
-        };
-
-        await store.put(newOfflineAsset);
-
-        // Queue the operation
-        await this.queueOperation({
-          type: 'edit',
-          assetId,
-          assetCode: updatedAsset.asset_code,
-          data: updates,
-          userId
-        });
-
-        console.log('✏️ Asset updated offline:', assetId);
+      if (!offlineAsset) {
+        return;
       }
+
+      const pendingAction = offlineAsset.pendingAction === 'create' ? 'create' : 'update';
+
+      const updatedAsset: AssetWithInventoryStatus = {
+        ...offlineAsset.data,
+        ...updates,
+        updated_at: new Date().toISOString(),
+        isOffline: true,
+        pendingAction
+      };
+
+      const newOfflineAsset: OfflineAsset = {
+        ...offlineAsset,
+        data: updatedAsset,
+        lastModified: Date.now(),
+        isLocal: true,
+        pendingAction
+      };
+
+      await store.put(newOfflineAsset);
+
+      await this.queueOperation({
+        type: 'edit',
+        assetId,
+        assetCode: updatedAsset.asset_code,
+        data: updates,
+        userId
+      });
+
+      console.log('✏️ Asset updated offline:', assetId);
     };
   }
 
   // Scan asset offline
-  async scanAssetOffline(assetCode: string, userId: string, scanType: 'check' | 'uncheck'): Promise<boolean> {
+  async scanAssetOffline(
+    asset: AssetWithInventoryStatus,
+    params: { scanType: 'check' | 'uncheck'; checkedBy: string; userEmail?: string }
+  ): Promise<boolean> {
     if (!this.db) await this.init();
+
+    const { scanType, checkedBy, userEmail } = params;
+    const userIdentifier = userEmail || checkedBy || 'unknown_user';
+    const assetCode = asset.asset_code;
 
     // Check for existing pending scans of this asset
     const existingOps = await this.getPendingOperationsByAssetCode(assetCode);
@@ -212,7 +328,7 @@ class OfflineStorage {
 
     if (hasConflict) {
       console.warn('⚠️ Scan conflict detected for asset:', assetCode);
-      await this.createConflict(assetCode, scanType, userId);
+      await this.createConflict(assetCode, scanType, userIdentifier);
       return false;
     }
 
@@ -221,11 +337,12 @@ class OfflineStorage {
       type: 'scan',
       assetCode,
       data: { scanType, scannedAt: new Date().toISOString() },
-      userId
+      userId: userIdentifier,
+      assetId: asset.id
     });
 
     // Update local asset status
-    await this.updateLocalAssetScanStatus(assetCode, scanType, userId);
+    await this.updateLocalAssetScanStatus(assetCode, scanType, checkedBy || userIdentifier);
 
     console.log('📱 Asset scanned offline:', assetCode, scanType);
     return true;
@@ -352,6 +469,10 @@ class OfflineStorage {
 
   private generateOperationId(): string {
     return `op_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+  }
+
+  private generateTempAssetId(): string {
+    return `temp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   }
 
   // Check if we have offline data

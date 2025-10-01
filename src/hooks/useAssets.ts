@@ -5,12 +5,14 @@ import { db, supabase } from '@/lib/supabase';
 import { offlineStorage } from '@/lib/offline-storage';
 import type { AssetWithInventoryStatus, AssetFilters } from '@/types';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ASSETS_CACHE_KEY = 'assets_cache';
 const CACHE_EXPIRY_KEY = 'assets_cache_expiry';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export function useAssets() {
+  const { user } = useAuth();
   const isInitialized = useRef(false);
   const realtimeSubscription = useRef<any>(null);
 
@@ -250,6 +252,20 @@ export function useAssets() {
 
   const createAsset = async (assetData: Omit<AssetWithInventoryStatus, 'id' | 'created_at' | 'updated_at' | 'qr_generated' | 'is_checked'>) => {
     try {
+      if (!navigator.onLine) {
+        if (!user) {
+          toast.error('Vui lòng đăng nhập để lưu tài sản');
+          throw new Error('User not authenticated');
+        }
+
+        const offlineAsset = await offlineStorage.createAssetOffline(assetData, user.email || user.id);
+
+        setAssets(prev => [offlineAsset, ...prev.filter(existing => existing.id !== offlineAsset.id)]);
+        toast.success('📴 Đã lưu tài sản offline - sẽ đồng bộ khi có internet');
+
+        return offlineAsset;
+      }
+
       const newAsset = await db.createAsset(assetData);
       toast.success('Đã thêm tài sản thành công');
       await loadAssets(true); // Force refresh the list
@@ -264,6 +280,51 @@ export function useAssets() {
 
   const updateAsset = async (id: string, updates: Partial<AssetWithInventoryStatus>) => {
     try {
+      if (!navigator.onLine) {
+        if (!user) {
+          toast.error('Vui lòng đăng nhập để cập nhật tài sản');
+          throw new Error('User not authenticated');
+        }
+
+        await offlineStorage.updateAssetOffline(id, updates, user.email || user.id);
+
+        const updatedAt = new Date().toISOString();
+        const existingAsset = assets.find(asset => asset.id === id);
+        const baseAsset: AssetWithInventoryStatus = existingAsset
+          ? existingAsset
+          : {
+              id,
+              asset_code: updates.asset_code || '',
+              name: updates.name || 'Tài sản tạm thời',
+              model: updates.model || '',
+              serial: updates.serial || '',
+              tech_code: updates.tech_code || '',
+              department: updates.department || '',
+              status: updates.status || 'Đang sử dụng',
+              location: updates.location || '',
+              notes: updates.notes || '',
+              qr_generated: false,
+              created_at: updatedAt,
+              updated_at: updatedAt,
+              is_checked: updates.is_checked ?? false
+            };
+        const pendingAction = baseAsset.pendingAction === 'create' ? 'create' : 'update';
+
+        const mergedAsset: AssetWithInventoryStatus = {
+          ...baseAsset,
+          ...updates,
+          id,
+          updated_at: updatedAt,
+          isOffline: true,
+          pendingAction
+        };
+
+        setAssets(prev => prev.map(asset => (asset.id === id ? mergedAsset : asset)));
+
+        toast.success('📴 Đã lưu thay đổi offline - sẽ đồng bộ khi có internet');
+        return mergedAsset;
+      }
+
       const updatedAsset = await db.updateAsset(id, updates);
       // Don't show toast here - let the calling component handle it
       await loadAssets(true); // Force refresh the list
@@ -277,6 +338,18 @@ export function useAssets() {
 
   const deleteAsset = async (id: string) => {
     try {
+      if (!navigator.onLine) {
+        if (!user) {
+          toast.error('Vui lòng đăng nhập để xóa tài sản');
+          throw new Error('User not authenticated');
+        }
+
+        await offlineStorage.deleteAssetOffline(id, user.email || user.id);
+        setAssets(prev => prev.filter(asset => asset.id !== id));
+        toast.success('📴 Đã xóa tài sản offline - sẽ đồng bộ khi có internet');
+        return;
+      }
+
       await db.deleteAsset(id);
       toast.success('Đã xóa tài sản');
       await loadAssets(true); // Force refresh the list
@@ -290,6 +363,16 @@ export function useAssets() {
   // Silent delete for bulk operations - no individual toast notifications
   const deleteAssetSilent = async (id: string) => {
     try {
+      if (!navigator.onLine) {
+        if (!user) {
+          throw new Error('User not authenticated');
+        }
+
+        await offlineStorage.deleteAssetOffline(id, user.email || user.id);
+        setAssets(prev => prev.filter(asset => asset.id !== id));
+        return;
+      }
+
       await db.deleteAsset(id);
     } catch (err) {
       console.error('Error deleting asset:', err);
@@ -464,11 +547,16 @@ export function useAssets() {
 
       // If offline, handle differently
       if (!navigator.onLine) {
+        const userEmail = user?.email || user?.id || 'offline-user';
         for (let i = 0; i < assetIds.length; i++) {
           const assetId = assetIds[i];
           const asset = assets.find(a => a.id === assetId);
           if (asset) {
-            const success = await offlineStorage.scanAssetOffline(asset.asset_code, checkedBy, 'check');
+            const success = await offlineStorage.scanAssetOffline(asset, {
+              scanType: 'check',
+              checkedBy,
+              userEmail
+            });
             if (!success) {
               toast.error(`⚠️ Xung đột dữ liệu cho tài sản ${asset.asset_code}`);
             }
@@ -547,11 +635,16 @@ export function useAssets() {
 
       // If offline, handle differently
       if (!navigator.onLine) {
+        const userEmail = user?.email || user?.id || 'offline-user';
         for (let i = 0; i < assetIds.length; i++) {
           const assetId = assetIds[i];
           const asset = assets.find(a => a.id === assetId);
           if (asset) {
-            const success = await offlineStorage.scanAssetOffline(asset.asset_code, 'system', 'uncheck');
+            const success = await offlineStorage.scanAssetOffline(asset, {
+              scanType: 'uncheck',
+              checkedBy: 'system',
+              userEmail
+            });
             if (!success) {
               toast.error(`⚠️ Xung đột dữ liệu cho tài sản ${asset.asset_code}`);
             }

@@ -8,6 +8,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { syncAllActions, onSyncStatusChange } from '@/lib/syncManager'
 import { getPendingActions } from '@/lib/offlineQueue'
+import { useOfflineSync } from '@/hooks/useOfflineSync'
 import toast from 'react-hot-toast'
 
 interface NetworkContextType {
@@ -35,12 +36,15 @@ interface NetworkProviderProps {
 export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) => {
   const [isOnline, setIsOnline] = useState(true)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [queueCount, setQueueCount] = useState(0)
   const [pendingActionsCount, setPendingActionsCount] = useState(0)
+
+  const { status: offlineStatus, syncOfflineData } = useOfflineSync()
 
   const refreshPendingCount = useCallback(async () => {
     try {
       const actions = await getPendingActions()
-      setPendingActionsCount(actions.length)
+      setQueueCount(actions.length)
     } catch (error) {
       console.error('Failed to get pending actions count:', error)
     }
@@ -61,6 +65,9 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
       const toastId = toast.loading('Đang đồng bộ dữ liệu...')
 
       const result = await syncAllActions()
+
+      // Trigger offline storage sync alongside queue sync
+      await syncOfflineData()
 
       if (result.failed > 0) {
         toast.error(`Đồng bộ thất bại ${result.failed} thao tác`, { id: toastId })
@@ -96,6 +103,8 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
 
             const result = await syncAllActions()
 
+            await syncOfflineData()
+
             if (result.failed > 0) {
               toast.error(`Đồng bộ thất bại ${result.failed} thao tác`, { id: toastId })
             } else if (result.success > 0) {
@@ -106,7 +115,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
 
             // Refresh count after sync
             const updatedActions = await getPendingActions()
-            setPendingActionsCount(updatedActions.length)
+            setQueueCount(updatedActions.length)
           } catch (error) {
             console.error('Sync error:', error)
             toast.error('Lỗi khi đồng bộ dữ liệu')
@@ -143,7 +152,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
   useEffect(() => {
     const unsubscribe = onSyncStatusChange((status, queueSize) => {
       console.log(`📊 Sync status: ${status}, Queue size: ${queueSize}`)
-      setPendingActionsCount(queueSize)
+      setQueueCount(queueSize)
 
       if (status === 'syncing') {
         setIsSyncing(true)
@@ -162,13 +171,17 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
     const loadInitialCount = async () => {
       try {
         const actions = await getPendingActions()
-        setPendingActionsCount(actions.length)
+        setQueueCount(actions.length)
       } catch (error) {
         console.error('Failed to load initial pending count:', error)
       }
     }
     loadInitialCount()
   }, [])
+
+  useEffect(() => {
+    setPendingActionsCount(queueCount + offlineStatus.pendingOperations)
+  }, [queueCount, offlineStatus.pendingOperations])
 
   return (
     <NetworkContext.Provider

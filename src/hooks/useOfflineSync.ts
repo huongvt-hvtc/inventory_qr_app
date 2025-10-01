@@ -227,6 +227,9 @@ export function useOfflineSync() {
     try {
       await db.createAsset(operation.data);
       console.log('✅ Create operation synced:', operation.data.asset_code);
+      if (operation.assetId) {
+        await offlineStorage.removeOfflineAsset(operation.assetId);
+      }
       return true;
     } catch (error) {
       console.error('Error syncing create operation:', error);
@@ -239,6 +242,9 @@ export function useOfflineSync() {
     try {
       await db.deleteAsset(operation.assetId);
       console.log('✅ Delete operation synced:', operation.assetId);
+      if (operation.assetId) {
+        await offlineStorage.removeOfflineAsset(operation.assetId);
+      }
       return true;
     } catch (error) {
       console.error('Error syncing delete operation:', error);
