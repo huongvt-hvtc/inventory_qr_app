@@ -1,75 +1,63 @@
 'use client';
 
 import React from 'react';
-import { useOfflineSync } from '@/hooks/useOfflineSync';
-import { Wifi, WifiOff, RotateCw, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useNetwork } from '@/contexts/NetworkContext';
+import { Wifi, WifiOff, RotateCw } from 'lucide-react';
 
 export function OfflineStatusIndicator() {
-  const { status, syncOfflineData, hasPendingData, hasConflicts } = useOfflineSync();
+  const { isOnline, isSyncing, pendingActionsCount, syncNow } = useNetwork();
 
-  if (status.isOnline && !hasPendingData && !hasConflicts) {
-    return null; // Don't show indicator when everything is normal
+  // Show indicator when offline OR when there are pending actions
+  if (isOnline && pendingActionsCount === 0) {
+    return null;
   }
 
   return (
     <div className="fixed top-4 right-4 z-50">
       <div className={`
         flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg backdrop-blur-sm border
-        ${status.isOffline
-          ? 'bg-orange-100/90 border-orange-300 text-orange-800'
+        ${!isOnline
+          ? 'bg-red-100/90 border-red-300 text-red-800'
           : 'bg-blue-100/90 border-blue-300 text-blue-800'
         }
       `}>
         {/* Connection Status */}
         <div className="flex items-center gap-2">
-          {status.isOffline ? (
-            <WifiOff className="h-4 w-4 text-orange-600" />
+          {!isOnline ? (
+            <WifiOff className="h-4 w-4 text-red-600" />
           ) : (
             <Wifi className="h-4 w-4 text-green-600" />
           )}
 
           <span className="text-sm font-medium">
-            {status.isOffline ? 'Offline' : 'Online'}
+            {!isOnline ? 'Offline' : 'Online'}
           </span>
         </div>
 
-        {/* Pending Operations */}
-        {hasPendingData && (
+        {/* Pending Actions */}
+        {pendingActionsCount > 0 && (
           <div className="flex items-center gap-2 pl-2 border-l border-gray-300">
-            <RotateCw className={`h-4 w-4 ${status.isSyncing ? 'animate-spin' : ''}`} />
+            <RotateCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
             <span className="text-sm">
-              {status.pendingOperations} pending
+              {pendingActionsCount} chờ sync
             </span>
 
-            {status.isOnline && !status.isSyncing && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={syncOfflineData}
-                className="h-6 px-2 text-xs bg-white/80 hover:bg-white"
+            {isOnline && !isSyncing && (
+              <button
+                onClick={syncNow}
+                className="h-6 px-2 text-xs bg-white/80 hover:bg-white rounded border border-gray-300 font-medium"
               >
-                RotateCw
-              </Button>
+                Đồng bộ
+              </button>
             )}
           </div>
         )}
 
-        {/* Conflicts */}
-        {hasConflicts && (
-          <div className="flex items-center gap-2 pl-2 border-l border-gray-300">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <span className="text-sm text-amber-800">
-              {status.conflicts} conflicts
-            </span>
-          </div>
-        )}
-
-        {/* RotateCw Status */}
-        {status.isSyncing && (
+        {/* Syncing Status */}
+        {isSyncing && (
           <div className="flex items-center gap-2 pl-2 border-l border-gray-300">
             <div className="animate-pulse text-sm font-medium">
-              RotateCwing...
+              Đang sync...
             </div>
           </div>
         )}

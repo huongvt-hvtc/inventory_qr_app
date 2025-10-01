@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useCa
 import { AssetWithInventoryStatus } from '@/types';
 import { useAuth } from './AuthContext';
 import { getRecentScans, addScanToHistory, clearScanHistory } from '@/lib/scanHistory';
+import { queueAction } from '@/lib/offlineQueue';
 import toast from 'react-hot-toast';
 
 interface RecentScansContextType {
@@ -64,17 +65,27 @@ export const RecentScansProvider: React.FC<RecentScansProviderProps> = ({ childr
       return;
     }
 
+    // Update local state immediately for better UX
+    setRecentScans(prev => {
+      // Remove if already exists to avoid duplicates
+      const filtered = prev.filter(scan => scan.id !== asset.id);
+      // Add to front and keep only last 50 scans
+      return [asset, ...filtered].slice(0, 50);
+    });
+
     try {
+      if (!navigator.onLine) {
+        // Queue for later sync
+        await queueAction('ADD_SCAN', {
+          userEmail: user.email,
+          assetId: asset.id
+        });
+        console.log('📥 Scan queued for later sync');
+        return;
+      }
+
       // Add to database
       await addScanToHistory(user.email, asset.id);
-
-      // Update local state immediately for better UX
-      setRecentScans(prev => {
-        // Remove if already exists to avoid duplicates
-        const filtered = prev.filter(scan => scan.id !== asset.id);
-        // Add to front and keep only last 50 scans
-        return [asset, ...filtered].slice(0, 50);
-      });
     } catch (error) {
       console.error('Error adding scan to history:', error);
       // Don't show error toast as this is background operation

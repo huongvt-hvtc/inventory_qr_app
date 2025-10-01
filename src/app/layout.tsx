@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { RecentScansProvider } from "@/contexts/RecentScansContext";
 import { RefreshProvider } from "@/contexts/RefreshContext";
 import { PWAInstallProvider } from "@/contexts/PWAInstallContext";
+import { NetworkProvider } from "@/contexts/NetworkContext";
 import AuthGuard from "@/components/auth/AuthGuard";
 import VisibilityHandler from "@/components/layout/VisibilityHandler";
 import MobilePWAFix from "@/components/layout/MobilePWAFix";
@@ -62,9 +63,10 @@ export default function RootLayout({
       <body className={`${beVietnamPro.variable} font-sans h-full bg-gray-50`}>
         <PWAInstallProvider>
           <AuthProvider>
-            <RecentScansProvider>
-              <RefreshProvider>
-                <AuthGuard>
+            <NetworkProvider>
+              <RecentScansProvider>
+                <RefreshProvider>
+                  <AuthGuard>
             {/* Prevent tab switch reloads */}
             <VisibilityHandler />
 
@@ -84,9 +86,10 @@ export default function RootLayout({
             </div>
 
             <PWAInstallPrompt />
-                </AuthGuard>
-              </RefreshProvider>
-            </RecentScansProvider>
+                  </AuthGuard>
+                </RefreshProvider>
+              </RecentScansProvider>
+            </NetworkProvider>
           </AuthProvider>
         </PWAInstallProvider>
         <Toaster
