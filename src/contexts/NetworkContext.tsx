@@ -104,7 +104,9 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
               toast.success('Không có thao tác cần đồng bộ', { id: toastId })
             }
 
-            await refreshPendingCount()
+            // Refresh count after sync
+            const updatedActions = await getPendingActions()
+            setPendingActionsCount(updatedActions.length)
           } catch (error) {
             console.error('Sync error:', error)
             toast.error('Lỗi khi đồng bộ dữ liệu')
@@ -134,7 +136,8 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
-  }, [refreshPendingCount])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount
 
   // Listen to sync status changes
   useEffect(() => {
@@ -156,8 +159,16 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
 
   // Initial pending count load
   useEffect(() => {
-    refreshPendingCount()
-  }, [refreshPendingCount])
+    const loadInitialCount = async () => {
+      try {
+        const actions = await getPendingActions()
+        setPendingActionsCount(actions.length)
+      } catch (error) {
+        console.error('Failed to load initial pending count:', error)
+      }
+    }
+    loadInitialCount()
+  }, [])
 
   return (
     <NetworkContext.Provider
