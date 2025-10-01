@@ -89,8 +89,28 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
       const actions = await getPendingActions()
       if (actions.length > 0) {
         console.log(`📤 Auto-syncing ${actions.length} pending actions...`)
-        setTimeout(() => {
-          syncNow()
+        setTimeout(async () => {
+          try {
+            setIsSyncing(true)
+            const toastId = toast.loading('Đang đồng bộ dữ liệu...')
+
+            const result = await syncAllActions()
+
+            if (result.failed > 0) {
+              toast.error(`Đồng bộ thất bại ${result.failed} thao tác`, { id: toastId })
+            } else if (result.success > 0) {
+              toast.success(`Đã đồng bộ ${result.success} thao tác`, { id: toastId })
+            } else {
+              toast.success('Không có thao tác cần đồng bộ', { id: toastId })
+            }
+
+            await refreshPendingCount()
+          } catch (error) {
+            console.error('Sync error:', error)
+            toast.error('Lỗi khi đồng bộ dữ liệu')
+          } finally {
+            setIsSyncing(false)
+          }
         }, 1000) // Wait 1 second to ensure connection is stable
       }
     }
@@ -114,7 +134,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
-  }, [syncNow])
+  }, [refreshPendingCount])
 
   // Listen to sync status changes
   useEffect(() => {
