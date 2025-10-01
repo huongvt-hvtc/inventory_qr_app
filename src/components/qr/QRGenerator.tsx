@@ -8,7 +8,6 @@ import {
   QrCode, 
   Printer, 
   Download, 
-  Search,
   CheckCircle,
   XCircle,
   Loader2,
@@ -40,10 +39,26 @@ export default function QRGenerator({
   const [qrCodes, setQrCodes] = useState<Map<string, string>>(new Map())
   const [searchTerm, setSearchTerm] = useState('')
   const [activeSearchTerm, setActiveSearchTerm] = useState('')
+  const trimmedSearchInput = searchTerm.trim()
+  const isSearchActive = activeSearchTerm.length > 0
+  const isCancelMode = isSearchActive && trimmedSearchInput === activeSearchTerm
   const [selectedForPrint, setSelectedForPrint] = useState<Set<string>>(new Set(selectedAssets))
 
   const handleSearchSubmit = () => {
-    setActiveSearchTerm(searchTerm.trim())
+    const trimmedTerm = searchTerm.trim()
+
+    if (isCancelMode) {
+      setSearchTerm('')
+      setActiveSearchTerm('')
+      return
+    }
+
+    if (!trimmedTerm) {
+      return
+    }
+
+    setActiveSearchTerm(trimmedTerm)
+    setSearchTerm(trimmedTerm)
   }
 
   const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -197,9 +212,10 @@ export default function QRGenerator({
                 <Button
                   type="button"
                   onClick={handleSearchSubmit}
-                  className="h-10 w-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg" aria-label="Tìm kiếm"
+                  disabled={!isSearchActive && trimmedSearchInput === ''}
+                  className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50" aria-label={isCancelMode ? 'Bỏ tìm kiếm' : 'Thực hiện tìm kiếm'}
                 >
-                  <Search className="h-4 w-4" />
+                  {isCancelMode ? 'Bỏ Tìm' : 'Tìm'}
                 </Button>
               </div>
               

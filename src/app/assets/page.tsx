@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Package,
-  Search,
   Plus,
   Upload,
   Download,
@@ -73,6 +72,11 @@ export default function AssetsPage() {
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [submittedSearchTerm, setSubmittedSearchTerm] = useState('');
+  const trimmedSearchInput = searchTerm.trim();
+  const isSearchActive = submittedSearchTerm.length > 0;
+  const isCancelMode = isSearchActive && trimmedSearchInput === submittedSearchTerm;
+  const [refreshStatus, setRefreshStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const refreshStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [inventoryFilter, setInventoryFilter] = useState<'all' | 'checked' | 'unchecked'>('all');
@@ -149,7 +153,20 @@ export default function AssetsPage() {
   }, [submittedSearchTerm, departmentFilter, statusFilter, inventoryFilter]);
 
   const handleSearchSubmit = () => {
-    setSubmittedSearchTerm(searchTerm.trim());
+    const trimmedTerm = searchTerm.trim();
+
+    if (isCancelMode) {
+      setSearchTerm('');
+      setSubmittedSearchTerm('');
+      return;
+    }
+
+    if (!trimmedTerm) {
+      return;
+    }
+
+    setSubmittedSearchTerm(trimmedTerm);
+    setSearchTerm(trimmedTerm);
   };
 
   const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -283,22 +300,51 @@ export default function AssetsPage() {
     });
   };
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
+    if (refreshStatus === 'loading') return;
+
+    if (refreshStatusTimeoutRef.current) {
+      clearTimeout(refreshStatusTimeoutRef.current);
+      refreshStatusTimeoutRef.current = null;
+    }
+
+    setRefreshStatus('loading');
     const toastId = toast.loading('Đang cập nhật dữ liệu...');
+
     try {
       await loadAssets(true); // Force refresh bypassing cache
       toast.success('Đã cập nhật dữ liệu mới nhất', { id: toastId });
+      setRefreshStatus('success');
+      refreshStatusTimeoutRef.current = setTimeout(() => {
+        setRefreshStatus('idle');
+        refreshStatusTimeoutRef.current = null;
+      }, 2200);
     } catch (error) {
       console.error('Error refreshing assets:', error);
       toast.error('Có lỗi xảy ra khi cập nhật dữ liệu', { id: toastId });
+      setRefreshStatus('error');
+      refreshStatusTimeoutRef.current = setTimeout(() => {
+        setRefreshStatus('idle');
+        refreshStatusTimeoutRef.current = null;
+      }, 3200);
     }
-  };
+  }, [refreshStatus, loadAssets]);
 
   // Register refresh function for network status component
   useEffect(() => {
     setRefreshFunction(() => handleRefresh);
     return () => setRefreshFunction(null);
-  }, [setRefreshFunction]);
+  }, [setRefreshFunction, handleRefresh]);
+
+  // Clear any pending timers on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshStatusTimeoutRef.current) {
+        clearTimeout(refreshStatusTimeoutRef.current);
+        refreshStatusTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Actual execution functions
   const executeCheckAssets = async (checkOnlyUnchecked: boolean = false) => {
@@ -541,16 +587,44 @@ export default function AssetsPage() {
             actions={
               <div className="flex items-center gap-3">
                 <WiFiIndicator />
-                <button
-                  disabled={loading}
-                  onClick={handleRefresh}
-                  className="h-10 px-4 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg active:shadow-sm touch-manipulation"
-                  title="Làm mới dữ liệu từ server"
-                  style={{ touchAction: 'manipulation' }}
-                >
-                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                  <span>Làm mới</span>
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    disabled={loading || refreshStatus === 'loading'}
+                    onClick={handleRefresh}
+                    className="h-10 px-4 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg active:shadow-sm touch-manipulation"
+                    title="Làm mới dữ liệu từ server"
+                    style={{ touchAction: 'manipulation' }}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${refreshStatus === 'loading' ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline">
+                      {refreshStatus === 'loading'
+                        ? 'Đang làm mới...'
+                        : refreshStatus === 'success'
+                          ? 'Đã cập nhật'
+                          : refreshStatus === 'error'
+                            ? 'Thử lại'
+                            : 'Làm mới'}
+                    </span>
+                    <span className="sm:hidden">
+                      {refreshStatus === 'loading'
+                        ? 'Đang...'
+                        : refreshStatus === 'success'
+                          ? 'Đã xong'
+                          : refreshStatus === 'error'
+                            ? 'Lỗi'
+                            : 'Làm mới'}
+                    </span>
+                  </button>
+                  {refreshStatus !== 'idle' && (
+                    <span className={`sm:hidden text-xs ${refreshStatus === 'error' ? 'text-red-600' : 'text-gray-600'}`}>
+                      {refreshStatus === 'loading'
+                        ? 'Đang cập nhật dữ liệu...'
+                        : refreshStatus === 'success'
+                          ? 'Đã cập nhật dữ liệu mới nhất'
+                          : 'Có lỗi xảy ra khi cập nhật dữ liệu'}
+                    </span>
+                  )}
+                </div>
               </div>
             }
           />
@@ -787,10 +861,10 @@ export default function AssetsPage() {
               <button
                 type="button"
                 onClick={handleSearchSubmit}
-                disabled={loading}
-                className="h-10 w-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow-md disabled:opacity-50" aria-label="Tìm kiếm"
+                disabled={loading || (!isSearchActive && trimmedSearchInput === '')}
+                className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow-md disabled:opacity-50" aria-label={isCancelMode ? 'Bỏ tìm kiếm' : 'Thực hiện tìm kiếm'}
               >
-                <Search className="h-4 w-4" />
+                {isCancelMode ? 'Bỏ Tìm' : 'Tìm'}
               </button>
             </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +54,8 @@ export default function ScannerPage() {
   });
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [refreshStatus, setRefreshStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const refreshStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync recent scans with latest asset data
   useEffect(() => {
@@ -237,22 +239,49 @@ export default function ScannerPage() {
     }
   };
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
+    if (refreshStatus === 'loading') return;
+
+    if (refreshStatusTimeoutRef.current) {
+      clearTimeout(refreshStatusTimeoutRef.current);
+      refreshStatusTimeoutRef.current = null;
+    }
+
+    setRefreshStatus('loading');
     const toastId = toast.loading('Đang cập nhật dữ liệu...');
     try {
       await loadAssets(true); // Force refresh bypassing cache
       toast.success('Đã cập nhật dữ liệu mới nhất', { id: toastId });
+      setRefreshStatus('success');
+      refreshStatusTimeoutRef.current = setTimeout(() => {
+        setRefreshStatus('idle');
+        refreshStatusTimeoutRef.current = null;
+      }, 2200);
     } catch (error) {
       console.error('Error refreshing assets:', error);
       toast.error('Có lỗi xảy ra khi cập nhật dữ liệu', { id: toastId });
+      setRefreshStatus('error');
+      refreshStatusTimeoutRef.current = setTimeout(() => {
+        setRefreshStatus('idle');
+        refreshStatusTimeoutRef.current = null;
+      }, 3200);
     }
-  };
+  }, [refreshStatus, loadAssets]);
 
   // Register refresh function for network status component
   useEffect(() => {
     setRefreshFunction(() => handleRefresh);
     return () => setRefreshFunction(null);
-  }, [setRefreshFunction]);
+  }, [setRefreshFunction, handleRefresh]);
+
+  useEffect(() => {
+    return () => {
+      if (refreshStatusTimeoutRef.current) {
+        clearTimeout(refreshStatusTimeoutRef.current);
+        refreshStatusTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('vi-VN', {
@@ -274,16 +303,44 @@ export default function ScannerPage() {
             actions={
               <div className="flex items-center gap-3">
                 <WiFiIndicator />
-                <button
-                  disabled={loading}
-                  onClick={handleRefresh}
-                  className="h-10 px-4 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg active:shadow-sm touch-manipulation"
-                  title="Làm mới dữ liệu từ server"
-                  style={{ touchAction: 'manipulation' }}
-                >
-                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                  <span>Làm mới</span>
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    disabled={loading || refreshStatus === 'loading'}
+                    onClick={handleRefresh}
+                    className="h-10 px-4 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg active:shadow-sm touch-manipulation"
+                    title="Làm mới dữ liệu từ server"
+                    style={{ touchAction: 'manipulation' }}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${refreshStatus === 'loading' ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline">
+                      {refreshStatus === 'loading'
+                        ? 'Đang làm mới...'
+                        : refreshStatus === 'success'
+                          ? 'Đã cập nhật'
+                          : refreshStatus === 'error'
+                            ? 'Thử lại'
+                            : 'Làm mới'}
+                    </span>
+                    <span className="sm:hidden">
+                      {refreshStatus === 'loading'
+                        ? 'Đang...'
+                        : refreshStatus === 'success'
+                          ? 'Đã xong'
+                          : refreshStatus === 'error'
+                            ? 'Lỗi'
+                            : 'Làm mới'}
+                    </span>
+                  </button>
+                  {refreshStatus !== 'idle' && (
+                    <span className={`sm:hidden text-xs ${refreshStatus === 'error' ? 'text-red-600' : 'text-gray-600'}`}>
+                      {refreshStatus === 'loading'
+                        ? 'Đang cập nhật dữ liệu...'
+                        : refreshStatus === 'success'
+                          ? 'Đã cập nhật dữ liệu mới nhất'
+                          : 'Có lỗi xảy ra khi cập nhật dữ liệu'}
+                    </span>
+                  )}
+                </div>
               </div>
             }
           />
