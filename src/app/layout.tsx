@@ -63,7 +63,6 @@ export default function RootLayout({
       <body className={`${beVietnamPro.variable} font-sans h-full bg-gray-50`}>
         <PWAInstallProvider>
           <AuthProvider>
-            <NetworkProvider>
               <RecentScansProvider>
                 <RefreshProvider>
                   <AuthGuard>
@@ -81,15 +80,14 @@ export default function RootLayout({
                 {children}
               </ConditionalLayout>
 
-              {/* Offline Status Indicator */}
-              <OfflineStatusIndicator />
+              {/* Offline Status Indicator - Temporarily disabled */}
+              {/* <OfflineStatusIndicator /> */}
             </div>
 
             <PWAInstallPrompt />
                   </AuthGuard>
                 </RefreshProvider>
               </RecentScansProvider>
-            </NetworkProvider>
           </AuthProvider>
         </PWAInstallProvider>
         <Toaster
